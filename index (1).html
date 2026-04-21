@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daniel Jo — Ceramic Product Designer</title>
+<meta name="description" content="Daniel Jo is a ceramic product designer and founder of Bunnar. Collaborative work with MoMA, Naver, Amore Pacific, and Osulloc.">
+<meta property="og:title" content="Daniel Jo — Ceramic Product Designer">
+<meta property="og:description" content="Design where material understanding meets precise form.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:  #000000;
+  --white:  #ffffff;
+  --mid:    #888888;
+  --dim:    #bbbbbb;
+  --border: #e8e8e8;
+  --f: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--white);
+  color: var(--black);
+  font-family: var(--f);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* HEADER */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 24px 52px;
+  background: var(--white);
+  border-bottom: 1px solid transparent;
+  transition: border-color .3s;
+}
+header.scrolled { border-bottom-color: var(--border); }
+
+.logo {
+  font-family: var(--f);
+  font-size: 12px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase;
+  text-decoration: none; color: var(--black);
+}
+
+nav { display: flex; gap: 40px; }
+nav a {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: .18em; text-transform: uppercase;
+  text-decoration: none; color: var(--mid);
+  transition: color .2s;
+}
+nav a:hover { color: var(--black); }
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 52px 80px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-label {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--mid); margin-bottom: 32px;
+  opacity: 0; transform: translateY(10px);
+  animation: up .8s .2s forwards;
+}
+
+.hero-name {
+  font-family: var(--f);
+  font-size: clamp(68px, 10.5vw, 152px);
+  font-weight: 200;
+  line-height: .93;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--black);
+  opacity: 0; transform: translateY(20px);
+  animation: up 1s .4s forwards;
+}
+.hero-name span { color: var(--dim); }
+
+.hero-bottom {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-top: 56px;
+  opacity: 0; transform: translateY(10px);
+  animation: up .8s .8s forwards;
+}
+
+.hero-desc {
+  font-family: var(--f);
+  font-size: 13px; font-weight: 300;
+  color: var(--mid); max-width: 340px;
+  line-height: 1.9; letter-spacing: .02em;
+}
+
+.hero-scroll {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 400;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--dim);
+  display: flex; align-items: center; gap: 14px;
+}
+.hero-scroll::before {
+  content: ''; display: block;
+  width: 36px; height: 1px; background: var(--dim);
+}
+
+/* SECTION HEADER */
+.section-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 52px 52px 36px;
+  border-bottom: 1px solid var(--border);
+}
+.section-title {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--mid);
+}
+.section-count {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 300;
+  letter-spacing: .08em; color: var(--dim);
+}
+
+/* WORK GRID */
+.work-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.project-item {
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; overflow: hidden;
+  transition: background .2s;
+}
+.project-item:nth-child(odd) { border-right: 1px solid var(--border); }
+.project-item:hover { background: #f0eeeb; }
+
+.project-image {
+  width: 100%; aspect-ratio: 4/3; overflow: hidden;
+}
+.project-image img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: grayscale(100%);
+  transition: transform .6s ease, filter .4s;
+}
+.project-item:hover .project-image img { transform: scale(1.03); filter: grayscale(60%); }
+
+.placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #e6e4e0, #e0e0e0);
+}
+.placeholder span {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .3em; text-transform: uppercase;
+  color: rgba(0,0,0,.14);
+}
+
+.project-info { padding: 26px 36px 34px; }
+.project-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.project-client {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--mid);
+}
+.project-year {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 300;
+  letter-spacing: .06em; color: var(--dim);
+}
+.project-title {
+  font-family: var(--f);
+  font-size: clamp(18px, 2vw, 26px);
+  font-weight: 300; line-height: 1.35;
+  color: var(--black); margin-bottom: 12px;
+  letter-spacing: .01em;
+}
+.project-desc {
+  font-family: var(--f);
+  font-size: 12px; font-weight: 300;
+  color: var(--mid); line-height: 1.85; letter-spacing: .015em;
+}
+
+/* FEATURED */
+.project-item.full {
+  grid-column: 1 / -1; border-right: none;
+  display: grid; grid-template-columns: 1fr 1fr;
+}
+.project-item.full .project-image { aspect-ratio: unset; min-height: 500px; }
+.project-item.full .project-info {
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 52px 60px;
+}
+.project-item.full .project-title {
+  font-size: clamp(26px, 3vw, 42px); font-weight: 200;
+}
+
+/* CLIENTS */
+.clients-strip { padding: 52px; border-bottom: 1px solid var(--border); }
+.clients-label {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .26em; text-transform: uppercase;
+  color: var(--mid); margin-bottom: 28px;
+}
+.clients-list { display: flex; flex-wrap: wrap; }
+.client-item {
+  font-family: var(--f);
+  font-size: clamp(16px, 2vw, 24px); font-weight: 200;
+  letter-spacing: .03em; color: var(--black);
+  padding-right: 24px; white-space: nowrap;
+}
+.client-item::after { content: ' —'; margin-right: 24px; color: var(--dim); }
+.client-item:last-child::after { display: none; }
+
+/* ABOUT */
+#about {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.about-left { padding: 80px 52px; border-right: 1px solid var(--border); }
+.about-headline {
+  font-family: var(--f);
+  font-size: clamp(26px, 3vw, 42px); font-weight: 200;
+  line-height: 1.4; color: var(--black);
+  margin-bottom: 36px; letter-spacing: .01em;
+}
+.about-text {
+  font-family: var(--f);
+  font-size: 13px; font-weight: 300;
+  color: #666; line-height: 2.05;
+  max-width: 460px; letter-spacing: .015em;
+}
+
+.about-right { padding: 80px 52px; }
+.cred-block { margin-bottom: 44px; }
+.cred-label {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--mid);
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.cred-list { list-style: none; }
+.cred-list li {
+  display: flex; justify-content: space-between;
+  align-items: baseline; gap: 16px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+  font-family: var(--f);
+  font-size: 12px; font-weight: 300;
+  line-height: 1.6; color: var(--black); letter-spacing: .01em;
+}
+.cred-list li .yr {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 300;
+  color: var(--dim); white-space: nowrap; letter-spacing: .04em;
+}
+
+/* CONTACT */
+#contact {
+  padding: 96px 52px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+  border-bottom: 1px solid var(--border);
+}
+.contact-headline {
+  font-family: var(--f);
+  font-size: clamp(34px, 4.5vw, 62px); font-weight: 200;
+  line-height: 1.2; color: var(--black); letter-spacing: .01em;
+}
+.contact-links { display: flex; flex-direction: column; justify-content: flex-end; }
+.contact-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 17px 0; border-bottom: 1px solid var(--border);
+  text-decoration: none; color: var(--black); transition: padding-left .2s;
+}
+.contact-row:hover { padding-left: 6px; }
+.contact-row-label {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--mid); min-width: 76px;
+}
+.contact-row-val {
+  font-family: var(--f);
+  font-size: 13px; font-weight: 300; letter-spacing: .02em;
+}
+.contact-arrow { font-size: 14px; color: var(--dim); transition: transform .2s; }
+.contact-row:hover .contact-arrow { transform: translateX(4px); }
+
+/* FOOTER */
+footer {
+  padding: 26px 52px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.f-copy, .f-brand {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 300;
+  color: var(--dim); letter-spacing: .06em;
+}
+
+/* ANIMATIONS */
+@keyframes up { to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* MOBILE */
+@media (max-width: 768px) {
+  header { padding: 20px 24px; }
+  nav { gap: 24px; }
+  .hero { padding: 0 24px 60px; }
+  .hero-name { font-size: clamp(52px, 15vw, 80px); }
+  .hero-bottom { flex-direction: column; gap: 20px; align-items: flex-start; }
+  .section-header { padding: 40px 24px 28px; }
+  .work-grid { grid-template-columns: 1fr; }
+  .project-item:nth-child(odd) { border-right: none; }
+  .project-item.full { grid-template-columns: 1fr; }
+  .project-item.full .project-image { min-height: 260px; }
+  .project-info { padding: 22px 24px 28px; }
+  .clients-strip { padding: 40px 24px; }
+  #about { grid-template-columns: 1fr; }
+  .about-left { border-right: none; border-bottom: 1px solid var(--border); padding: 52px 24px; }
+  .about-right { padding: 52px 24px; }
+  #contact { grid-template-columns: 1fr; padding: 64px 24px; }
+  footer { padding: 24px; flex-direction: column; gap: 6px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <a href="#" class="logo">Daniel Jo</a>
+  <nav>
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <p class="hero-label">Ceramic Product Designer &nbsp;·&nbsp; Dongtan, Korea</p>
+  <h1 class="hero-name">Daniel<br><span>Jo</span></h1>
+  <div class="hero-bottom">
+    <p class="hero-desc">Design where material understanding<br>meets precise form. From concept to production.</p>
+    <span class="hero-scroll">Scroll to explore</span>
+  </div>
+</section>
+
+<div id="work">
+  <div class="section-header reveal">
+    <span class="section-title">Selected Work</span>
+    <span class="section-count">2007 – Present</span>
+  </div>
+  <div class="work-grid">
+
+    <div class="project-item full reveal">
+      <div class="project-image"><div class="placeholder"><span>Naver</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Naver</span><span class="project-year">2013</span></div>
+        <h2 class="project-title">Tableware for<br>Naver Training Center</h2>
+        <p class="project-desc">A full tableware system of 8 sets for Naver's training facility. Rooted in the brand identity 'Connect One', traditional Baekja porcelain reinterpreted in contemporary form.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Osulloc</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Osulloc</span><span class="project-year">2011</span></div>
+        <h2 class="project-title">Tea Ware Collection</h2>
+        <p class="project-desc">A refined tea ware set embodying Korean aesthetic. Designed to make the ritual of tea accessible to a wider audience. Balanced form from every angle.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>White Tree</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Osulloc</span><span class="project-year">2010</span></div>
+        <h2 class="project-title">White Tree Tea Pot</h2>
+        <p class="project-desc">Inspired by white birch trees. Decoration eliminated entirely — only balance and simplicity remain. A vessel that is part of the tree itself.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>MoMA Store</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">New York MoMA Store</span><span class="project-year">2009 – 2014</span></div>
+        <h2 class="project-title">Bird & Cloud<br>Souvenir Collection</h2>
+        <p class="project-desc">Exclusive product development and supply with MoMA Store, New York. The Bird & Cloud shakers became a signature souvenir of Seoul.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Module</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Arumjigi Foundation</span><span class="project-year">2012</span></div>
+        <h2 class="project-title">In-Flight Meal<br>Module System</h2>
+        <p class="project-desc">Stackable modular dessert tableware for in-flight service. Every vessel interlocks for efficient storage in confined space. Silver, porcelain.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>LBless</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">LBless</span><span class="project-year">2013</span></div>
+        <h2 class="project-title">Candle & Diffuser<br>Brand Direction</h2>
+        <p class="project-desc">Full creative direction for LBless — a premium ambient fragrance brand used in Hilton and Hyatt Hotels. Branding, packaging, and vessel design.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Amore Pacific</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Amore Pacific</span><span class="project-year">2007</span></div>
+        <h2 class="project-title">TR Cream<br>Special Edition</h2>
+        <p class="project-desc">Limited edition ceramic vessel for Amore Pacific's TR Cream set. Cup and plate shaped as water meeting a tea leaf. Porcelain, clear glaze.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>GICB 2015</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">World Ceramic Biennale</span><span class="project-year">2015</span></div>
+        <h2 class="project-title">GICB Competition<br>Trophy</h2>
+        <p class="project-desc">Official trophy for the 2015 Gyeonggi International Ceramic Biennale. Form derived from kiln furniture. CNC ceramic with laser engraving.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Kyouei Design</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Kyouei Design, Japan</span><span class="project-year">2009</span></div>
+        <h2 class="project-title">Water Clock</h2>
+        <p class="project-desc">Collaboration with Koichi Okamoto of Kyouei Design. Ceramic form development and structural engineering. A bead moves across water as time passes.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>10 Corso Como</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">10 Corso Como Seoul</span><span class="project-year">2009</span></div>
+        <h2 class="project-title">Vase & Plate<br>Special Edition</h2>
+        <p class="project-desc">Created for the Seoul Modern Art exhibition at 10 Corso Como. The dress silhouette of a woman became a vase — fashionable, concise, unmistakably Daniel Jo.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="clients-strip reveal">
+  <p class="clients-label">Clients & Collaborators</p>
+  <div class="clients-list">
+    <span class="client-item">New York MoMA Store</span>
+    <span class="client-item">Naver</span>
+    <span class="client-item">Amore Pacific</span>
+    <span class="client-item">Osulloc</span>
+    <span class="client-item">10 Corso Como</span>
+    <span class="client-item">Kyouei Design</span>
+    <span class="client-item">LBless</span>
+    <span class="client-item">World Ceramic Biennale</span>
+  </div>
+</div>
+
+<section id="about">
+  <div class="about-left reveal">
+    <p class="about-headline">Design in service<br>of material truth.</p>
+    <p class="about-text">
+      I make ceramic products where what is necessary is kept, and what is not is removed. Not from a philosophy of minimalism — but from a deep understanding of how porcelain actually behaves.<br><br>
+      Digital tools are used where precision demands it. The hand is used where the material requires it. The result is always guided by one question: what is the most fitting form for this purpose?<br><br>
+      Since 2020, I have operated Bunnar — a tableware brand supplying over 500 cafés across Korea, with buyers in the Netherlands, Australia, and Japan.
+    </p>
+  </div>
+  <div class="about-right reveal">
+    <div class="cred-block">
+      <p class="cred-label">Recognition</p>
+      <ul class="cred-list">
+        <li><span>Next Generation Design Leader, Ministry of Knowledge Economy</span><span class="yr">2009 – 2010</span></li>
+        <li><span>Design Net Spotlight 50</span><span class="yr">2010</span></li>
+        <li><span>Icheon Ceramics Competition, Excellence Award</span><span class="yr">2007</span></li>
+        <li><span>Beautiful Korean Ceramics Competition</span><span class="yr">2007</span></li>
+        <li><span>Swarovski Small Objects Competition</span><span class="yr">2005</span></li>
+      </ul>
+    </div>
+    <div class="cred-block">
+      <p class="cred-label">Capabilities</p>
+      <ul class="cred-list">
+        <li><span>Ceramic product design &amp; ODM production</span></li>
+        <li><span>Rhino 3D modelling &amp; 3D printing</span></li>
+        <li><span>Brand identity &amp; packaging direction</span></li>
+        <li><span>B2B tableware development for hospitality</span></li>
+        <li><span>Cross-material collaboration</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="reveal">
+    <h2 class="contact-headline">Let's work<br>together.</h2>
+  </div>
+  <div class="contact-links reveal">
+    <a href="mailto:info@danieljo.com" class="contact-row">
+      <span class="contact-row-label">Email</span>
+      <span class="contact-row-val">info@danieljo.com</span>
+      <span class="contact-arrow">→</span>
+    </a>
+    <a href="https://www.danieljo.com" target="_blank" class="contact-row">
+      <span class="contact-row-label">Website</span>
+      <span class="contact-row-val">danieljo.com</span>
+      <span class="contact-arrow">→</span>
+    </a>
+    <a href="https://bunnar.kr" target="_blank" class="contact-row">
+      <span class="contact-row-label">Brand</span>
+      <span class="contact-row-val">Bunnar — bunnar.kr</span>
+      <span class="contact-arrow">→</span>
+    </a>
+    <a href="https://www.instagram.com/bunnar_daily" target="_blank" class="contact-row">
+      <span class="contact-row-label">Instagram</span>
+      <span class="contact-row-val">@bunnar_daily</span>
+      <span class="contact-arrow">→</span>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <span class="f-copy">© 2025 Daniel Jo. All rights reserved.</span>
+  <span class="f-brand">Betterhand Studio, Dongtan, Korea</span>
+</footer>
+
+<script>
+  const hdr = document.getElementById('hdr');
+  window.addEventListener('scroll', () => {
+    hdr.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -50px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+</script>
+</body>
+</html>
