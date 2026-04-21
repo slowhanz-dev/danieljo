@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daniel Jo — Ceramic Product Designer</title>
+<meta name="description" content="Daniel Jo is a ceramic product designer and founder of Bunnar. Collaborative work with MoMA, Naver, Amore Pacific, and Osulloc.">
+<meta property="og:title" content="Daniel Jo — Ceramic Product Designer">
+<meta property="og:description" content="Design where material understanding meets precise form.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:  #000000;
+  --white:  #ffffff;
+  --mid:    #888888;
+  --dim:    #bbbbbb;
+  --border: #e8e8e8;
+  --f: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--white);
+  color: var(--black);
+  font-family: var(--f);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* HEADER */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 24px 52px;
+  background: var(--white);
+  border-bottom: 1px solid transparent;
+  transition: border-color .3s;
+}
+header.scrolled { border-bottom-color: var(--border); }
+
+.logo {
+  font-family: 'Jost', Helvetica, sans-serif;
+  font-size: 15px; font-weight: 400;
+  letter-spacing: .18em; text-transform: uppercase;
+  text-decoration: none; color: var(--black);
+}
+
+nav { display: flex; gap: 40px; }
+nav a {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: .18em; text-transform: uppercase;
+  text-decoration: none; color: var(--black);
+  transition: opacity .2s;
+}
+nav a:hover { opacity: .45; }
+
+/* HERO — SLIDESHOW */
+.hero {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Slides */
+.hero-slides {
+  position: absolute; inset: 0;
+}
+.hero-slide {
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.hero-slide.active { opacity: 1; }
+
+/* Placeholder backgrounds — replace background-image with real photos */
+.hero-slide:nth-child(1) { background-color: #d4d2ce; background-image: url('images/slide1.jpg'); }
+.hero-slide:nth-child(2) { background-color: #c8c6c2; background-image: url('images/slide2.jpg'); }
+.hero-slide:nth-child(3) { background-color: #dcdad6; background-image: url('images/slide3.jpg'); }
+.hero-slide:nth-child(4) { background-color: #c0beba; background-image: url('images/slide4.jpg'); }
+.hero-slide:nth-child(5) { background-color: #d0cecc; background-image: url('images/slide5.jpg'); }
+
+/* Slide project label */
+.hero-slide::after {
+  content: attr(data-project);
+  position: absolute;
+  bottom: 32px; right: 52px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.5);
+}
+
+/* Click zones */
+.hero-zone {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 50%;
+  z-index: 10;
+  cursor: pointer;
+}
+.hero-zone.prev { left: 0; }
+.hero-zone.next { right: 0; }
+
+/* Overlay — subtle gradient at bottom for text */
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,.08) 0%,
+    rgba(0,0,0,.0) 40%,
+    rgba(0,0,0,.45) 100%
+  );
+  pointer-events: none;
+}
+
+/* Mission text */
+.hero-content {
+  position: absolute;
+  bottom: 64px; left: 52px; right: 52px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: up 1s .5s forwards;
+}
+
+.hero-mission {
+  font-family: var(--f);
+  font-size: clamp(28px, 3.8vw, 54px);
+  font-weight: 200;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  color: #ffffff;
+  max-width: 680px;
+}
+
+.hero-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+.hero-meta-name {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.7);
+}
+.hero-meta-role {
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+}
+
+/* Slide dots */
+.hero-dots {
+  position: absolute;
+  bottom: 32px; left: 52px;
+  display: flex; gap: 8px;
+  opacity: 0;
+  animation: up .8s .9s forwards;
+}
+.hero-dot {
+  width: 24px; height: 1px;
+  background: rgba(255,255,255,.3);
+  cursor: pointer;
+  transition: background .3s, width .3s;
+}
+.hero-dot.active {
+  background: rgba(255,255,255,.9);
+  width: 40px;
+}
+
+
+
+
+
+/* SECTION HEADER */
+.section-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 52px 52px 36px;
+  border-bottom: 1px solid var(--border);
+}
+.section-title {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--mid);
+}
+.section-count {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 300;
+  letter-spacing: .08em; color: var(--dim);
+}
+
+/* WORK GRID */
+.work-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.project-item {
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; overflow: hidden;
+  transition: background .2s;
+}
+.project-item:nth-child(odd) { border-right: 1px solid var(--border); }
+.project-item:hover { background: #f0eeeb; }
+
+.project-image {
+  width: 100%; aspect-ratio: 4/3; overflow: hidden;
+}
+.project-image img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: grayscale(100%);
+  transition: transform .6s ease, filter .4s;
+}
+.project-item:hover .project-image img { transform: scale(1.03); filter: grayscale(60%); }
+
+.placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #e6e4e0, #e0e0e0);
+}
+.placeholder span {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .3em; text-transform: uppercase;
+  color: rgba(0,0,0,.14);
+}
+
+.project-info { padding: 26px 36px 34px; }
+.project-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.project-client {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--mid);
+}
+.project-year {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 300;
+  letter-spacing: .06em; color: var(--dim);
+}
+.project-title {
+  font-family: var(--f);
+  font-size: clamp(20px, 2vw, 26px);
+  font-weight: 300; line-height: 1.35;
+  color: var(--black); margin-bottom: 12px;
+  letter-spacing: .01em;
+}
+.project-desc {
+  font-family: var(--f);
+  font-size: 12px; font-weight: 300;
+  color: var(--mid); line-height: 1.85; letter-spacing: .015em;
+}
+
+/* FEATURED */
+.project-item.full {
+  grid-column: 1 / -1; border-right: none;
+  display: grid; grid-template-columns: 1fr 1fr;
+}
+.project-item.full .project-image { aspect-ratio: unset; min-height: 500px; }
+.project-item.full .project-info {
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 52px 60px;
+}
+.project-item.full .project-title {
+  font-size: clamp(26px, 3vw, 42px); font-weight: 200;
+}
+
+/* CLIENTS */
+.clients-strip { padding: 52px; border-bottom: 1px solid var(--border); }
+.clients-label {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .26em; text-transform: uppercase;
+  color: var(--mid); margin-bottom: 28px;
+}
+.clients-list { display: flex; flex-wrap: wrap; }
+.client-item {
+  font-family: var(--f);
+  font-size: clamp(16px, 2vw, 24px); font-weight: 200;
+  letter-spacing: .03em; color: var(--black);
+  padding-right: 24px; white-space: nowrap;
+}
+.client-item::after { content: ' —'; margin-right: 24px; color: var(--dim); }
+.client-item:last-child::after { display: none; }
+
+/* ABOUT */
+#about {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.about-left { padding: 80px 52px; border-right: 1px solid var(--border); }
+.about-headline {
+  font-family: var(--f);
+  font-size: clamp(28px, 3.2vw, 46px); font-weight: 200;
+  line-height: 1.25; color: var(--black);
+  margin-bottom: 36px; letter-spacing: -.01em;
+}
+.about-text {
+  font-family: var(--f);
+  font-size: 13px; font-weight: 300;
+  color: #666; line-height: 2.05;
+  max-width: 460px; letter-spacing: .015em;
+}
+
+.about-right { padding: 80px 52px; }
+.cred-block { margin-bottom: 44px; }
+.cred-label {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--mid);
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.cred-list { list-style: none; }
+.cred-list li {
+  display: flex; justify-content: space-between;
+  align-items: baseline; gap: 16px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+  font-family: var(--f);
+  font-size: 12px; font-weight: 300;
+  line-height: 1.6; color: var(--black); letter-spacing: .01em;
+}
+.cred-list li .yr {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 300;
+  color: var(--dim); white-space: nowrap; letter-spacing: .04em;
+}
+
+/* PROCESS */
+#process {
+  border-bottom: 1px solid var(--border);
+}
+
+.process-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: end;
+  padding: 80px 52px 64px;
+  border-bottom: 1px solid var(--border);
+}
+
+.process-label {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--mid); margin-bottom: 20px;
+}
+
+.process-headline {
+  font-family: var(--f);
+  font-size: clamp(36px, 4.5vw, 62px);
+  font-weight: 200; line-height: 1.15;
+  letter-spacing: -.01em; color: var(--black);
+}
+
+.process-intro {
+  font-size: 16px; font-weight: 300;
+  line-height: 1.8; color: var(--mid);
+  align-self: end;
+  letter-spacing: .01em;
+}
+
+.process-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.process-item {
+  padding: 48px 44px 52px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  transition: background .2s;
+}
+.process-item:nth-child(3n) { border-right: none; }
+.process-item:nth-last-child(-n+3) { border-bottom: none; }
+.process-item:hover { background: #fafafa; }
+
+.process-num {
+  font-size: 11px; font-weight: 400;
+  letter-spacing: .16em; color: var(--dim);
+  margin-bottom: 32px;
+}
+
+.process-title {
+  font-family: var(--f);
+  font-size: 15px; font-weight: 400;
+  letter-spacing: .01em; line-height: 1.3;
+  color: var(--black); margin-bottom: 16px;
+}
+
+.process-text {
+  font-size: 13px; font-weight: 300;
+  line-height: 1.9; color: var(--mid);
+  letter-spacing: .01em;
+}
+
+@media (max-width: 900px) {
+  .process-header { grid-template-columns: 1fr; }
+  .process-grid { grid-template-columns: 1fr 1fr; }
+  .process-item:nth-child(3n) { border-right: 1px solid var(--border); }
+  .process-item:nth-child(2n) { border-right: none; }
+  .process-item:nth-last-child(-n+3) { border-bottom: 1px solid var(--border); }
+  .process-item:nth-last-child(-n+2) { border-bottom: none; }
+}
+
+@media (max-width: 600px) {
+  .process-header { padding: 48px 24px 40px; }
+  .process-grid { grid-template-columns: 1fr; }
+  .process-item { border-right: none !important; border-bottom: 1px solid var(--border) !important; padding: 36px 24px; }
+  .process-item:last-child { border-bottom: none !important; }
+}
+#contact {
+  padding: 96px 52px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+  border-bottom: 1px solid var(--border);
+}
+.contact-headline {
+  font-family: var(--f);
+  font-size: clamp(34px, 4.5vw, 62px); font-weight: 200;
+  line-height: 1.2; color: var(--black); letter-spacing: .01em;
+}
+.contact-links { display: flex; flex-direction: column; justify-content: flex-end; }
+.contact-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 17px 0; border-bottom: 1px solid var(--border);
+  text-decoration: none; color: var(--black); transition: padding-left .2s;
+}
+.contact-row:hover { padding-left: 6px; }
+.contact-row-label {
+  font-family: var(--f);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--mid); min-width: 76px;
+}
+.contact-row-val {
+  font-family: var(--f);
+  font-size: 13px; font-weight: 300; letter-spacing: .02em;
+}
+.contact-arrow { font-size: 14px; color: var(--dim); transition: transform .2s; }
+.contact-row:hover .contact-arrow { transform: translateX(4px); }
+
+/* FOOTER */
+footer {
+  padding: 26px 52px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.f-copy, .f-brand {
+  font-family: var(--f);
+  font-size: 11px; font-weight: 300;
+  color: var(--dim); letter-spacing: .06em;
+}
+
+/* ANIMATIONS */
+@keyframes up { to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* MOBILE */
+@media (max-width: 768px) {
+  header { padding: 20px 24px; }
+  nav { gap: 24px; }
+  .hero { padding: 0 24px 60px; }
+  .hero-name { font-size: clamp(52px, 15vw, 80px); }
+  .hero-bottom { flex-direction: column; gap: 20px; align-items: flex-start; }
+  .section-header { padding: 40px 24px 28px; }
+  .work-grid { grid-template-columns: 1fr; }
+  .project-item:nth-child(odd) { border-right: none; }
+  .project-item.full { grid-template-columns: 1fr; }
+  .project-item.full .project-image { min-height: 260px; }
+  .project-info { padding: 22px 24px 28px; }
+  .clients-strip { padding: 40px 24px; }
+  #about { grid-template-columns: 1fr; }
+  .about-left { border-right: none; border-bottom: 1px solid var(--border); padding: 52px 24px; }
+  .about-right { padding: 52px 24px; }
+  #contact { grid-template-columns: 1fr; padding: 64px 24px; }
+  footer { padding: 24px; flex-direction: column; gap: 6px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <a href="#" class="logo">Daniel Jo</a>
+  <nav>
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<section class="hero" id="home">
+  <!-- Slides: replace background-image with real photo URLs -->
+  <div class="hero-slides">
+    <div class="hero-slide active" data-project="Osulloc Tea Ware — 2011"></div>
+    <div class="hero-slide" data-project="Naver Tableware — 2013"></div>
+    <div class="hero-slide" data-project="MoMA Store Collection — 2009"></div>
+    <div class="hero-slide" data-project="LBless Brand Direction — 2013"></div>
+    <div class="hero-slide" data-project="In-Flight Module System — 2012"></div>
+  </div>
+
+  <!-- Dark overlay -->
+  <div class="hero-overlay"></div>
+
+  <!-- Mission + name -->
+  <div class="hero-content">
+    <p class="hero-mission">Form follows purpose.<br>Nothing more, nothing less.</p>
+    <div class="hero-meta">
+      <span class="hero-meta-name">Daniel Jo</span>
+      <span class="hero-meta-role">Ceramic Product Designer</span>
+    </div>
+  </div>
+
+  <!-- Dots -->
+  <div class="hero-dots">
+    <div class="hero-dot active"></div>
+    <div class="hero-dot"></div>
+    <div class="hero-dot"></div>
+    <div class="hero-dot"></div>
+    <div class="hero-dot"></div>
+  </div>
+
+  <!-- Click zones -->
+  <div class="hero-zone prev" id="hero-prev"></div>
+  <div class="hero-zone next" id="hero-next"></div>
+</section>
+
+<div id="work">
+  <div class="section-header reveal">
+    <span class="section-title">Selected Work</span>
+    <span class="section-count">2007 – Present</span>
+  </div>
+  <div class="work-grid">
+
+    <div class="project-item full reveal">
+      <div class="project-image"><div class="placeholder"><span>Naver</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Naver</span><span class="project-year">2013</span></div>
+        <h2 class="project-title" >Tableware for<br>Naver Training Center</h2>
+        <p class="project-desc">A full tableware system of 8 sets for Naver's training facility. Rooted in the brand identity 'Connect One', traditional Baekja porcelain reinterpreted in contemporary form.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Osulloc</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Osulloc</span><span class="project-year">2011</span></div>
+        <h2 class="project-title" >Tea Ware Collection</h2>
+        <p class="project-desc">A refined tea ware set embodying Korean aesthetic. Designed to make the ritual of tea accessible to a wider audience. Balanced form from every angle.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>White Tree</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Osulloc</span><span class="project-year">2010</span></div>
+        <h2 class="project-title" >White Tree Tea Pot</h2>
+        <p class="project-desc">Inspired by white birch trees. Decoration eliminated entirely — only balance and simplicity remain. A vessel that is part of the tree itself.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>MoMA Store</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">New York MoMA Store</span><span class="project-year">2009 – 2014</span></div>
+        <h2 class="project-title" >Bird &amp; Cloud<br>Souvenir Collection</h2>
+        <p class="project-desc">Exclusive product development and supply with MoMA Store, New York. The Bird & Cloud shakers became a signature souvenir of Seoul.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Module</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Arumjigi Foundation</span><span class="project-year">2012</span></div>
+        <h2 class="project-title" >In-Flight Meal<br>Module System</h2>
+        <p class="project-desc">Stackable modular dessert tableware for in-flight service. Every vessel interlocks for efficient storage in confined space. Silver, porcelain.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>LBless</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">LBless</span><span class="project-year">2013</span></div>
+        <h2 class="project-title" >Candle &amp; Diffuser<br>Brand Direction</h2>
+        <p class="project-desc">Full creative direction for LBless — a premium ambient fragrance brand used in Hilton and Hyatt Hotels. Branding, packaging, and vessel design.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Amore Pacific</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Amore Pacific</span><span class="project-year">2007</span></div>
+        <h2 class="project-title" >TR Cream<br>Special Edition</h2>
+        <p class="project-desc">Limited edition ceramic vessel for Amore Pacific's TR Cream set. Cup and plate shaped as water meeting a tea leaf. Porcelain, clear glaze.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>GICB 2015</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">World Ceramic Biennale</span><span class="project-year">2015</span></div>
+        <h2 class="project-title" >GICB Competition<br>Trophy</h2>
+        <p class="project-desc">Official trophy for the 2015 Gyeonggi International Ceramic Biennale. Form derived from kiln furniture — the structural post that bears weight through extreme heat. CNC ceramic with laser engraving.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Kyouei</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Kyouei Design, Japan</span><span class="project-year">2009</span></div>
+        <h2 class="project-title" >Water Clock</h2>
+        <p class="project-desc">Collaboration with Koichi Okamoto of Kyouei Design. Ceramic form development and structural engineering. A bead moves across water as time passes.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>10 Corso Como</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">10 Corso Como Seoul</span><span class="project-year">2009</span></div>
+        <h2 class="project-title" >Vase &amp; Plate<br>Special Edition</h2>
+        <p class="project-desc">Created for the Seoul Modern Art exhibition at 10 Corso Como. The dress silhouette of a woman became a vase — fashionable, concise, unmistakably Daniel Jo.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+    <div class="project-item full reveal">
+      <div class="project-image"><div class="placeholder"><span>Naver</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Naver</span><span class="project-year">2013</span></div>
+        <h2 class="project-title">Tableware for<br>Naver Training Center</h2>
+        <p class="project-desc">A full tableware system of 8 sets for Naver's training facility. Rooted in the brand identity 'Connect One', traditional Baekja porcelain reinterpreted in contemporary form.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Osulloc</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Osulloc</span><span class="project-year">2011</span></div>
+        <h2 class="project-title">Tea Ware Collection</h2>
+        <p class="project-desc">A refined tea ware set embodying Korean aesthetic. Designed to make the ritual of tea accessible to a wider audience. Balanced form from every angle.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>White Tree</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Osulloc</span><span class="project-year">2010</span></div>
+        <h2 class="project-title">White Tree Tea Pot</h2>
+        <p class="project-desc">Inspired by white birch trees. Decoration eliminated entirely — only balance and simplicity remain. A vessel that is part of the tree itself.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>MoMA Store</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">New York MoMA Store</span><span class="project-year">2009 – 2014</span></div>
+        <h2 class="project-title">Bird & Cloud<br>Souvenir Collection</h2>
+        <p class="project-desc">Exclusive product development and supply with MoMA Store, New York. The Bird & Cloud shakers became a signature souvenir of Seoul.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Module</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Arumjigi Foundation</span><span class="project-year">2012</span></div>
+        <h2 class="project-title">In-Flight Meal<br>Module System</h2>
+        <p class="project-desc">Stackable modular dessert tableware for in-flight service. Every vessel interlocks for efficient storage in confined space. Silver, porcelain.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>LBless</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">LBless</span><span class="project-year">2013</span></div>
+        <h2 class="project-title">Candle & Diffuser<br>Brand Direction</h2>
+        <p class="project-desc">Full creative direction for LBless — a premium ambient fragrance brand used in Hilton and Hyatt Hotels. Branding, packaging, and vessel design.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Amore Pacific</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Amore Pacific</span><span class="project-year">2007</span></div>
+        <h2 class="project-title">TR Cream<br>Special Edition</h2>
+        <p class="project-desc">Limited edition ceramic vessel for Amore Pacific's TR Cream set. Cup and plate shaped as water meeting a tea leaf. Porcelain, clear glaze.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>GICB 2015</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">World Ceramic Biennale</span><span class="project-year">2015</span></div>
+        <h2 class="project-title">GICB Competition<br>Trophy</h2>
+        <p class="project-desc">Official trophy for the 2015 Gyeonggi International Ceramic Biennale. Form derived from kiln furniture. CNC ceramic with laser engraving.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>Kyouei Design</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">Kyouei Design, Japan</span><span class="project-year">2009</span></div>
+        <h2 class="project-title">Water Clock</h2>
+        <p class="project-desc">Collaboration with Koichi Okamoto of Kyouei Design. Ceramic form development and structural engineering. A bead moves across water as time passes.</p>
+      </div>
+    </div>
+
+    <div class="project-item reveal">
+      <div class="project-image"><div class="placeholder"><span>10 Corso Como</span></div></div>
+      <div class="project-info">
+        <div class="project-meta"><span class="project-client">10 Corso Como Seoul</span><span class="project-year">2009</span></div>
+        <h2 class="project-title">Vase & Plate<br>Special Edition</h2>
+        <p class="project-desc">Created for the Seoul Modern Art exhibition at 10 Corso Como. The dress silhouette of a woman became a vase — fashionable, concise, unmistakably Daniel Jo.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="process-header reveal">
+    <div>
+      <p class="process-label" >What makes us different</p>
+      <h2 class="process-headline" >The way<br>we work.</h2>
+    </div>
+    <p class="process-intro" >Most designers hand off a drawing.<br>We hand off a product ready to make.</p>
+  </div>
+  <div class="process-grid">
+    <div class="process-item reveal">
+      <div class="process-num">01</div>
+      <div class="process-body">
+        <h3 class="process-title" >Material-first design</h3>
+        <p class="process-text">Every decision starts from an understanding of how porcelain actually behaves — not how it looks in a render. We design within the real constraints of the kiln, the glaze, and the hand.</p>
+      </div>
+    </div>
+    <div class="process-item reveal">
+      <div class="process-num">02</div>
+      <div class="process-body">
+        <h3 class="process-title" >Digital precision where it matters</h3>
+        <p class="process-text">We use Rhino 3D where exact dimensions are required — proportions, tolerances, stacking geometry. Digital tools are used because porcelain demands it, not as a stylistic choice.</p>
+      </div>
+    </div>
+    <div class="process-item reveal">
+      <div class="process-num">03</div>
+      <div class="process-body">
+        <h3 class="process-title" >Handcraft where the machine cannot</h3>
+        <p class="process-text">Some surfaces cannot be machined economically. A cylinder refined on a lathe costs a fraction of CNC at the same precision. We know where the hand wins, and we use it there.</p>
+      </div>
+    </div>
+    <div class="process-item reveal">
+      <div class="process-num">04</div>
+      <div class="process-body">
+        <h3 class="process-title" >Proportion obsession</h3>
+        <p class="process-text">A single handle is tested 20–30 times. Form dimensions are iterated at 0.5mm intervals. The difference between a cup you reach for and one you don't is almost never obvious — but it is always there.</p>
+      </div>
+    </div>
+    <div class="process-item reveal">
+      <div class="process-num">05</div>
+      <div class="process-body">
+        <h3 class="process-title" >Concept to production, in one studio</h3>
+        <p class="process-text">From brief to 3D model, prototype to ODM production — we manage the full cycle. No handoffs lost in translation. Over 500 café clients and international buyers in three continents.</p>
+      </div>
+    </div>
+    <div class="process-item reveal">
+      <div class="process-num">06</div>
+      <div class="process-body">
+        <h3 class="process-title" >Designed to be used, not admired</h3>
+        <p class="process-text">Beauty here is not decoration. It is the result of solving every problem correctly — ergonomics, stackability, glaze durability, cost of production. A well-made cup should feel inevitable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+  <div class="process-header reveal">
+    <div>
+      <p class="process-label">What makes us different</p>
+      <h2 class="process-headline">The way<br>we work.</h2>
+    </div>
+    <p class="process-intro">Most designers hand off a drawing.<br>We hand off a product ready to make.</p>
+  </div>
+
+  <div class="process-grid">
+
+    <div class="process-item reveal">
+      <div class="process-num">01</div>
+      <div class="process-body">
+        <h3 class="process-title">Material-first design</h3>
+        <p class="process-text">Every decision starts from an understanding of how porcelain actually behaves — not how it looks in a render. We design within the real constraints of the kiln, the glaze, and the hand.</p>
+      </div>
+    </div>
+
+    <div class="process-item reveal">
+      <div class="process-num">02</div>
+      <div class="process-body">
+        <h3 class="process-title">Digital precision where it matters</h3>
+        <p class="process-text">We use Rhino 3D where exact dimensions are required — proportions, tolerances, stacking geometry. Digital tools are used because porcelain demands it, not as a stylistic choice.</p>
+      </div>
+    </div>
+
+    <div class="process-item reveal">
+      <div class="process-num">03</div>
+      <div class="process-body">
+        <h3 class="process-title">Handcraft where the machine cannot</h3>
+        <p class="process-text">Some surfaces cannot be machined economically. A cylinder refined on a lathe costs a fraction of CNC at the same precision. We know where the hand wins, and we use it there.</p>
+      </div>
+    </div>
+
+    <div class="process-item reveal">
+      <div class="process-num">04</div>
+      <div class="process-body">
+        <h3 class="process-title">Proportion obsession</h3>
+        <p class="process-text">A single handle is tested 20–30 times. Form dimensions are iterated at 0.5mm intervals. The difference between a cup you reach for and one you don't is almost never obvious — but it is always there.</p>
+      </div>
+    </div>
+
+    <div class="process-item reveal">
+      <div class="process-num">05</div>
+      <div class="process-body">
+        <h3 class="process-title">Concept to production, in one studio</h3>
+        <p class="process-text">From brief to 3D model, prototype to ODM production — we manage the full cycle. No handoffs lost in translation. Over 500 café clients and international buyers in three continents.</p>
+      </div>
+    </div>
+
+    <div class="process-item reveal">
+      <div class="process-num">06</div>
+      <div class="process-body">
+        <h3 class="process-title">Designed to be used, not admired</h3>
+        <p class="process-text">Beauty here is not decoration. It is the result of solving every problem correctly — ergonomics, stackability, glaze durability, cost of production. A well-made cup should feel inevitable.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="about">
+  <div class="about-left reveal">
+    <p class="about-headline" >Design in service<br>of material truth.</p>
+    <p class="about-text">I make ceramic products where what is necessary is kept, and what is not is removed. Not from a philosophy of minimalism — but from a deep understanding of how porcelain actually behaves.<br><br>Digital tools are used where precision demands it. The hand is used where the material requires it. The result is always guided by one question: what is the most fitting form for this purpose?<br><br>Since 2020, I have operated Bunnar — a tableware brand supplying over 500 cafés across Korea, with buyers in the Netherlands, Australia, and Japan.</p>
+  </div>
+  <div class="about-right reveal">
+    <div class="cred-block">
+      <p class="cred-label" >Recognition</p>
+      <ul class="cred-list">
+        <li><span>Next Generation Design Leader, Ministry of Knowledge Economy</span><span class="yr">2009 – 2010</span></li>
+        <li><span>Design Net Spotlight 50</span><span class="yr">2010</span></li>
+        <li><span>Icheon Ceramics Competition, Excellence Award</span><span class="yr">2007</span></li>
+        <li><span>Beautiful Korean Ceramics Competition</span><span class="yr">2007</span></li>
+        <li><span>Swarovski Small Objects Competition</span><span class="yr">2005</span></li>
+      </ul>
+    </div>
+    <div class="cred-block">
+      <p class="cred-label" >Capabilities</p>
+      <ul class="cred-list">
+        <li><span>Ceramic product design &amp; ODM production</span></li>
+        <li><span>Rhino 3D modelling &amp; 3D printing</span></li>
+        <li><span>Brand identity &amp; packaging direction</span></li>
+        <li><span>B2B tableware development for hospitality</span></li>
+        <li><span>Cross-material collaboration</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="reveal">
+    <h2 class="contact-headline" >Let's work<br>together.</h2>
+  </div>
+  <div class="contact-links reveal">
+    <a href="mailto:info@danieljo.com" class="contact-row">
+      <span class="contact-row-label" >Email</span>
+      <span class="contact-row-val">info@danieljo.com</span>
+      <span class="contact-arrow">→</span>
+    </a>
+    <a href="https://www.danieljo.com" target="_blank" class="contact-row">
+      <span class="contact-row-label" >Website</span>
+      <span class="contact-row-val">danieljo.com</span>
+      <span class="contact-arrow">→</span>
+    </a>
+    <a href="https://bunnar.kr" target="_blank" class="contact-row">
+      <span class="contact-row-label" >Brand</span>
+      <span class="contact-row-val">Bunnar — bunnar.kr</span>
+      <span class="contact-arrow">→</span>
+    </a>
+    <a href="https://www.instagram.com/bunnar_daily" target="_blank" class="contact-row">
+      <span class="contact-row-label">Instagram</span>
+      <span class="contact-row-val">@bunnar_daily</span>
+      <span class="contact-arrow">→</span>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <span class="f-copy" >© 2025 Daniel Jo. All rights reserved.</span>
+  <span class="f-brand" >Betterhand Studio, Dongtan, Korea</span>
+</footer>
+
+<script>
+  const hdr = document.getElementById('hdr');
+  window.addEventListener('scroll', () => {
+    hdr.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -50px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+  // Slideshow
+  const slides = document.querySelectorAll('.hero-slide');
+  const dots   = document.querySelectorAll('.hero-dot');
+  let cur = 0;
+  let timer;
+
+  function goTo(n) {
+    slides[cur].classList.remove('active');
+    dots[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    dots[cur].classList.add('active');
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    timer = setInterval(() => goTo(cur + 1), 4500);
+  }
+
+  dots.forEach((d, i) => d.addEventListener('click', () => { goTo(i); resetTimer(); }));
+
+  // Arrow buttons
+  document.getElementById('hero-prev').addEventListener('click', () => { goTo(cur - 1); resetTimer(); });
+  document.getElementById('hero-next').addEventListener('click', () => { goTo(cur + 1); resetTimer(); });
+
+  // Swipe (mobile)
+  const hero = document.querySelector('.hero');
+  let touchStartX = 0;
+  hero.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  hero.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? goTo(cur + 1) : goTo(cur - 1);
+      resetTimer();
+    }
+  }, { passive: true });
+
+  timer = setInterval(() => goTo(cur + 1), 4500);
+</script>
+</body>
+</html>
