@@ -824,35 +824,27 @@ fetch('json/projects.json')
   .then(data => {
     const list = document.getElementById('work-list');
     list.innerHTML = '';
-    data.projects.forEach((p, i) => {
-      const even = i % 2 === 1;
+    data.projects.forEach(p => {
       list.innerHTML += `
         <div class="work-item">
-          <div class="work-img">
-            <img src="${p.cover}" alt="${p.title}" onerror="this.parentElement.innerHTML='<div class=\"work-ph\"><span>${p.client}</span></div>'">
-          </div>
+          <a href="${p.url}" class="work-img"><img src="${p.cover}" alt="${p.title}"></a>
           <div class="work-info">
             <div>
               <div class="work-meta">
                 <span class="work-client">${p.client}</span>
                 <span class="work-year">${p.year}</span>
               </div>
-              <h2 class="work-title">${p.title}</h2>
+              <a href="${p.url}" style="text-decoration:none;color:inherit;"><h2 class="work-title">${p.title}</h2></a>
               <p class="work-desc">${p.desc}</p>
             </div>
-            <a href="${p.url}" class="work-arrow">→</a>
+            <a href="${p.url}" style="text-decoration:none;color:inherit;" class="work-arrow">→</a>
           </div>
         </div>`;
     });
-    // Re-observe reveal elements
-    document.querySelectorAll('.work-item').forEach(el => {
-      el.classList.add('work-item');
-      io2.observe(el);
-    });
+    document.querySelectorAll('#work-list .work-item').forEach(el => io2.observe(el));
   })
   .catch(() => {
-    // JSON 로드 실패시 기존 하드코딩 유지
-    console.log('projects.json not found, using static content');
+    console.log('Using static content');
   });
 
 const io2 = new IntersectionObserver(entries => {
