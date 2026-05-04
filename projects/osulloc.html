@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tea Ware Collection — Daniel Jo</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --b: #000;
+  --w: #fff;
+  --pre: 'Pretendard', -apple-system, sans-serif;
+  --jost: 'Jost', sans-serif;
+  --LAYOUT-WIDTH: 1520px;
+  --outer: 40px;
+  --pad: var(--outer);
+  --accent: #00DE5A;
+  --ph: repeating-conic-gradient(#e8e8e8 0% 25%, #f4f4f4 0% 50%) 0 0 / 32px 32px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--w); color: var(--b);
+  font-family: var(--pre); font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { width: 100%; max-width: var(--LAYOUT-WIDTH); margin: 0 auto; }
+
+/* HEADER */
+header {
+  position: fixed; top: 0;
+  width: 100%; max-width: var(--LAYOUT-WIDTH);
+  left: 50%; transform: translateX(-50%);
+  z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 32px var(--pad);
+  background: var(--w);
+  border-bottom: none;
+}
+.logo {
+  font-family: var(--jost);
+  font-size: 16px; font-weight: 400;
+  letter-spacing: .22em; text-transform: uppercase;
+  text-decoration: none; color: var(--b);
+  transition: color .2s;
+}
+.logo:hover { color: var(--accent); }
+nav { display: flex; gap: 48px; }
+nav a {
+  font-family: var(--pre);
+  font-size: 13px; font-weight: 400;
+  letter-spacing: .06em;
+  text-decoration: none; color: var(--b);
+  transition: color .2s;
+}
+nav a:hover { color: var(--accent); }
+.nav-back::before { content: '← '; }
+
+/* PLACEHOLDER */
+.ph { background: var(--ph); display: block; width: 100%; height: 100%; }
+
+/* HERO — not full bleed, left-offset */
+.proj-hero { padding-top: 80px; padding: 80px var(--pad) 0; }
+.proj-cover {
+  width: 60%;
+  margin-left: auto;
+  margin-right: 0;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+}
+.proj-cover img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(100%); }
+
+/* INTRO */
+.proj-intro {
+  padding: 80px var(--pad) 96px;
+  display: grid;
+  grid-template-columns: 5fr 4fr;
+  gap: 80px;
+  border-bottom: 1px solid var(--b);
+}
+.proj-num {
+  font-size: 11px; font-weight: 500; letter-spacing: .2em;
+  margin-bottom: 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.proj-num::after { content: ''; width: 24px; height: 1px; background: var(--b); }
+.proj-title {
+  font-size: clamp(36px, 4.5vw, 64px); font-weight: 200;
+  line-height: 1.1; letter-spacing: -.02em; margin-bottom: 48px;
+}
+.proj-meta-row { display: flex; gap: 40px; flex-wrap: wrap; }
+.proj-meta-label { font-size: 10px; font-weight: 500; letter-spacing: .18em; margin-bottom: 5px; display: block; }
+.proj-meta-value { font-size: 13px; font-weight: 300; }
+.proj-lead {
+  font-size: 16px; font-weight: 300; line-height: 1.9;
+  margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--b);
+}
+
+/* ── BODY ── */
+.body { padding: 0 var(--pad); }
+
+/* ── IMAGE BLOCKS — Chipperfield random rhythm ── */
+
+/* A. 55% left */
+.img-55l {
+  width: 55%; margin: 96px 0;
+  aspect-ratio: 3/2; overflow: hidden;
+}
+
+/* B. 65% right */
+.img-65r {
+  width: 65%; margin: 96px 0 96px auto;
+  aspect-ratio: 4/3; overflow: hidden;
+}
+
+/* C. 45% center-left */
+.img-45cl {
+  width: 45%; margin: 96px 0 96px 10%;
+  aspect-ratio: 4/5; overflow: hidden;
+}
+
+/* D. 70% left */
+.img-70l {
+  width: 70%; margin: 96px 0;
+  aspect-ratio: 16/10; overflow: hidden;
+}
+
+/* E. 40% right, tall */
+.img-40r {
+  width: 40%; margin: 96px 0 96px auto;
+  aspect-ratio: 3/4; overflow: hidden;
+}
+
+/* F. 50% center-right */
+.img-50cr {
+  width: 50%; margin: 96px auto 96px 30%;
+  aspect-ratio: 4/3; overflow: hidden;
+}
+
+/* G. Two col — offset (Chipperfield signature) */
+.split-offset {
+  display: grid; grid-template-columns: 3fr 2fr;
+  gap: 32px; margin: 96px 0; align-items: start;
+}
+.split-offset .a { aspect-ratio: 3/2; overflow: hidden; }
+.split-offset .b {
+  aspect-ratio: 2/3; overflow: hidden;
+  margin-top: 120px;
+}
+
+/* H. Two col — reverse offset */
+.split-offset-r {
+  display: grid; grid-template-columns: 2fr 3fr;
+  gap: 32px; margin: 96px 0; align-items: end;
+}
+.split-offset-r .a {
+  aspect-ratio: 2/3; overflow: hidden;
+  margin-bottom: 120px;
+}
+.split-offset-r .b { aspect-ratio: 3/2; overflow: hidden; }
+
+/* Shared img */
+.img-55l img, .img-65r img, .img-45cl img, .img-70l img,
+.img-40r img, .img-50cr img,
+.split-offset .a img, .split-offset .b img,
+.split-offset-r .a img, .split-offset-r .b img {
+  width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(100%);
+}
+
+/* Text blocks */
+.text-c { max-width: 560px; margin: 0 auto 96px; }
+.text-c h2 { font-size: 22px; font-weight: 400; line-height: 1.4; letter-spacing: -.01em; margin-bottom: 20px; }
+.text-c p { font-size: 15px; font-weight: 300; line-height: 2; margin-bottom: 18px; }
+.text-c p:last-child { margin-bottom: 0; }
+
+.text-l { max-width: 460px; margin: 0 0 96px; }
+.text-l h2 { font-size: 22px; font-weight: 400; line-height: 1.4; letter-spacing: -.01em; margin-bottom: 20px; }
+.text-l p { font-size: 15px; font-weight: 300; line-height: 2; margin-bottom: 18px; }
+
+.text-r { max-width: 460px; margin: 0 0 96px auto; }
+.text-r h2 { font-size: 22px; font-weight: 400; line-height: 1.4; letter-spacing: -.01em; margin-bottom: 20px; }
+.text-r p { font-size: 15px; font-weight: 300; line-height: 2; margin-bottom: 18px; }
+
+/* Image+text aside */
+.img-aside { display: grid; grid-template-columns: 3fr 2fr; gap: 80px; margin: 96px 0; align-items: center; }
+.img-aside.r { grid-template-columns: 2fr 3fr; }
+.img-aside.r .img-aside-img { order: 2; }
+.img-aside.r .img-aside-txt { order: 1; }
+.img-aside-img { aspect-ratio: 4/3; overflow: hidden; }
+.img-aside-num { font-size: 10px; font-weight: 500; letter-spacing: .2em; margin-bottom: 16px; display: block; }
+.img-aside-txt h3 { font-size: 20px; font-weight: 400; line-height: 1.4; letter-spacing: -.01em; margin-bottom: 16px; }
+.img-aside-txt p { font-size: 14px; font-weight: 300; line-height: 1.95; }
+
+/* Shared image style */
+.bleed img, .large-left img, .large-right img,
+.split-60-40 .a img, .split-60-40 .b img,
+.split-40-60 .a img, .split-40-60 .b img,
+.three-col .a img, .three-col .b img, .three-col .c img,
+.img-aside-img img, .small-c img {
+  width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(100%);
+}
+
+/* SPEC */
+.spec-block { border-top: 1px solid var(--b); margin: 96px 0 0; }
+.spec-row {
+  display: grid; grid-template-columns: 200px 1fr;
+  border-bottom: 1px solid var(--b);
+  padding: 18px 0; font-size: 13px;
+}
+.spec-label { font-weight: 500; }
+.spec-val { font-weight: 300; }
+
+/* NEXT */
+.next-proj {
+  border-top: 1px solid var(--b);
+  padding: 64px var(--pad);
+  display: flex; justify-content: space-between; align-items: center;
+  text-decoration: none; color: var(--b); transition: background .2s;
+}
+.next-proj:hover { background: #f8f8f8; }
+.next-label { font-size: 10px; font-weight: 500; letter-spacing: .2em; margin-bottom: 10px; display: block; }
+.next-title { font-size: clamp(20px, 2.5vw, 32px); font-weight: 300; letter-spacing: -.01em; }
+.next-arrow { font-size: 28px; transition: transform .3s, color .3s; }
+.next-proj:hover .next-arrow { transform: translateX(8px); color: var(--accent); }
+
+/* FOOTER */
+footer {
+  padding: 28px var(--pad);
+  display: flex; justify-content: space-between;
+  border-top: 1px solid var(--b);
+  font-size: 11px; font-weight: 300; letter-spacing: .04em;
+}
+
+/* REVEAL */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+/* TABLET */
+@media only screen and (min-width: 768px) and (max-width: 1099px) {
+  :root { --outer: 32px; }
+  .large-left, .large-right { width: 90%; }
+  .small-c { width: 65%; }
+}
+
+/* MOBILE */
+@media only screen and (max-width: 767px) {
+  :root { --outer: 24px; }
+  header { padding: 20px var(--pad); }
+  .logo { font-size: 14px; }
+  nav { gap: 20px; }
+  nav a { font-size: 12px; }
+  .proj-intro { grid-template-columns: 1fr; gap: 32px; padding: 48px var(--pad) 56px; }
+  .proj-lead { margin-top: 16px; padding-top: 16px; }
+  .bleed { margin: 64px calc(-1 * var(--pad)); aspect-ratio: 4/3; }
+  .large-left, .large-right { width: 100%; margin: 64px 0; }
+  .text-c, .text-l, .text-r { max-width: 100%; margin-bottom: 64px; }
+  .split-60-40, .split-40-60, .three-col { grid-template-columns: 1fr; gap: 16px; margin: 64px 0; }
+  .img-aside, .img-aside.r { grid-template-columns: 1fr; gap: 32px; margin: 64px 0; }
+  .img-aside.r .img-aside-img { order: 0; }
+  .img-aside.r .img-aside-txt { order: 0; }
+  .small-c { width: 80%; margin: 64px auto; }
+  .spec-row { grid-template-columns: 120px 1fr; }
+  .next-proj { flex-direction: column; align-items: flex-start; gap: 16px; }
+  footer { flex-direction: column; gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <a href="../concept.html" class="logo">Daniel Jo</a>
+  <nav>
+    <a href="../concept.html#work" class="nav-back">All work</a>
+    <a href="../concept.html#process">Process</a>
+    <a href="../concept.html#about">About</a>
+    <a href="../concept.html#contact">Contact</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<div class="proj-hero">
+  <div class="proj-cover"><div class="ph"></div></div>
+</div>
+
+<!-- INTRO -->
+<div class="proj-intro reveal">
+  <div>
+    <p class="proj-num">002</p>
+    <h1 class="proj-title">Tea ware<br>collection</h1>
+    <div class="proj-meta-row">
+      <div><span class="proj-meta-label">Client</span><span class="proj-meta-value">Osulloc, Amore Pacific</span></div>
+      <div><span class="proj-meta-label">Year</span><span class="proj-meta-value">2010 – 2012</span></div>
+      <div><span class="proj-meta-label">Category</span><span class="proj-meta-value">Tea ware, Brand</span></div>
+      <div><span class="proj-meta-label">Material</span><span class="proj-meta-value">Porcelain, celadon glaze</span></div>
+    </div>
+  </div>
+  <div>
+    <p class="proj-lead">The brief was to make tea approachable. The result was a set that doesn't ask you to understand ceramics — it asks you to sit down. Balanced form from every angle, at every price point.</p>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- 중앙 텍스트로 시작 — 이미지 없이 -->
+  <div class="text-c reveal">
+    <h2>Designed to be held</h2>
+    <p>Tea has a ritual. The object that carries it must understand that ritual without performing it. The Osulloc tea ware begins where most ceramics end — at the moment someone picks it up for the first time and doesn't think about the weight.</p>
+  </div>
+
+  <!-- 65% 오른쪽 -->
+  <div class="img-65r reveal"><div class="ph"></div></div>
+
+  <!-- 오른쪽 텍스트 -->
+  <div class="text-r reveal">
+    <p>Every handle was prototyped until the grip required no adjustment. The spout was tested at three different pouring angles. The lid seat was refined to eliminate the half-turn that plagues most teapots.</p>
+  </div>
+
+  <!-- 리버스 오프셋 — 좌 세로 올라옴 + 우 가로 -->
+  <div class="split-offset-r reveal">
+    <div class="a"><div class="ph"></div></div>
+    <div class="b"><div class="ph"></div></div>
+  </div>
+
+  <!-- 70% 왼쪽 -->
+  <div class="img-70l reveal"><div class="ph"></div></div>
+
+  <!-- 이미지+텍스트 우측 -->
+  <div class="img-aside r reveal">
+    <div class="img-aside-img"><div class="ph"></div></div>
+    <div class="img-aside-txt">
+      <span class="img-aside-num">01</span>
+      <h3>Celadon as a choice</h3>
+      <p>The glaze is celadon — the pale blue-green of Korean ceramic tradition. Not applied for aesthetics, but because celadon responds to light the way tea itself does: differently at different times of day, always quietly.</p>
+    </div>
+  </div>
+
+  <!-- 45% 중앙-왼쪽 -->
+  <div class="img-45cl reveal"><div class="ph"></div></div>
+
+  <!-- 왼쪽 텍스트 -->
+  <div class="text-l reveal">
+    <h2>A set that works as a whole</h2>
+    <p>Cup, teapot, tray, pitcher, strainer. Each piece was designed separately, then tested together. The visual weight of the full set is intentional — neither dominant nor apologetic. It simply belongs on the table.</p>
+  </div>
+
+  <!-- 오프셋 — 좌 가로 + 우 세로 내려옴 -->
+  <div class="split-offset reveal">
+    <div class="a"><div class="ph"></div></div>
+    <div class="b"><div class="ph"></div></div>
+  </div>
+
+  <!-- 이미지+텍스트 좌측 -->
+  <div class="img-aside reveal">
+    <div class="img-aside-img"><div class="ph"></div></div>
+    <div class="img-aside-txt">
+      <span class="img-aside-num">02</span>
+      <h3>Accessible at every scale</h3>
+      <p>The set was designed to work at every price point — which meant the proportions had to survive smaller production scales without losing the form. The same teapot reads correctly at the flagship store and at the local counter.</p>
+    </div>
+  </div>
+
+  <!-- 40% 오른쪽 — 작게 마무리 -->
+  <div class="img-40r reveal"><div class="ph"></div></div>
+
+  <!-- 스펙 -->
+  <div class="spec-block reveal">
+    <div class="spec-row"><span class="spec-label">Client</span><span class="spec-val">Osulloc, Amore Pacific, Korea</span></div>
+    <div class="spec-row"><span class="spec-label">Completed</span><span class="spec-val">2010 – 2012</span></div>
+    <div class="spec-row"><span class="spec-label">Scope</span><span class="spec-val">Product design, brand development</span></div>
+    <div class="spec-row"><span class="spec-label">Material</span><span class="spec-val">Porcelain, celadon glaze</span></div>
+    <div class="spec-row"><span class="spec-label">Pieces</span><span class="spec-val">Cup, teapot, tray, pitcher, strainer</span></div>
+    <div class="spec-row"><span class="spec-label">Production</span><span class="spec-val">Betterhand Studio, Dongtan</span></div>
+  </div>
+
+</div><!-- /body -->
+
+<!-- NEXT -->
+<a href="moma.html" class="next-proj">
+  <div>
+    <span class="next-label">Next project</span>
+    <p class="next-title">Bird & Cloud souvenir collection — MoMA Store</p>
+  </div>
+  <span class="next-arrow">→</span>
+</a>
+
+<footer>
+  <span>© 2025 Daniel Jo. All rights reserved.</span>
+  <span>Betterhand Studio, Dongtan</span>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
