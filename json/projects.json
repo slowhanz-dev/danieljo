@@ -1,1 +1,65 @@
+{
+  "projects": [
+    {
+      "id": "naver",
+      "num": "001",
+      "client": "Naver",
+      "year": "2013",
+      "title": "Tableware for Naver training center",
+      "desc": "Every corporate dining space looks the same. This one doesn't. Reinterpreting Joseon Baekja through Naver's 'Connect One' identity — eight vessel forms that feel traditional and entirely contemporary at once.",
+      "cover": "images/naver.jpg",
+      "url": "projects/naver.html"
+    },
+    {
+      "id": "osulloc",
+      "num": "002",
+      "client": "Osulloc, Amore Pacific",
+      "year": "2010 – 2012",
+      "title": "Tea ware collection",
+      "desc": "The brief was to make tea approachable. The result was a set that doesn't ask you to understand ceramics — it asks you to sit down. Balanced form from every angle, at every price point.",
+      "cover": "images/osulloc.jpg",
+      "url": "projects/osulloc.html"
+    },
+    {
+      "id": "moma",
+      "num": "003",
+      "client": "New York MoMA Store",
+      "year": "2009 – 2014",
+      "title": "Bird & Cloud souvenir collection",
+      "desc": "A souvenir is a memory in object form. Sold exclusively at MoMA Store New York under a five-year contract — the Bird & Cloud became the shape people chose to remember Seoul by.",
+      "cover": "images/moma.jpg",
+      "url": "projects/moma.html"
+    },
+    {
+      "id": "lbless",
+      "num": "004",
+      "client": "LBless",
+      "year": "2013",
+      "title": "Candle & diffuser brand direction",
+      "desc": "From naming rationale to vessel geometry to shelf presence — full creative direction for a fragrance brand now placed in Hilton and Hyatt properties.",
+      "cover": "images/lbless.jpg",
+      "url": "projects/lbless.html"
+    },
+    {
+      "id": "amore",
+      "num": "005",
+      "client": "Amore Pacific",
+      "year": "2007",
+      "title": "TR Cream limited edition vessel",
+      "desc": "When a skincare brand asks for something that feels like morning dew on a tea leaf, the answer is never obvious. Porcelain as metaphor, executed precisely.",
+      "cover": "images/amore.jpg",
+      "url": "projects/amore.html"
+    },
+    {
+      "id": "gicb",
+      "num": "006",
+      "client": "World Ceramic Biennale",
+      "year": "2015",
+      "title": "GICB international competition trophy",
+      "desc": "The official trophy of the world's largest ceramic competition. The form borrowed its language from kiln furniture — the unglamorous post that holds everything upright at extreme heat.",
+      "cover": "images/gicb.jpg",
+      "url": "projects/gicb.html"
+    }
+  ]
+}
 
