@@ -5,7 +5,7 @@
       "num": "001",
       "client": "Naver",
       "year": "2013",
-      "title": "Tableware for Naver training center222",
+      "title": "Tableware for Naver training center",
       "desc": "Every corporate dining space looks the same. This one doesn't. Reinterpreting Joseon Baekja through Naver's 'Connect One' identity — eight vessel forms that feel traditional and entirely contemporary at once.",
       "cover": "images/naver.jpg",
       "url": "projects/naver.html"
@@ -56,6 +56,16 @@
       "client": "World Ceramic Biennale",
       "year": "2015",
       "title": "GICB international competition trophy",
+      "desc": "The official trophy of the world's largest ceramic competition. The form borrowed its language from kiln furniture — the unglamorous post that holds everything upright at extreme heat.",
+      "cover": "images/gicb.jpg",
+      "url": "projects/gicb.html"
+    }
+    {
+      "id": "poulbasset",
+      "num": "007",
+      "client": "poulbasset",
+      "year": "2015",
+      "title": "poulbasset mug cup producing",
       "desc": "The official trophy of the world's largest ceramic competition. The form borrowed its language from kiln furniture — the unglamorous post that holds everything upright at extreme heat.",
       "cover": "images/gicb.jpg",
       "url": "projects/gicb.html"
