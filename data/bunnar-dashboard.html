@@ -127,14 +127,6 @@ body{
   flex-shrink:0;user-select:none;touch-action:none;
 }
 .drag-handle:active{cursor:grabbing}
-.move-btns{display:flex;flex-direction:column;gap:1px;flex-shrink:0;margin-top:-2px}
-.move-btn{
-  width:18px;height:16px;border:1px solid var(--border);
-  background:var(--surface);color:var(--text3);border-radius:4px;
-  font-size:10px;line-height:1;cursor:pointer;padding:0;
-}
-.move-btn:hover{background:var(--surface2);color:var(--text)}
-.move-btn:disabled{opacity:.25;cursor:not-allowed}
 .iname{
   flex:1;font-size:12px;
   color:var(--text);
@@ -278,6 +270,20 @@ body{
 .empty-state{background:var(--surface);border:1px dashed var(--border2);border-radius:var(--radius);padding:24px;color:var(--text2);font-size:13px;text-align:center}
 .loading-inline{font-size:11px;color:var(--text3);margin-left:8px}
 
+/* ─── Print ─── */
+@media print{
+  .header{position:static;padding:14px 0;border-bottom:1px solid #ddd}
+  .header-actions,.toolbar,.filter-row,.hint,.add-row,.add-cat-btn,.del-btn,.flag-btn,.drag-handle,#toast{display:none!important}
+  .main{max-width:none;padding:18px 0 0}
+  body{background:#fff;color:#111;font-size:12px}
+  .stats-row{grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+  .stat,.card{break-inside:avoid;border-color:#ddd;background:#fff}
+  .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .card-head{padding:10px 12px}
+  .irow{padding:6px 12px}
+  .badge,.flag-chip,.itag{border:1px solid #ddd!important;background:#fff!important;color:#111!important}
+}
+
 /* ─── Responsive ─── */
 @media(max-width:600px){
   .header{padding:14px 16px;align-items:flex-start;gap:12px;position:static}
@@ -303,6 +309,7 @@ body{
   <div class="header-actions">
     <button class="btn" id="exportBtn" onclick="exportData()">📤 내보내기</button>
     <button class="btn" id="importBtn" onclick="triggerImport()">📥 가져오기</button>
+    <button class="btn" id="printBtn" onclick="printDashboard()">🖨️ 프린트</button>
     <button class="btn" id="loginBtn" onclick="login()">🔐 로그인</button>
     <button class="btn" id="logoutBtn" onclick="logout()" style="display:none">로그아웃</button>
     <span id="authStatus" style="font-size:11px;color:var(--text3);display:none"></span>
@@ -333,7 +340,7 @@ body{
     <button class="fbtn" data-f="예정">예정</button>
     <button class="fbtn" data-f="탈락">탈락</button>
   </div>
-  <p class="hint">≡ 드래그 또는 ↑↓ 버튼 → 순서 변경 &nbsp;·&nbsp; 상태 배지 클릭 → 순환 변경 &nbsp;·&nbsp; ★ 중요 / 오늘 버튼으로 빠른 필터링 &nbsp;·&nbsp; 모든 변경사항 자동 저장</p>
+  <p class="hint">≡ 손잡이 드래그 → 순서 변경 &nbsp;·&nbsp; 상태 배지 클릭 → 순환 변경 &nbsp;·&nbsp; ★ 중요 / 오늘 버튼으로 빠른 필터링 &nbsp;·&nbsp; 모든 변경사항 자동 저장</p>
 
   <div class="grid" id="mg"></div>
 </div>
@@ -638,13 +645,6 @@ function moveItem(catId, fromIdx, toIdx) {
   render();
 }
 
-function moveItemStep(catId, itemIdx, direction) {
-  const cat = DATA.find(c => c.id === catId);
-  if (!cat) return;
-  const nextIdx = itemIdx + direction;
-  moveItem(catId, itemIdx, nextIdx);
-}
-
 function dragStart(e, catId, itemIdx) {
   dragging = { catId, itemIdx };
   e.currentTarget.classList.add('dragging');
@@ -742,6 +742,9 @@ function exportData() {
 function triggerImport() {
   document.getElementById('importFile').click();
 }
+function printDashboard() {
+  window.print();
+}
 function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -824,10 +827,6 @@ function render() {
           ${item.today ? `<span class="flag-chip flag-today">오늘</span>` : ''}
           ${item.tag ? `<span class="itag">${item.tag}</span>` : ''}
         </span>
-        <div class="move-btns" title="위아래 이동">
-          <button class="move-btn" onclick="event.stopPropagation();moveItemStep('${cat.id}',${realIdx},-1)" ${realIdx === 0 ? 'disabled' : ''}>▲</button>
-          <button class="move-btn" onclick="event.stopPropagation();moveItemStep('${cat.id}',${realIdx},1)" ${realIdx === cat.items.length - 1 ? 'disabled' : ''}>▼</button>
-        </div>
         <button class="flag-btn ${item.important ? 'on' : ''}" onclick="event.stopPropagation();toggleImportant('${cat.id}',${realIdx})" title="중요 표시">★</button>
         <button class="flag-btn today ${item.today ? 'on' : ''}" onclick="event.stopPropagation();toggleToday('${cat.id}',${realIdx})" title="오늘 할일">오늘</button>
         <button class="badge" style="${BADGE_STYLE[item.s]}" onclick="event.stopPropagation();cycleStatus('${cat.id}',${realIdx})" title="클릭하여 상태 변경">${item.s}</button>
