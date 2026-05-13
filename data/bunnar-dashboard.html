@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BUNNAR · 업무 현황판</title>
+<title>BUNNAR · 업무 현황판 V3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -119,6 +119,22 @@ body{
 }
 .irow:hover{background:var(--surface2)}
 .irow.editing{background:var(--surface2)}
+.irow.dragging{opacity:.45;background:var(--surface2)}
+.irow.drag-over{box-shadow:inset 0 2px 0 var(--blue)}
+.drag-handle{
+  border:none;background:transparent;color:var(--text3);
+  cursor:grab;font-size:14px;line-height:1;padding:2px 4px 0 0;
+  flex-shrink:0;user-select:none;touch-action:none;
+}
+.drag-handle:active{cursor:grabbing}
+.move-btns{display:flex;flex-direction:column;gap:1px;flex-shrink:0;margin-top:-2px}
+.move-btn{
+  width:18px;height:16px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text3);border-radius:4px;
+  font-size:10px;line-height:1;cursor:pointer;padding:0;
+}
+.move-btn:hover{background:var(--surface2);color:var(--text)}
+.move-btn:disabled{opacity:.25;cursor:not-allowed}
 .iname{
   flex:1;font-size:12px;
   color:var(--text);
@@ -317,7 +333,7 @@ body{
     <button class="fbtn" data-f="예정">예정</button>
     <button class="fbtn" data-f="탈락">탈락</button>
   </div>
-  <p class="hint">상태 배지 클릭 → 순환 변경 &nbsp;·&nbsp; ★ 중요 / 오늘 버튼으로 빠른 필터링 &nbsp;·&nbsp; 항목 우측 × → 삭제 &nbsp;·&nbsp; 모든 변경사항 자동 저장</p>
+  <p class="hint">≡ 드래그 또는 ↑↓ 버튼 → 순서 변경 &nbsp;·&nbsp; 상태 배지 클릭 → 순환 변경 &nbsp;·&nbsp; ★ 중요 / 오늘 버튼으로 빠른 필터링 &nbsp;·&nbsp; 모든 변경사항 자동 저장</p>
 
   <div class="grid" id="mg"></div>
 </div>
@@ -605,6 +621,64 @@ function deleteItem(catId, itemIdx) {
   render();
 }
 
+
+// ── Reorder item ───────────────────────────
+let dragging = null;
+
+function moveItem(catId, fromIdx, toIdx) {
+  const cat = DATA.find(c => c.id === catId);
+  if (!cat) return;
+  if (fromIdx === toIdx) return;
+  if (fromIdx < 0 || toIdx < 0) return;
+  if (fromIdx >= cat.items.length || toIdx >= cat.items.length) return;
+
+  const [moved] = cat.items.splice(fromIdx, 1);
+  cat.items.splice(toIdx, 0, moved);
+  save();
+  render();
+}
+
+function moveItemStep(catId, itemIdx, direction) {
+  const cat = DATA.find(c => c.id === catId);
+  if (!cat) return;
+  const nextIdx = itemIdx + direction;
+  moveItem(catId, itemIdx, nextIdx);
+}
+
+function dragStart(e, catId, itemIdx) {
+  dragging = { catId, itemIdx };
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', catId + ':' + itemIdx);
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function dragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function dropItem(e, catId, targetIdx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragging || dragging.catId !== catId) {
+    dragging = null;
+    return;
+  }
+  moveItem(catId, dragging.itemIdx, targetIdx);
+  dragging = null;
+}
+
+function dragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  dragging = null;
+}
+
 // ── Delete category ────────────────────────
 function deleteCat(catId) {
   if (!confirm('이 카테고리를 삭제할까요?')) return;
@@ -736,13 +810,24 @@ function render() {
       const realIdx = cat.items.indexOf(item);
       const row = document.createElement('div');
       row.className = 'irow';
+      row.draggable = true;
+      row.ondragstart = e => dragStart(e, cat.id, realIdx);
+      row.ondragover = dragOver;
+      row.ondragleave = dragLeave;
+      row.ondrop = e => dropItem(e, cat.id, realIdx);
+      row.ondragend = dragEnd;
       row.innerHTML = `
+        <button class="drag-handle" title="드래그해서 순서 변경" aria-label="순서 변경">≡</button>
         <span class="iname">
           ${item.n}
           ${item.important ? `<span class="flag-chip flag-important">중요</span>` : ''}
           ${item.today ? `<span class="flag-chip flag-today">오늘</span>` : ''}
           ${item.tag ? `<span class="itag">${item.tag}</span>` : ''}
         </span>
+        <div class="move-btns" title="위아래 이동">
+          <button class="move-btn" onclick="event.stopPropagation();moveItemStep('${cat.id}',${realIdx},-1)" ${realIdx === 0 ? 'disabled' : ''}>▲</button>
+          <button class="move-btn" onclick="event.stopPropagation();moveItemStep('${cat.id}',${realIdx},1)" ${realIdx === cat.items.length - 1 ? 'disabled' : ''}>▼</button>
+        </div>
         <button class="flag-btn ${item.important ? 'on' : ''}" onclick="event.stopPropagation();toggleImportant('${cat.id}',${realIdx})" title="중요 표시">★</button>
         <button class="flag-btn today ${item.today ? 'on' : ''}" onclick="event.stopPropagation();toggleToday('${cat.id}',${realIdx})" title="오늘 할일">오늘</button>
         <button class="badge" style="${BADGE_STYLE[item.s]}" onclick="event.stopPropagation();cycleStatus('${cat.id}',${realIdx})" title="클릭하여 상태 변경">${item.s}</button>
