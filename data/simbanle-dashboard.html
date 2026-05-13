@@ -310,6 +310,7 @@ body{
     <button class="btn" id="exportBtn" onclick="exportData()">📤 내보내기</button>
     <button class="btn" id="importBtn" onclick="triggerImport()">📥 가져오기</button>
     <button class="btn" id="printBtn" onclick="printDashboard()">🖨️ 프린트</button>
+    <button class="btn" id="resetBtn" onclick="resetToDefault()">↺ 기본값</button>
     <button class="btn" id="loginBtn" onclick="login()">🔐 로그인</button>
     <button class="btn" id="logoutBtn" onclick="logout()" style="display:none">로그아웃</button>
     <span id="authStatus" style="font-size:11px;color:var(--text3);display:none"></span>
@@ -372,6 +373,7 @@ body{
 <script>
 // ── Constants ──────────────────────────────
 const KEY = 'simbanle_dashboard_v1';
+const DEFAULT_VERSION = 'simbanle-marketing-v2';
 const STATUSES = ['완료','수행중','진행중','심사중','신청완료','예정','탈락'];
 const BADGE_STYLE = {
   '완료':   'background:#9FE1CB;color:#085041',
@@ -470,19 +472,35 @@ async function loadData() {
   try {
     const snap = await DASHBOARD_DOC.get();
 
-    if (snap.exists && Array.isArray(snap.data().items)) {
-      const cloudData = snap.data().items;
-      localStorage.setItem(KEY, JSON.stringify(cloudData));
-      return cloudData;
+    if (snap.exists) {
+      const doc = snap.data();
+      const cloudData = doc.items;
+
+      // 이전 파일에서 저장된 낡은 데이터가 있으면, 아내용 기본 데이터로 한 번 교체합니다.
+      // 이후부터는 dashboardVersion이 맞기 때문에 사용자가 수정한 내용이 유지됩니다.
+      if (Array.isArray(cloudData) && doc.dashboardVersion === DEFAULT_VERSION) {
+        localStorage.setItem(KEY, JSON.stringify(cloudData));
+        return cloudData;
+      }
+
+      const initialData = JSON.parse(JSON.stringify(DEFAULT));
+      await DASHBOARD_DOC.set({
+        items: initialData,
+        dashboardVersion: DEFAULT_VERSION,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: auth.currentUser ? (auth.currentUser.email || '') : ''
+      }, { merge: true });
+
+      localStorage.setItem(KEY, JSON.stringify(initialData));
+      return initialData;
     }
 
-    // Firebase 데이터가 아직 없으면, 이 브라우저에 남아 있는 기존 데이터를 우선 이전합니다.
-    const localBackup = getLocalBackupData();
-    const initialData = localBackup || JSON.parse(JSON.stringify(DEFAULT));
-
+    const initialData = JSON.parse(JSON.stringify(DEFAULT));
     await DASHBOARD_DOC.set({
       items: initialData,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      dashboardVersion: DEFAULT_VERSION,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: auth.currentUser ? (auth.currentUser.email || '') : ''
     });
 
     localStorage.setItem(KEY, JSON.stringify(initialData));
@@ -508,6 +526,7 @@ async function save() {
     updateSyncNote('저장 중...');
     await DASHBOARD_DOC.set({
       items: DATA,
+      dashboardVersion: DEFAULT_VERSION,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: auth.currentUser.email || ''
     }, { merge: true });
@@ -734,6 +753,13 @@ function exportData() {
 function triggerImport() {
   document.getElementById('importFile').click();
 }
+function resetToDefault() {
+  if (!confirm('아내용 기본 현황판 내용으로 다시 적용할까요? 현재 수정한 내용은 덮어쓰기 됩니다.')) return;
+  DATA = JSON.parse(JSON.stringify(DEFAULT));
+  save();
+  render();
+}
+
 function printDashboard() {
   window.print();
 }
