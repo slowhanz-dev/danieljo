@@ -293,6 +293,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
     <div class="stats-row" id="sg"></div>
     <div class="filter-row" id="fr">
       <button class="fbtn on" data-f="all">전체</button>
+      <button class="fbtn" data-f="지금당장">🔴 지금당장</button>
       <button class="fbtn" data-f="완료">완료</button>
       <button class="fbtn" data-f="수행중">수행중</button>
       <button class="fbtn" data-f="진행중">진행중</button>
@@ -338,8 +339,9 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 
 <script>
 const KEY = 'bunnar_dashboard_v1';
-const STATUSES = ['완료','수행중','진행중','심사중','신청완료','예정','탈락'];
+const STATUSES = ['지금당장','완료','수행중','진행중','심사중','신청완료','예정','탈락'];
 const BADGE_STYLE = {
+  '지금당장':'background:#FCA5A5;color:#7F1D1D',
   '완료':'background:#9FE1CB;color:#085041',
   '수행중':'background:#6EE7B7;color:#065F46',
   '진행중':'background:#B5D4F4;color:#0C447C',
@@ -459,7 +461,7 @@ function calcStats(){
   const done=all.filter(i=>i.s==='완료').length;
   return{
     total:all.length,done,
-    active:all.filter(i=>['수행중','진행중','심사중','신청완료'].includes(i.s)).length,
+    active:all.filter(i=>['지금당장','수행중','진행중','심사중','신청완료'].includes(i.s)).length,
     plan:all.filter(i=>i.s==='예정').length,
     fail:all.filter(i=>i.s==='탈락').length,
     pct:all.length?Math.round(done/all.length*100):0,
@@ -608,7 +610,7 @@ function renderDigest(){
       all.push({...it,catLabel:cat.label,catColor:cat.color,catId:cat.id,idx});
     });
   });
-  const urgent=all.filter(i=>i.due&&!['완료','탈락'].includes(i.s)).filter(i=>daysUntil(i.due)<=3).sort((a,b)=>daysUntil(a.due)-daysUntil(b.due));
+  const urgent=all.filter(i=>!['완료','탈락'].includes(i.s)).filter(i=>i.s==='지금당장'||(i.due&&daysUntil(i.due)<=3)).sort((a,b)=>{const da=a.due?daysUntil(a.due):999;const db=b.due?daysUntil(b.due):999;return da-db});
   const soon=all.filter(i=>i.due&&!['완료','탈락'].includes(i.s)).filter(i=>{const n=daysUntil(i.due);return n>3&&n<=14}).sort((a,b)=>daysUntil(a.due)-daysUntil(b.due));
   const active=all.filter(i=>!i.due&&i.s==='수행중').slice(0,6);
   document.getElementById('digUrgent').innerHTML=renderDigestList(urgent,true);
