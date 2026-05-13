@@ -180,12 +180,30 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .save-toast.show{opacity:1}
 
 @media(max-width:700px){
-  .header{padding:12px 14px}
+  .header{padding:10px 14px;gap:8px}
+  .header-actions{gap:4px}
+  .header-actions .btn{padding:5px 9px;font-size:11px}
+  .header-actions #authStatus{display:none !important}
+  .header-actions #exportBtn,.header-actions #importBtn{display:none}
   .main{padding:14px 12px 80px}
-  .digest-grid{grid-template-columns:1fr;gap:18px}
-  .stats-row{grid-template-columns:repeat(3,1fr)}
+  .digest{padding:14px 16px}
+  .digest-grid{grid-template-columns:1fr;gap:14px}
+  .digest-head h2{font-size:13px}
+  .inbox{padding:14px 16px}
+  .stats-row{grid-template-columns:repeat(3,1fr);gap:6px}
+  .stat{padding:10px 8px}
+  .stat-num{font-size:20px}
   .stats-row .stat:nth-child(4),.stats-row .stat:nth-child(5){display:none}
-  .logo{font-size:15px}
+  .logo{font-size:14px}
+  .logo span{display:none}
+  .filter-row{gap:4px}
+  .fbtn{padding:4px 10px;font-size:10px}
+  .grid{grid-template-columns:1fr;gap:10px}
+  .drag-handle{display:none !important}
+  .del-btn{opacity:1 !important}
+  .iname{font-size:13px}
+  .badge{font-size:11px;padding:3px 10px}
+  .hint{display:none}
 }
 
 /* ─── Print ─── */
