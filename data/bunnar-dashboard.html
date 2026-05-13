@@ -8,15 +8,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BUNNAR">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=2">
-<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png?v=2">
-<link rel="icon" type="image/png" sizes="180x180" href="icon-180.png?v=2">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2">
+<link rel="icon" href="favicon.ico?v=3" sizes="any">
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="white"/><g fill="%23A70127"><rect x="145" y="109" width="80" height="304"/><ellipse cx="280" cy="305" rx="100" ry="108"/><circle cx="340" cy="145" r="40"/></g></svg>'>
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=3">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <!-- PWA manifest as inline data URL — GitHub Pages 친화 -->
-<link rel="manifest" href='data:application/json,{"name":"BUNNAR Dashboard v2","short_name":"BUNNAR","start_url":".","display":"standalone","background_color":"%23ffffff","theme_color":"%231a1a18","icons":[{"src":"icon-180.png?v=2","sizes":"180x180","type":"image/png","purpose":"any"},{"src":"icon-512.png?v=2","sizes":"512x512","type":"image/png","purpose":"any"}]}'>
+<link rel="manifest" href='data:application/json,{"name":"BUNNAR Dashboard v3","short_name":"BUNNAR","start_url":".","display":"standalone","background_color":"%23ffffff","theme_color":"%23A70127","icons":[{"src":"icon-180.png?v=3","sizes":"180x180","type":"image/png","purpose":"any"},{"src":"icon-512.png?v=3","sizes":"512x512","type":"image/png","purpose":"any"}]}'>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -54,7 +54,8 @@
 }
 body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:12px;flex-wrap:wrap}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:12px;flex-wrap:wrap;transition:transform .25s ease}
+.header.hide{transform:translateY(-110%)}
 .logo{font-size:17px;font-weight:600;letter-spacing:.04em}
 .logo span{font-weight:300;opacity:.5;margin-left:6px;font-size:13px}
 .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -767,6 +768,28 @@ document.getElementById('fr').addEventListener('click',e=>{
   document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');activeFilter=b.dataset.f;render();
 });
+
+// ── Mobile: auto-hide header on scroll down, show on scroll up ──
+(function(){
+  let lastY=0;
+  let ticking=false;
+  const header=document.querySelector('.header');
+  function onScroll(){
+    if(window.innerWidth>700){header.classList.remove('hide');return}
+    const y=window.scrollY;
+    const dy=y-lastY;
+    // Show near top
+    if(y<40){header.classList.remove('hide')}
+    // Hide on scroll down (after threshold), show on scroll up
+    else if(dy>4){header.classList.add('hide')}
+    else if(dy<-4){header.classList.remove('hide')}
+    lastY=y;
+    ticking=false;
+  }
+  window.addEventListener('scroll',()=>{
+    if(!ticking){requestAnimationFrame(onScroll);ticking=true}
+  },{passive:true});
+})();
 
 // ── Print prep: mark rows with notes, stamp date ──
 window.addEventListener('beforeprint',()=>{
