@@ -245,12 +245,36 @@ body{
 }
 .save-toast.show{opacity:1}
 
+
+/* ─── V2: search / flags / loading ─── */
+.toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:220px;max-width:420px}
+.search-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:8px 14px;font-size:12px;color:var(--text);font-family:inherit;outline:none}
+.search-input:focus{border-color:var(--blue);background:var(--surface2)}
+.sync-note{font-size:11px;color:var(--text3);white-space:nowrap}
+.flag-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:0 2px;line-height:1;opacity:.55;transition:all .12s;flex-shrink:0;margin-top:2px}
+.flag-btn:hover{opacity:1;transform:scale(1.08)}
+.flag-btn.on{opacity:1;color:var(--amber)}
+.flag-btn.today.on{color:var(--blue)}
+.flag-chip{font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;margin-left:4px;display:inline-block;white-space:nowrap}
+.flag-important{background:#FDE68A;color:#78350F}
+.flag-today{background:#BFDBFE;color:#1E3A8A}
+.empty-state{background:var(--surface);border:1px dashed var(--border2);border-radius:var(--radius);padding:24px;color:var(--text2);font-size:13px;text-align:center}
+.loading-inline{font-size:11px;color:var(--text3);margin-left:8px}
+
 /* ─── Responsive ─── */
 @media(max-width:600px){
-  .header{padding:14px 16px}
+  .header{padding:14px 16px;align-items:flex-start;gap:12px;position:static}
+  .header-actions{flex-wrap:wrap;justify-content:flex-end;gap:6px}
+  .logo span{display:block;margin-left:0;margin-top:2px}
   .main{padding:16px 12px 60px}
-  .stats-row{grid-template-columns:repeat(3,1fr)}
+  .stats-row{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
   .stats-row .stat:nth-child(4),.stats-row .stat:nth-child(5){display:none}
+  .stat{padding:10px 8px}.stat-num{font-size:22px}
+  .filter-row{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.fbtn{white-space:nowrap}
+  .toolbar{display:block}.search-wrap{max-width:none;margin-bottom:8px}.sync-note{display:block;margin-bottom:8px}
+  .grid{grid-template-columns:1fr;gap:12px}
+  .btn{padding:6px 10px;font-size:11px}
 }
 </style>
 </head>
@@ -274,8 +298,17 @@ body{
 <div class="main">
   <div class="stats-row" id="sg"></div>
 
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input class="search-input" id="searchInput" placeholder="검색: 지원사업, 바이어, 웹사이트 작업 등" oninput="setSearch(this.value)">
+    </div>
+    <div class="sync-note" id="syncNote">로컬 데이터 준비 중</div>
+  </div>
+
   <div class="filter-row" id="fr">
     <button class="fbtn on" data-f="all">전체</button>
+    <button class="fbtn" data-f="important">중요</button>
+    <button class="fbtn" data-f="today">오늘 할일</button>
     <button class="fbtn" data-f="완료">완료</button>
     <button class="fbtn" data-f="수행중">수행중</button>
     <button class="fbtn" data-f="진행중">진행중</button>
@@ -284,7 +317,7 @@ body{
     <button class="fbtn" data-f="예정">예정</button>
     <button class="fbtn" data-f="탈락">탈락</button>
   </div>
-  <p class="hint">상태 배지 클릭 → 순환 변경 &nbsp;·&nbsp; 항목 우측 × → 삭제 &nbsp;·&nbsp; 카드 하단 입력 → 새 항목 추가 &nbsp;·&nbsp; 모든 변경사항 자동 저장</p>
+  <p class="hint">상태 배지 클릭 → 순환 변경 &nbsp;·&nbsp; ★ 중요 / 오늘 버튼으로 빠른 필터링 &nbsp;·&nbsp; 항목 우측 × → 삭제 &nbsp;·&nbsp; 모든 변경사항 자동 저장</p>
 
   <div class="grid" id="mg"></div>
 </div>
@@ -403,7 +436,9 @@ const DEFAULT = [
 // ── State ──────────────────────────────────
 let DATA = JSON.parse(JSON.stringify(DEFAULT));
 let activeFilter = 'all';
+let searchQuery = '';
 let unsubscribeDashboard = null;
+let isSaving = false;
 
 function getLocalBackupData() {
   try {
@@ -445,24 +480,31 @@ async function loadData() {
 }
 
 async function save() {
+  // 화면 속도를 위해 먼저 브라우저에 즉시 백업합니다.
+  localStorage.setItem(KEY, JSON.stringify(DATA));
+
   if (!auth.currentUser) {
-    alert('저장하려면 먼저 구글 로그인이 필요합니다.');
+    updateSyncNote('로그인 후 Firebase 저장 가능');
     return;
   }
 
   try {
+    isSaving = true;
+    updateSyncNote('저장 중...');
     await DASHBOARD_DOC.set({
       items: DATA,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: auth.currentUser.email || ''
     }, { merge: true });
 
-    // 만약을 대비해 현재 브라우저에도 백업합니다.
-    localStorage.setItem(KEY, JSON.stringify(DATA));
+    updateSyncNote('Firebase 저장 완료');
     showToast();
   } catch(e) {
     console.error(e);
+    updateSyncNote('저장 실패: 로그인 계정/보안 규칙 확인');
     alert('저장에 실패했습니다. 로그인 상태나 Firebase 보안 규칙을 확인해 주세요.');
+  } finally {
+    isSaving = false;
   }
 }
 
@@ -484,6 +526,42 @@ function logout() {
   auth.signOut();
 }
 
+
+function updateSyncNote(text) {
+  const el = document.getElementById('syncNote');
+  if (el) el.textContent = text;
+}
+
+function setSearch(value) {
+  searchQuery = (value || '').trim().toLowerCase();
+  render();
+}
+
+function toggleImportant(catId, itemIdx) {
+  const cat = DATA.find(c => c.id === catId);
+  if (!cat || !cat.items[itemIdx]) return;
+  cat.items[itemIdx].important = !cat.items[itemIdx].important;
+  save();
+  render();
+}
+
+function toggleToday(catId, itemIdx) {
+  const cat = DATA.find(c => c.id === catId);
+  if (!cat || !cat.items[itemIdx]) return;
+  cat.items[itemIdx].today = !cat.items[itemIdx].today;
+  save();
+  render();
+}
+
+function itemMatches(item) {
+  if (activeFilter === 'important' && !item.important) return false;
+  if (activeFilter === 'today' && !item.today) return false;
+  if (!['all','important','today'].includes(activeFilter) && item.s !== activeFilter) return false;
+  if (!searchQuery) return true;
+  const hay = [item.n, item.s, item.tag, item.important ? '중요' : '', item.today ? '오늘 할일' : ''].filter(Boolean).join(' ').toLowerCase();
+  return hay.includes(searchQuery);
+}
+
 function showToast() {
   const t = document.getElementById('toast');
   t.classList.add('show');
@@ -499,6 +577,8 @@ function calcStats() {
     total: all.length,
     done,
     active: all.filter(i => ['수행중','진행중','심사중','신청완료'].includes(i.s)).length,
+    today: all.filter(i => i.today).length,
+    important: all.filter(i => i.important).length,
     plan: all.filter(i => i.s === '예정').length,
     fail: all.filter(i => i.s === '탈락').length,
     pct: all.length ? Math.round(done / all.length * 100) : 0,
@@ -617,18 +697,22 @@ function render() {
     <div class="stat"><div class="stat-num">${s.total}</div><div class="stat-label">전체</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--green)">${s.done}</div><div class="stat-label">완료</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--blue)">${s.active}</div><div class="stat-label">진행중</div></div>
-    <div class="stat"><div class="stat-num" style="color:var(--text2)">${s.plan}</div><div class="stat-label">예정</div></div>
-    <div class="stat"><div class="stat-num" style="color:${s.pct >= 50 ? 'var(--green)' : 'var(--red)'}">${s.pct}%</div><div class="stat-label">완료율</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--amber)">${s.important}</div><div class="stat-label">중요</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red)">${s.today}</div><div class="stat-label">오늘</div></div>
   `;
 
   // Cards
   const grid = document.getElementById('mg');
   grid.innerHTML = '';
+  let visibleItemsTotal = 0;
 
   DATA.forEach(cat => {
     const done = cat.items.filter(i => i.s === '완료').length;
     const pct = cat.items.length ? Math.round(done / cat.items.length * 100) : 0;
-    const vis = activeFilter === 'all' ? cat.items : cat.items.filter(i => i.s === activeFilter);
+    const vis = cat.items.filter(itemMatches);
+    visibleItemsTotal += vis.length;
+
+    if (vis.length === 0 && (activeFilter !== 'all' || searchQuery)) return;
 
     const card = document.createElement('div');
     card.className = 'card';
@@ -653,7 +737,14 @@ function render() {
       const row = document.createElement('div');
       row.className = 'irow';
       row.innerHTML = `
-        <span class="iname">${item.n}${item.tag ? `<span class="itag">${item.tag}</span>` : ''}</span>
+        <span class="iname">
+          ${item.n}
+          ${item.important ? `<span class="flag-chip flag-important">중요</span>` : ''}
+          ${item.today ? `<span class="flag-chip flag-today">오늘</span>` : ''}
+          ${item.tag ? `<span class="itag">${item.tag}</span>` : ''}
+        </span>
+        <button class="flag-btn ${item.important ? 'on' : ''}" onclick="event.stopPropagation();toggleImportant('${cat.id}',${realIdx})" title="중요 표시">★</button>
+        <button class="flag-btn today ${item.today ? 'on' : ''}" onclick="event.stopPropagation();toggleToday('${cat.id}',${realIdx})" title="오늘 할일">오늘</button>
         <button class="badge" style="${BADGE_STYLE[item.s]}" onclick="event.stopPropagation();cycleStatus('${cat.id}',${realIdx})" title="클릭하여 상태 변경">${item.s}</button>
         <button class="del-btn" onclick="event.stopPropagation();deleteItem('${cat.id}',${realIdx})" title="삭제">×</button>
       `;
@@ -670,6 +761,13 @@ function render() {
 
     grid.appendChild(card);
   });
+
+  if (visibleItemsTotal === 0 && (activeFilter !== 'all' || searchQuery)) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = '조건에 맞는 항목이 없습니다.';
+    grid.appendChild(empty);
+  }
 
   // Add category button
   const addBtn = document.createElement('button');
@@ -705,6 +803,7 @@ auth.onAuthStateChanged(async user => {
     loginBtn.style.display = 'inline-block';
     logoutBtn.style.display = 'none';
     authStatus.style.display = 'none';
+    updateSyncNote('로그인이 필요합니다');
     addCatHeaderBtn.style.display = 'none';
 
     document.getElementById('sg').innerHTML = '';
@@ -726,14 +825,27 @@ auth.onAuthStateChanged(async user => {
   authStatus.style.display = 'inline-block';
   addCatHeaderBtn.style.display = 'inline-block';
 
+  // V2: 새로고침 직후에는 브라우저 백업 데이터를 먼저 보여주고, Firebase 최신 데이터는 뒤에서 동기화합니다.
+  const localBackup = getLocalBackupData();
+  if (localBackup) {
+    DATA = localBackup;
+    updateSyncNote('로컬 백업 먼저 표시 · Firebase 확인 중');
+    render();
+  } else {
+    updateSyncNote('Firebase 데이터 불러오는 중');
+  }
+
   DATA = await loadData();
+  updateSyncNote('Firebase 동기화 완료');
   render();
 
   // 다른 기기에서 저장한 변경사항이 있으면 새로고침 없이도 반영합니다.
   unsubscribeDashboard = DASHBOARD_DOC.onSnapshot(snap => {
     if (!snap.exists || !Array.isArray(snap.data().items)) return;
+    if (isSaving) return;
     DATA = snap.data().items;
     localStorage.setItem(KEY, JSON.stringify(DATA));
+    updateSyncNote('최신 데이터 반영됨');
     render();
   }, err => {
     console.error(err);
