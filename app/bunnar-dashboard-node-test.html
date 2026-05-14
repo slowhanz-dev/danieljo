@@ -8,11 +8,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BUNNAR">
-<!-- 기존 /app/ 경로 기준 아이콘 유지 -->
-<link rel="icon" type="image/png" sizes="512x512" href="/app/bunnar-icon-512.png?v=20260514">
-<link rel="shortcut icon" type="image/png" href="/app/bunnar-icon-512.png?v=20260514">
-<link rel="apple-touch-icon" sizes="180x180" href="/app/bunnar-icon-180.png?v=20260514">
-<link rel="apple-touch-icon-precomposed" sizes="180x180" href="/app/bunnar-icon-180.png?v=20260514">
+<!-- BUNNAR WORK 앱 아이콘: SVG 파비콘 + iOS 홈화면용 PNG -->
+<link rel="icon" type="image/svg+xml" href="/app/bunnar_work_icon.svg?v=20260514-work">
+<link rel="shortcut icon" type="image/png" sizes="512x512" href="/app/bunnar_work_icon_512.png?v=20260514-work">
+<link rel="apple-touch-icon" sizes="180x180" href="/app/bunnar_work_icon_180.png?v=20260514-work">
+<link rel="apple-touch-icon-precomposed" sizes="180x180" href="/app/bunnar_work_icon_180.png?v=20260514-work">
+<link rel="manifest" href="/app/bunnar-work-manifest.webmanifest?v=20260514-work">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -28,7 +29,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 button,input,textarea,select{font-family:inherit}
 .header{background:rgba(255,255,255,.84);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
 @media(prefers-color-scheme:dark){.header{background:rgba(26,26,23,.84)}}
-.logo{font-size:17px;font-weight:700;letter-spacing:.04em}.logo span{font-weight:400;opacity:.55;margin-left:7px;font-size:13px}.test-pill{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b;border-radius:999px;padding:2px 7px;vertical-align:middle}.header-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.main{max-width:1640px;margin:0 auto;padding:22px 28px 80px}
+.brand{display:flex;align-items:center;gap:10px}.logo-mark{width:30px;height:30px;border-radius:9px;display:block;box-shadow:0 4px 12px rgba(0,0,0,.12)}.logo{font-size:17px;font-weight:700;letter-spacing:.04em}.logo span{font-weight:400;opacity:.55;margin-left:7px;font-size:13px}.test-pill{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b;border-radius:999px;padding:2px 7px;vertical-align:middle}.header-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.main{max-width:1640px;margin:0 auto;padding:22px 28px 80px}
 .btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;cursor:pointer;color:var(--text);transition:.15s;display:inline-flex;align-items:center;gap:5px;text-decoration:none}.btn:hover{background:var(--surface2)}.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text)}.btn-primary:hover{opacity:.84}.btn-danger{color:var(--red);border-color:rgba(153,53,86,.35)}.btn-small{font-size:11px;padding:5px 8px;border-radius:7px}.auth-note{font-size:11px;color:var(--text3)}
 .tabs{display:flex;gap:6px;margin:0 0 16px;flex-wrap:wrap}.tab{background:transparent;border:1px solid var(--border2);border-radius:999px;padding:7px 14px;font-size:12px;color:var(--text2);cursor:pointer}.tab:hover,.tab.on{background:var(--text);color:var(--bg);border-color:var(--text)}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -43,7 +44,7 @@ button,input,textarea,select{font-family:inherit}
 </head>
 <body>
 <div class="header">
-  <div><span class="logo">BUNNAR <span>· 노드 테스트 대시보드</span></span><span class="test-pill">TEST</span></div>
+  <div class="brand"><img class="logo-mark" src="/app/bunnar_work_icon.svg?v=20260514-work" alt="BUNNAR WORK"><div><span class="logo">BUNNAR <span>· 노드 테스트 대시보드</span></span><span class="test-pill">TEST</span></div></div>
   <div class="header-actions">
     <button class="btn" onclick="window.print()">🖨️ 프린트</button>
     <button class="btn" onclick="exportData()">📤 내보내기</button>
