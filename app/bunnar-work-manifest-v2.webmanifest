@@ -1,7 +1,7 @@
 {
   "name": "BUNNAR Work Dashboard",
   "short_name": "BUNNAR WORK",
-  "start_url": "./bunnar-dashboard-node-icon-test.html",
+  "start_url": "./bunnar-dashboard-node-icon-test-v2.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0f0f0d",

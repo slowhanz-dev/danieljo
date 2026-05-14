@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUNNAR · 노드 테스트 대시보드</title>
+<meta name="theme-color" content="#1a1a18">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BUNNAR">
+<!-- BUNNAR WORK 앱 아이콘: 상대경로 사용. /app/ 하드코딩으로 인한 홈화면 404 방지 -->
+<link rel="icon" type="image/svg+xml" href="bunnar_work_icon.svg?v=20260514-work-v2">
+<link rel="shortcut icon" type="image/png" sizes="512x512" href="bunnar_work_icon_512.png?v=20260514-work-v2">
+<link rel="apple-touch-icon" sizes="180x180" href="bunnar_work_icon_180.png?v=20260514-work-v2">
+<link rel="apple-touch-icon-precomposed" sizes="180x180" href="bunnar_work_icon_180.png?v=20260514-work-v2">
+<link rel="manifest" href="bunnar-work-manifest-v2.webmanifest?v=20260514-work-v2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f3;--surface:#fff;--surface2:#f0efe9;--surface3:#ebe8df;
+  --border:#e2e0d8;--border2:#ccc9bc;--text:#1a1a18;--text2:#6b6960;--text3:#a09d92;
+  --green:#1D9E75;--blue:#185FA5;--amber:#854F0B;--red:#993556;--purple:#6D5BD0;
+  --radius:14px;--radius-sm:9px;--shadow:0 12px 30px rgba(25,24,20,.06)
+}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0d;--surface:#1a1a17;--surface2:#232320;--surface3:#2b2b26;--border:#2a2a26;--border2:#3a3a34;--text:#f0ede6;--text2:#9a9790;--text3:#5a5952;--green:#4ADE80;--blue:#60A5FA;--amber:#FCD34D;--red:#F87171;--purple:#A78BFA;--shadow:none}}
+body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.55}
+button,input,textarea,select{font-family:inherit}
+.header{background:rgba(255,255,255,.84);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+@media(prefers-color-scheme:dark){.header{background:rgba(26,26,23,.84)}}
+.brand{display:flex;align-items:center;gap:10px}.logo-mark{width:30px;height:30px;border-radius:9px;display:block;box-shadow:0 4px 12px rgba(0,0,0,.12)}.logo{font-size:17px;font-weight:700;letter-spacing:.04em}.logo span{font-weight:400;opacity:.55;margin-left:7px;font-size:13px}.test-pill{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b;border-radius:999px;padding:2px 7px;vertical-align:middle}.header-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.main{max-width:1640px;margin:0 auto;padding:22px 28px 80px}
+.btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;cursor:pointer;color:var(--text);transition:.15s;display:inline-flex;align-items:center;gap:5px;text-decoration:none}.btn:hover{background:var(--surface2)}.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text)}.btn-primary:hover{opacity:.84}.btn-danger{color:var(--red);border-color:rgba(153,53,86,.35)}.btn-small{font-size:11px;padding:5px 8px;border-radius:7px}.auth-note{font-size:11px;color:var(--text3)}
+.tabs{display:flex;gap:6px;margin:0 0 16px;flex-wrap:wrap}.tab{background:transparent;border:1px solid var(--border2);border-radius:999px;padding:7px 14px;font-size:12px;color:var(--text2);cursor:pointer}.tab:hover,.tab.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.focus{padding:18px 20px;margin-bottom:18px;background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%)}.focus-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.focus-head h1{font-size:17px;line-height:1.35}.focus-head p{font-size:12px;color:var(--text2);margin-top:3px}.today{font-size:11px;color:var(--text3);white-space:nowrap}.focus-grid{display:grid;grid-template-columns:1.2fr .9fr .9fr;gap:12px}.focus-col{border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.45);padding:12px}.focus-col h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);font-weight:600;margin-bottom:8px}.focus-item{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}.focus-item:last-child{border-bottom:none}.focus-item strong{font-weight:600}.focus-item small{display:block;color:var(--text3);margin-top:1px}.dot{width:8px;height:8px;border-radius:99px;margin-top:5px;flex-shrink:0}.empty{font-size:12px;color:var(--text3);font-style:italic;padding:8px 0}.statline{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-top:8px}.statline span{background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:2px 8px}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin:22px 0 10px;font-weight:600;display:flex;gap:8px;align-items:center}.section-title .count{background:var(--surface2);color:var(--text2);border-radius:999px;padding:1px 8px;font-size:10px;letter-spacing:.04em}
+.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}.card-head{display:flex;align-items:center;gap:9px;padding:13px 15px;border-bottom:1px solid var(--border)}.card-label{font-size:13px;font-weight:700;flex:1}.card-meta{font-size:11px;color:var(--text3)}.items{padding:5px 0}.irow{display:flex;gap:7px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid transparent}.irow:hover{background:var(--surface2)}.iname{font-size:12px;line-height:1.45;flex:1;word-break:keep-all}.badge{font-size:10px;border:none;border-radius:999px;padding:2px 8px;font-weight:600;white-space:nowrap}.dday{font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:3px}.dday.urgent{background:#fecaca;color:#991b1b}.dday.soon{background:#fde68a;color:#854d0e}.dday.normal{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}.dday.over{background:var(--text);color:var(--bg)}
+.workflow-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.workflow-toolbar p{font-size:12px;color:var(--text2)}.flow{padding:16px;margin-bottom:14px}.flow-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.flow-title-wrap{display:flex;align-items:center;gap:8px;flex:1}.flow-title{font-size:15px;font-weight:700;border:none;background:transparent;color:var(--text);outline:none;width:100%;padding:4px 0}.flow-title:focus{background:var(--surface2);border-radius:6px;padding:4px 8px}.flow-meta{font-size:11px;color:var(--text3);margin-top:2px}.flow-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.nodes{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 2px 12px;scrollbar-width:thin}.node-wrap{display:flex;align-items:center;flex-shrink:0}.arrow{width:34px;height:2px;background:var(--border2);position:relative;flex-shrink:0}.arrow:after{content:"";position:absolute;right:-1px;top:-4px;border-left:7px solid var(--border2);border-top:5px solid transparent;border-bottom:5px solid transparent}.node{width:230px;min-height:215px;border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:11px;position:relative;transition:.15s}.node.ready{border-color:rgba(24,95,165,.45);box-shadow:0 0 0 3px rgba(24,95,165,.08)}.node.done{border-color:rgba(29,158,117,.35);background:linear-gradient(180deg,rgba(29,158,117,.06),var(--surface))}.node.waiting{border-color:rgba(133,79,11,.35)}.node.blocked{border-color:rgba(153,53,86,.35)}.node.locked{opacity:.55;background:var(--surface2)}.node-top{display:flex;align-items:center;gap:7px;margin-bottom:8px}.step{width:22px;height:22px;border-radius:7px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text2);flex-shrink:0}.node-status{font-size:10px;font-weight:700;border-radius:999px;padding:2px 7px}.node-title{width:100%;border:none;background:transparent;color:var(--text);font-weight:700;font-size:13px;line-height:1.35;outline:none;padding:4px;border-radius:7px}.node-title:focus{background:var(--surface2)}.node-row{display:flex;gap:6px;align-items:center;margin-top:7px}.node-row label{font-size:10px;color:var(--text3);width:34px;flex-shrink:0}.node input,.node textarea,.node select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:11px;outline:none;padding:5px 7px}.node textarea{min-height:45px;resize:vertical;line-height:1.35}.node input:focus,.node textarea:focus,.node select:focus{border-color:var(--blue)}.node-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.mini{font-size:10px;padding:3px 6px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text2);cursor:pointer}.mini:hover{background:var(--text);color:var(--bg)}.mini:disabled{opacity:.35;cursor:not-allowed}.mini.danger:hover{background:var(--red);border-color:var(--red);color:#fff}.node-locked-msg{font-size:11px;color:var(--text3);background:var(--surface2);border:1px dashed var(--border2);padding:8px;border-radius:9px;margin-top:10px}
+.manual{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.manual h2{font-size:18px;margin-bottom:8px}.manual h3{font-size:13px;margin:16px 0 8px}.manual p,.manual li{font-size:13px;color:var(--text2)}.manual ol,.manual ul{padding-left:20px}.manual li{margin-bottom:6px}.manual-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px}.kbd{display:inline-block;border:1px solid var(--border2);background:var(--surface);border-radius:5px;padding:1px 5px;font-size:11px;color:var(--text)}.notice{background:#fffbeb;color:#854d0e;border:1px solid #fde68a;border-radius:12px;padding:12px;font-size:12px;margin-top:12px}.save-toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:var(--bg);border-radius:10px;padding:8px 16px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:90}.save-toast.show{opacity:1}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;width:100%;max-width:420px}.modal h3{font-size:16px;margin-bottom:12px}.modal label{display:block;font-size:11px;color:var(--text2);margin:10px 0 4px}.modal input,.modal select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 10px;outline:none}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.logged-out{padding:28px}.logged-out h2{font-size:18px}.logged-out p{color:var(--text2);margin:8px 0 16px}
+@media(max-width:860px){.main{padding:15px 12px 80px}.header{padding:10px 12px}.header-actions .btn{font-size:11px;padding:5px 8px}.logo span{display:none}.focus-grid{grid-template-columns:1fr}.workflow-toolbar{align-items:flex-start}.manual{grid-template-columns:1fr;padding:16px}.node{width:218px}.arrow{width:26px}.board-grid{grid-template-columns:1fr}.tabs{position:sticky;top:51px;z-index:30;background:var(--bg);padding:8px 0;margin-bottom:10px}.test-pill{display:none}}
+@media print{.header,.tabs,.workflow-toolbar,.flow-actions,.node-actions,.save-toast,.modal-overlay{display:none!important}.main{padding:0}.focus,.flow,.card{box-shadow:none;break-inside:avoid}.nodes{overflow:visible;flex-wrap:wrap}.node{width:210px}.arrow{width:20px}.manual{display:block}.manual-card{margin-bottom:10px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand"><img class="logo-mark" src="bunnar_work_icon.svg?v=20260514-work-v2" alt="BUNNAR WORK"><div><span class="logo">BUNNAR <span>· 노드 테스트 대시보드</span></span><span class="test-pill">TEST</span></div></div>
+  <div class="header-actions">
+    <button class="btn" onclick="window.print()">🖨️ 프린트</button>
+    <button class="btn" onclick="exportData()">📤 내보내기</button>
+    <button class="btn" onclick="triggerImport()">📥 가져오기</button>
+    <button class="btn" id="loginBtn" onclick="login()">🔐 로그인</button>
+    <button class="btn" id="logoutBtn" onclick="logout()" style="display:none">로그아웃</button>
+    <span class="auth-note" id="authStatus" style="display:none"></span>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</div>
+
+<div class="main">
+  <div id="loggedOut" class="panel logged-out" style="display:none">
+    <h2>로그인이 필요합니다.</h2>
+    <p>기존 업무 현황판과 같은 Firebase 문서에 연결됩니다. 회사·집·모바일에서 같은 데이터를 보려면 구글 로그인을 해주세요.</p>
+    <button class="btn btn-primary" onclick="login()">구글 로그인</button>
+  </div>
+
+  <div id="app" style="display:none">
+    <section class="panel focus">
+      <div class="focus-head">
+        <div>
+          <h1>오늘은 “다음 행동”만 봅니다.</h1>
+          <p>기억해야 할 순서는 노드가 보관하고, 지금 움직일 수 있는 단계만 위에 모읍니다.</p>
+        </div>
+        <div class="today" id="todayDate"></div>
+      </div>
+      <div class="focus-grid">
+        <div class="focus-col"><h3>🔴 지금 가능한 다음 노드</h3><div id="focusReady"></div></div>
+        <div class="focus-col"><h3>🟡 대기 / 연락 필요</h3><div id="focusWaiting"></div></div>
+        <div class="focus-col"><h3>⚪ 오늘 보드 참고</h3><div id="focusBoard"></div></div>
+      </div>
+      <div class="statline" id="statLine"></div>
+    </section>
+
+    <div class="tabs">
+      <button class="tab on" data-view="nodes" onclick="setView('nodes')">노드 보기</button>
+      <button class="tab" data-view="board" onclick="setView('board')">기존 보드 요약</button>
+      <button class="tab" data-view="manual" onclick="setView('manual')">사용 메뉴얼</button>
+    </div>
+
+    <section id="view-nodes">
+      <div class="workflow-toolbar">
+        <div>
+          <div class="section-title" style="margin-top:0">Workflow Nodes <span class="count" id="flowCount">0개 흐름</span></div>
+          <p>노드 하나를 완료하면 다음 노드가 자연스럽게 “지금 가능” 상태로 올라옵니다.</p>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn" onclick="addFlow('B2B 고객 문의 흐름')">+ B2B 흐름</button>
+          <button class="btn" onclick="addFlow('지원사업 흐름')">+ 지원사업 흐름</button>
+          <button class="btn btn-primary" onclick="openFlowModal()">+ 빈 흐름</button>
+        </div>
+      </div>
+      <div id="flowList"></div>
+    </section>
+
+    <section id="view-board" style="display:none">
+      <div class="section-title">Current Board Summary <span class="count" id="boardCount">0개 카테고리</span></div>
+      <div class="board-grid" id="boardGrid"></div>
+    </section>
+
+    <section id="view-manual" style="display:none">
+      <div class="panel manual">
+        <div>
+          <h2>간략 사용 메뉴얼</h2>
+          <div class="manual-card">
+            <h3>1. 아침에 보는 순서</h3>
+            <ol>
+              <li>맨 위의 <strong>지금 가능한 다음 노드</strong>만 먼저 봅니다.</li>
+              <li>오늘 처리할 노드는 1~3개만 고릅니다.</li>
+              <li>진행할 수 없는 일은 상태를 <strong>대기</strong> 또는 <strong>막힘</strong>으로 바꿔 머릿속에서 지웁니다.</li>
+            </ol>
+            <h3>2. 노드 처리 방식</h3>
+            <ul>
+              <li><strong>완료</strong>: 해당 단계가 끝났을 때 누릅니다. 다음 단계가 활성화됩니다.</li>
+              <li><strong>대기</strong>: 고객 답변, 배송 도착, 기관 발표처럼 내가 당장 못 움직이는 일입니다.</li>
+              <li><strong>막힘</strong>: 정보·견적·파일·결정이 부족해서 멈춘 일입니다.</li>
+              <li><strong>연락</strong> 칸에는 연락할 사람, <strong>메모</strong> 칸에는 다음 행동을 적습니다.</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="manual-card">
+            <h3>추천 테스트 방법</h3>
+            <ol>
+              <li><span class="kbd">+ B2B 흐름</span>을 눌러 하나를 만듭니다.</li>
+              <li>“문의 수신 → 요구사항 확인 → 견적서 작성 → 샘플 발송 → 송장 전달 → 도착 확인 → 팔로업” 순서가 맞는지 봅니다.</li>
+              <li>첫 노드를 <strong>완료</strong> 처리하고, 두 번째 노드가 위 집중 영역에 올라오는지 확인합니다.</li>
+              <li>연락이 필요한 단계에는 연락처나 고객명을 적어봅니다.</li>
+              <li>며칠 써본 뒤 “노드 이름 / 상태 / 메모 필드”가 실제 업무와 맞는지 조정합니다.</li>
+            </ol>
+            <div class="notice">이 파일은 테스트용입니다. 다만 서버 연결은 기존과 동일한 <strong>Firebase / dashboards / bunnar-main</strong> 문서를 사용합니다. 노드 데이터는 기존 보드 데이터와 별도 필드로 저장되어 기존 화면을 크게 건드리지 않도록 구성했습니다.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="modal-overlay" id="flowModal" onclick="closeFlowModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>새 업무 흐름 만들기</h3>
+    <label>흐름 이름</label>
+    <input type="text" id="newFlowTitle" placeholder="예: 독일 샘플 발송 후속 관리">
+    <label>기본 템플릿</label>
+    <select id="newFlowTemplate">
+      <option value="blank">빈 흐름</option>
+      <option value="b2b">B2B 고객 문의</option>
+      <option value="support">지원사업</option>
+      <option value="product">제품 개발</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeFlowModalDirect()">취소</button>
+      <button class="btn btn-primary" onclick="createFlowFromModal()">추가</button>
+    </div>
+  </div>
+</div>
+
+<div class="save-toast" id="toast">✓ 저장됨</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const KEY='bunnar_node_dashboard_test_v1';
+const STATUSES=['지금당장','완료','수행중','진행중','심사중','신청완료','예정','탈락'];
+const BADGE_STYLE={
+  '지금당장':'background:#FCA5A5;color:#7F1D1D','완료':'background:#9FE1CB;color:#085041','수행중':'background:#6EE7B7;color:#065F46','진행중':'background:#B5D4F4;color:#0C447C','심사중':'background:#FAC775;color:#633806','신청완료':'background:#AFA9EC;color:#3C3489','예정':'background:#D3D1C7;color:#444441','탈락':'background:#F09595;color:#791F1F'
+};
+const NODE_STATUS={
+  ready:{label:'지금 가능',style:'background:#dbeafe;color:#1e40af',dot:'var(--blue)'},
+  waiting:{label:'대기',style:'background:#fef3c7;color:#92400e',dot:'var(--amber)'},
+  blocked:{label:'막힘',style:'background:#fee2e2;color:#991b1b',dot:'var(--red)'},
+  done:{label:'완료',style:'background:#dcfce7;color:#166534',dot:'var(--green)'},
+  locked:{label:'이전 단계 필요',style:'background:var(--surface2);color:var(--text3)',dot:'var(--text3)'}
+};
+
+// 기존 서버 연결 유지: Firebase 설정과 dashboards/bunnar-main 문서명을 변경하지 않았습니다.
+const firebaseConfig={apiKey:"AIzaSyBGBDywtb_UQwewBObvTSVxiXTTLDZQd2w",authDomain:"bunnar-dashboard.firebaseapp.com",projectId:"bunnar-dashboard",storageBucket:"bunnar-dashboard.firebasestorage.app",messagingSenderId:"170038311346",appId:"1:170038311346:web:59e4eb30f65961aab80cab",measurementId:"G-TDR9PS981E"};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
+const db=firebase.firestore();
+const DASHBOARD_DOC=db.collection('dashboards').doc('bunnar-main');
+
+let DATA=[];let QUICK=[];let FLOWS=[];let activeView='nodes';let unsubscribeDashboard=null;let suppressSnapshot=false;let hasLoadedRemote=false;
+
+function uid(p='id'){return p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}
+function todayISO(){return new Date().toISOString().slice(0,10)}
+function daysUntil(d){if(!d)return null;const t=new Date(todayISO()+'T00:00:00');const due=new Date(d+'T00:00:00');return Math.round((due-t)/86400000)}
+function ddayLabel(d){const n=daysUntil(d);if(n===null)return null;if(n<0)return{cls:'over',text:`D+${Math.abs(n)}`};if(n===0)return{cls:'urgent',text:'D-DAY'};if(n<=3)return{cls:'urgent',text:`D-${n}`};if(n<=7)return{cls:'soon',text:`D-${n}`};return{cls:'normal',text:`D-${n}`}}
+function escapeHtml(s){if(s==null)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function getLocalBackup(){try{const saved=localStorage.getItem(KEY);return saved?JSON.parse(saved):null}catch(e){return null}}
+function setLocalBackup(obj){try{localStorage.setItem(KEY,JSON.stringify(obj||{items:DATA,quickTasks:QUICK,flows:FLOWS}))}catch(e){}}
+function showToast(){const t=document.getElementById('toast');t.classList.add('show');clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),1400)}
+
+function templateNodes(type){
+  const lists={
+    b2b:['문의 수신','고객 유형 확인','제품·수량·국가 확인','견적 가능 여부 판단','견적서 작성','샘플 발송 여부 결정','샘플 포장','EMS/DHL 발송','송장 전달','도착 확인','3일 후 팔로업','주문·협업 논의'],
+    support:['공고 발견','지원 가능 여부 확인','마감일 등록','제출서류 확인','사업계획서 작성','증빙서류 준비','최종 검토','제출','결과 확인'],
+    product:['아이디어','용도 정의','치수 설정','원형 제작','몰드·금형','샘플 제작','유약 테스트','사진 촬영','가격 설정','판매·제안'],
+    blank:['첫 단계']
+  };
+  return (lists[type]||lists.blank).map((label,i)=>({id:uid('node'),label,status:i===0?'ready':'blocked',due:'',contact:'',note:'',type:guessType(label)}));
+}
+function guessType(label){if(/문의|연락|송장|팔로업|확인/.test(label))return'연락';if(/발송|포장|EMS|DHL|샘플/.test(label))return'물류';if(/견적서|서류|사업계획서|증빙|사진/.test(label))return'문서';if(/판단|가능|결정|정의/.test(label))return'판단';return'작업'}
+function defaultFlows(){return[
+  {id:uid('flow'),title:'B2B 고객 문의 → 샘플 발송 테스트',template:'b2b',createdAt:new Date().toISOString(),nodes:templateNodes('b2b')},
+  {id:uid('flow'),title:'지원사업 제출 흐름 테스트',template:'support',createdAt:new Date().toISOString(),nodes:templateNodes('support')}
+]}
+function normalizeFlow(flow){
+  if(!flow.nodes||!Array.isArray(flow.nodes))flow.nodes=[];
+  flow.nodes=flow.nodes.map((n,i)=>({id:n.id||uid('node'),label:n.label||n.n||`단계 ${i+1}`,status:n.status||n.s|| (i===0?'ready':'blocked'),due:n.due||'',contact:n.contact||'',note:n.note||'',type:n.type||guessType(n.label||'')}));
+  return {id:flow.id||uid('flow'),title:flow.title||'새 업무 흐름',template:flow.template||'custom',createdAt:flow.createdAt||new Date().toISOString(),nodes:flow.nodes};
+}
+
+async function loadData(){
+  try{
+    const snap=await DASHBOARD_DOC.get();
+    if(snap.exists){
+      const d=snap.data();hasLoadedRemote=true;
+      DATA=Array.isArray(d.items)?d.items:[];QUICK=Array.isArray(d.quickTasks)?d.quickTasks:[];
+      FLOWS=Array.isArray(d.flows)&&d.flows.length?d.flows.map(normalizeFlow):defaultFlows();
+      setLocalBackup({items:DATA,quickTasks:QUICK,flows:FLOWS});
+      return;
+    }
+  }catch(e){console.error(e);alert('데이터 불러오기에 실패했습니다. 로그인 상태나 Firebase 보안 규칙을 확인해 주세요. 로컬 백업을 표시합니다.');}
+  const local=getLocalBackup();
+  DATA=Array.isArray(local?.items)?local.items:[];QUICK=Array.isArray(local?.quickTasks)?local.quickTasks:[];FLOWS=Array.isArray(local?.flows)&&local.flows.length?local.flows.map(normalizeFlow):defaultFlows();
+}
+async function saveFlowsOnly(){
+  setLocalBackup();
+  if(!auth.currentUser){showToast();return}
+  try{suppressSnapshot=true;await DASHBOARD_DOC.set({flows:FLOWS,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:auth.currentUser.email||''},{merge:true});showToast()}catch(e){console.error(e);alert('노드 저장에 실패했습니다. 로그인 상태나 Firebase 보안 규칙을 확인해 주세요.')}
+}
+async function saveAll(){
+  setLocalBackup();
+  if(!auth.currentUser){showToast();return}
+  try{suppressSnapshot=true;await DASHBOARD_DOC.set({items:DATA,quickTasks:QUICK,flows:FLOWS,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:auth.currentUser.email||''},{merge:true});showToast()}catch(e){console.error(e);alert('저장에 실패했습니다. 로그인 상태나 Firebase 보안 규칙을 확인해 주세요.')}
+}
+function login(){const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});auth.signInWithPopup(provider).catch(err=>{console.error(err);if(err.code==='auth/popup-blocked'||err.code==='auth/cancelled-popup-request'){auth.signInWithRedirect(provider);return}alert('로그인에 실패했습니다.')})}
+function logout(){auth.signOut()}
+
+auth.onAuthStateChanged(async user=>{
+  document.getElementById('loginBtn').style.display=user?'none':'inline-flex';
+  document.getElementById('logoutBtn').style.display=user?'inline-flex':'none';
+  document.getElementById('authStatus').style.display=user?'inline':'none';
+  document.getElementById('authStatus').textContent=user?`로그인: ${user.email||''}`:'';
+  if(unsubscribeDashboard){unsubscribeDashboard();unsubscribeDashboard=null}
+  if(!user){document.getElementById('app').style.display='none';document.getElementById('loggedOut').style.display='block';return}
+  document.getElementById('loggedOut').style.display='none';document.getElementById('app').style.display='block';
+  await loadData();renderAll();
+  unsubscribeDashboard=DASHBOARD_DOC.onSnapshot(snap=>{
+    if(suppressSnapshot){suppressSnapshot=false;return}
+    if(!snap.exists)return;const d=snap.data();
+    DATA=Array.isArray(d.items)?d.items:DATA;QUICK=Array.isArray(d.quickTasks)?d.quickTasks:QUICK;FLOWS=Array.isArray(d.flows)&&d.flows.length?d.flows.map(normalizeFlow):FLOWS;
+    setLocalBackup({items:DATA,quickTasks:QUICK,flows:FLOWS});renderAll();
+  },err=>console.error(err));
+});
+
+function setView(v){activeView=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));['nodes','board','manual'].forEach(x=>document.getElementById('view-'+x).style.display=x===v?'block':'none')}
+function realNodeStatus(flow,idx){const n=flow.nodes[idx];if(!n)return'blocked';if(n.status==='done')return'done';if(idx>0&&flow.nodes[idx-1]?.status!=='done')return'locked';return n.status==='blocked'?'ready':n.status}
+function findNextNode(flow){for(let i=0;i<flow.nodes.length;i++){if(realNodeStatus(flow,i)!=='done')return{flow,node:flow.nodes[i],idx:i,status:realNodeStatus(flow,i)}}return null}
+function renderAll(){renderFocus();renderFlows();renderBoard()}
+function renderFocus(){
+  document.getElementById('todayDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  const nexts=FLOWS.map(findNextNode).filter(Boolean);
+  const ready=nexts.filter(x=>x.status==='ready'||(x.node.due&&daysUntil(x.node.due)<=3));
+  const waiting=nexts.filter(x=>x.status==='waiting'||x.node.contact);
+  const boardItems=[];DATA.forEach(c=>c.items?.forEach(it=>{if(!['완료','탈락'].includes(it.s)&&(it.s==='지금당장'||it.today||(it.due&&daysUntil(it.due)<=3)))boardItems.push({...it,cat:c.label,color:c.color})}));
+  document.getElementById('focusReady').innerHTML=ready.length?ready.slice(0,6).map(x=>focusItem(x,'ready')).join(''):'<div class="empty">지금 당장 움직일 노드가 없습니다.</div>';
+  document.getElementById('focusWaiting').innerHTML=waiting.length?waiting.slice(0,6).map(x=>focusItem(x,'waiting')).join(''):'<div class="empty">대기 중인 연락/확인 노드가 없습니다.</div>';
+  document.getElementById('focusBoard').innerHTML=boardItems.length?boardItems.slice(0,6).map(i=>`<div class="focus-item"><span class="dot" style="background:${i.color||'var(--text3)'}"></span><div><strong>${escapeHtml(i.n)}</strong><small>${escapeHtml(i.cat)} · ${escapeHtml(i.s)} ${i.due?'· '+escapeHtml(ddayLabel(i.due).text):''}</small></div></div>`).join(''):'<div class="empty">기존 보드에서 급한 항목이 없습니다.</div>';
+  const totalNodes=FLOWS.reduce((a,f)=>a+f.nodes.length,0),doneNodes=FLOWS.reduce((a,f)=>a+f.nodes.filter(n=>n.status==='done').length,0);
+  document.getElementById('statLine').innerHTML=`<span>흐름 ${FLOWS.length}개</span><span>노드 ${totalNodes}개</span><span>완료 ${doneNodes}개</span><span>기존 보드 ${DATA.length}개 카테고리</span>`;
+}
+function focusItem(x,kind){const st=NODE_STATUS[x.status]||NODE_STATUS.ready;const due=x.node.due?ddayLabel(x.node.due):null;return `<div class="focus-item"><span class="dot" style="background:${st.dot}"></span><div><strong>${escapeHtml(x.node.label)}</strong><small>${escapeHtml(x.flow.title)} · ${x.idx+1}단계 ${due?'· '+escapeHtml(due.text):''}${x.node.contact?' · 연락: '+escapeHtml(x.node.contact):''}</small></div></div>`}
+
+function renderFlows(){
+  document.getElementById('flowCount').textContent=`${FLOWS.length}개 흐름`;
+  const el=document.getElementById('flowList');
+  if(!FLOWS.length){el.innerHTML='<div class="panel flow"><div class="empty">아직 업무 흐름이 없습니다. + B2B 흐름으로 테스트를 시작하세요.</div></div>';return}
+  el.innerHTML=FLOWS.map(flow=>{
+    const done=flow.nodes.filter(n=>n.status==='done').length;
+    return `<article class="panel flow" data-flow="${flow.id}">
+      <div class="flow-head">
+        <div style="flex:1">
+          <div class="flow-title-wrap"><input class="flow-title" value="${escapeHtml(flow.title)}" onchange="updateFlowTitle('${flow.id}',this.value)"></div>
+          <div class="flow-meta">${done}/${flow.nodes.length} 완료 · 다음 행동 중심으로 관리</div>
+        </div>
+        <div class="flow-actions">
+          <button class="btn btn-small" onclick="addNode('${flow.id}')">+ 노드</button>
+          <button class="btn btn-small" onclick="resetFlow('${flow.id}')">상태 초기화</button>
+          <button class="btn btn-small btn-danger" onclick="deleteFlow('${flow.id}')">삭제</button>
+        </div>
+      </div>
+      <div class="nodes">${flow.nodes.map((node,idx)=>renderNode(flow,node,idx)).join('')}</div>
+    </article>`
+  }).join('')
+}
+function renderNode(flow,node,idx){
+  const stKey=realNodeStatus(flow,idx),st=NODE_STATUS[stKey]||NODE_STATUS.ready;const locked=stKey==='locked';const due=node.due?ddayLabel(node.due):null;
+  return `<div class="node-wrap">
+    <div class="node ${stKey}">
+      <div class="node-top"><span class="step">${idx+1}</span><span class="node-status" style="${st.style}">${st.label}</span>${due?`<span class="dday ${due.cls}">${due.text}</span>`:''}</div>
+      <input class="node-title" value="${escapeHtml(node.label)}" onchange="updateNode('${flow.id}','${node.id}','label',this.value)" ${locked?'':'title="노드 이름 수정"'}>
+      <div class="node-row"><label>상태</label><select onchange="updateNode('${flow.id}','${node.id}','status',this.value)" ${locked?'disabled':''}>
+        <option value="ready" ${node.status==='ready'||node.status==='blocked'?'selected':''}>지금 가능</option>
+        <option value="waiting" ${node.status==='waiting'?'selected':''}>대기</option>
+        <option value="blocked" ${node.status==='blocked'?'selected':''}>막힘</option>
+        <option value="done" ${node.status==='done'?'selected':''}>완료</option>
+      </select></div>
+      <div class="node-row"><label>마감</label><input type="date" value="${escapeHtml(node.due)}" onchange="updateNode('${flow.id}','${node.id}','due',this.value)"></div>
+      <div class="node-row"><label>연락</label><input value="${escapeHtml(node.contact)}" placeholder="예: 고객명 / 업체 / 기관" onchange="updateNode('${flow.id}','${node.id}','contact',this.value)"></div>
+      <div class="node-row" style="align-items:flex-start"><label>메모</label><textarea placeholder="다음 행동, 보낼 물건, 확인할 내용" onchange="updateNode('${flow.id}','${node.id}','note',this.value)">${escapeHtml(node.note)}</textarea></div>
+      ${locked?'<div class="node-locked-msg">이전 노드를 완료하면 이 단계가 활성화됩니다.</div>':''}
+      <div class="node-actions">
+        <button class="mini" onclick="completeNode('${flow.id}','${node.id}')" ${locked?'disabled':''}>완료</button>
+        <button class="mini" onclick="moveNode('${flow.id}','${node.id}',-1)" ${idx===0?'disabled':''}>←</button>
+        <button class="mini" onclick="moveNode('${flow.id}','${node.id}',1)" ${idx===flow.nodes.length-1?'disabled':''}>→</button>
+        <button class="mini danger" onclick="deleteNode('${flow.id}','${node.id}')">삭제</button>
+      </div>
+    </div>${idx<flow.nodes.length-1?'<div class="arrow"></div>':''}
+  </div>`
+}
+function getFlow(id){return FLOWS.find(f=>f.id===id)}
+function getNode(flow,id){return flow?.nodes.find(n=>n.id===id)}
+function updateFlowTitle(flowId,value){const f=getFlow(flowId);if(!f)return;f.title=value.trim()||'새 업무 흐름';saveFlowsOnly();renderAll()}
+function updateNode(flowId,nodeId,key,value){const f=getFlow(flowId),n=getNode(f,nodeId);if(!n)return;n[key]=value;if(key==='status'&&value==='done'){const idx=f.nodes.findIndex(x=>x.id===nodeId);const next=f.nodes[idx+1];if(next&&next.status==='blocked')next.status='ready'}saveFlowsOnly();renderAll()}
+function completeNode(flowId,nodeId){const f=getFlow(flowId),n=getNode(f,nodeId);if(!n)return;n.status='done';const idx=f.nodes.findIndex(x=>x.id===nodeId);const next=f.nodes[idx+1];if(next&&next.status==='blocked')next.status='ready';saveFlowsOnly();renderAll()}
+function addNode(flowId){const f=getFlow(flowId);if(!f)return;f.nodes.push({id:uid('node'),label:'새 단계',status:f.nodes.length===0?'ready':'blocked',due:'',contact:'',note:'',type:'작업'});saveFlowsOnly();renderAll()}
+function deleteNode(flowId,nodeId){const f=getFlow(flowId);if(!f)return;if(!confirm('이 노드를 삭제할까요?'))return;f.nodes=f.nodes.filter(n=>n.id!==nodeId);saveFlowsOnly();renderAll()}
+function moveNode(flowId,nodeId,dir){const f=getFlow(flowId);if(!f)return;const i=f.nodes.findIndex(n=>n.id===nodeId),j=i+dir;if(i<0||j<0||j>=f.nodes.length)return;[f.nodes[i],f.nodes[j]]=[f.nodes[j],f.nodes[i]];saveFlowsOnly();renderAll()}
+function resetFlow(flowId){const f=getFlow(flowId);if(!f)return;if(!confirm('이 흐름의 모든 노드 상태를 초기화할까요?'))return;f.nodes.forEach((n,i)=>{n.status=i===0?'ready':'blocked'});saveFlowsOnly();renderAll()}
+function deleteFlow(flowId){if(!confirm('이 업무 흐름 전체를 삭제할까요?'))return;FLOWS=FLOWS.filter(f=>f.id!==flowId);saveFlowsOnly();renderAll()}
+function addFlow(title){const map={'B2B 고객 문의 흐름':'b2b','지원사업 흐름':'support'};const type=map[title]||'blank';FLOWS.unshift({id:uid('flow'),title,template:type,createdAt:new Date().toISOString(),nodes:templateNodes(type)});saveFlowsOnly();renderAll()}
+function openFlowModal(){document.getElementById('flowModal').style.display='flex';document.getElementById('newFlowTitle').focus()}
+function closeFlowModal(e){if(e.target.id==='flowModal')closeFlowModalDirect()}
+function closeFlowModalDirect(){document.getElementById('flowModal').style.display='none';document.getElementById('newFlowTitle').value='';document.getElementById('newFlowTemplate').value='blank'}
+function createFlowFromModal(){const title=document.getElementById('newFlowTitle').value.trim()||'새 업무 흐름';const type=document.getElementById('newFlowTemplate').value;FLOWS.unshift({id:uid('flow'),title,template:type,createdAt:new Date().toISOString(),nodes:templateNodes(type)});closeFlowModalDirect();saveFlowsOnly();renderAll()}
+
+function renderBoard(){
+  document.getElementById('boardCount').textContent=`${DATA.length}개 카테고리`;
+  const grid=document.getElementById('boardGrid');
+  if(!DATA.length){grid.innerHTML='<div class="panel" style="padding:20px"><div class="empty">기존 보드 데이터가 아직 없습니다.</div></div>';return}
+  grid.innerHTML=DATA.map(cat=>{const done=(cat.items||[]).filter(i=>i.s==='완료').length;return `<div class="card"><div class="card-head"><span>${escapeHtml(cat.icon||'📌')}</span><div class="card-label">${escapeHtml(cat.label||'카테고리')}</div><div class="card-meta">${done}/${(cat.items||[]).length}</div></div><div class="items">${(cat.items||[]).map(it=>{const due=it.due?ddayLabel(it.due):null;return `<div class="irow"><div class="iname">${escapeHtml(it.n)} ${it.note?'<span style="color:var(--text3)">· 메모</span>':''}${due?`<span class="dday ${due.cls}">${due.text}</span>`:''}</div><span class="badge" style="${BADGE_STYLE[it.s]||BADGE_STYLE['예정']}">${escapeHtml(it.s||'예정')}</span></div>`}).join('')||'<div class="empty" style="padding:14px">항목 없음</div>'}</div></div>`}).join('')
+}
+
+function exportData(){const payload={items:DATA,quickTasks:QUICK,flows:FLOWS,exportedAt:new Date().toISOString(),source:'bunnar-dashboard-node-test'};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bunnar-dashboard-node-test-'+new Date().toISOString().slice(0,10)+'.json';a.click()}
+function triggerImport(){document.getElementById('importFile').click()}
+function importData(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=function(ev){try{const p=JSON.parse(ev.target.result);if(Array.isArray(p.flows))FLOWS=p.flows.map(normalizeFlow);if(Array.isArray(p.items))DATA=p.items;if(Array.isArray(p.quickTasks))QUICK=p.quickTasks;saveAll();renderAll();alert('가져오기 완료!')}catch(err){alert('올바른 JSON 파일이 아닙니다.')}};r.readAsText(file);e.target.value=''}
+</script>
+</body>
+</html>
