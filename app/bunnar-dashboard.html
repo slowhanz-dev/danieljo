@@ -8,12 +8,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BUNNAR">
-<!-- 아이콘: SVG가 메인, PNG는 iOS 홈 화면용 -->
-<!-- precomposed: iOS가 광택/aqua 효과를 입히지 않음 -->
-<link rel="icon" type="image/svg+xml" href="icon.svg?v=7">
-<link rel="icon" href="favicon.ico?v=7" sizes="any">
-<link rel="apple-touch-icon-precomposed" sizes="180x180" href="icon-180.png?v=7">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=7">
+<!-- 아이콘: 모든 환경에서 SVG 인라인 사용 (외부 파일 0개) -->
+<!-- iOS·Android·데스크탑 모두 이 한 줄로 처리됨 -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'><rect width='600' height='600' fill='white'/><g transform='translate(90, 24)'><svg width='420' height='552' viewBox='0 0 390.92 513.25' preserveAspectRatio='xMidYMid meet'><path fill='%23d50032' d='M182.37,257.24c-41.51,0-69.19,36.46-69.19,85.6s31.49,83.65,69.19,83.65c42.75,0,68.57-35.84,68.57-88.08,0-43.38-24.57-81.16-68.57-81.16M0,33.89h113.89v186.19h1.24c28.92-36.46,67.33-49.67,112.56-49.67,90.57,0,140.33,86.22,140.33,165.43,0,96.86-52.25,177.41-149.73,177.41-52.25,0-98.11-29.54-112.65-66.08h-1.24v58.54H0V33.9h0Z'/><path fill='%23d50032' d='M322.35,0C280.84,0,253.16,36.46,253.16,85.6s31.4,83.65,69.19,83.65c42.75,0,68.57-35.84,68.57-88.08C390.92,37.79,366.35,0,322.35,0'/></svg></g></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'><rect width='600' height='600' fill='white'/><g transform='translate(90, 24)'><svg width='420' height='552' viewBox='0 0 390.92 513.25' preserveAspectRatio='xMidYMid meet'><path fill='%23d50032' d='M182.37,257.24c-41.51,0-69.19,36.46-69.19,85.6s31.49,83.65,69.19,83.65c42.75,0,68.57-35.84,68.57-88.08,0-43.38-24.57-81.16-68.57-81.16M0,33.89h113.89v186.19h1.24c28.92-36.46,67.33-49.67,112.56-49.67,90.57,0,140.33,86.22,140.33,165.43,0,96.86-52.25,177.41-149.73,177.41-52.25,0-98.11-29.54-112.65-66.08h-1.24v58.54H0V33.9h0Z'/><path fill='%23d50032' d='M322.35,0C280.84,0,253.16,36.46,253.16,85.6s31.4,83.65,69.19,83.65c42.75,0,68.57-35.84,68.57-88.08C390.92,37.79,366.35,0,322.35,0'/></svg></g></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -112,7 +110,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
 .card-head{display:flex;align-items:center;gap:10px;padding:13px 16px 11px;border-bottom:1px solid var(--border)}
 .card-icon{font-size:15px;flex-shrink:0}
-.card-label{font-size:13px;font-weight:600;flex:1}
+.card-label{font-size:13px;font-weight:600;flex:1;cursor:pointer}
 .card-meta{font-size:11px;color:var(--text3)}
 .pbar{height:2px;background:var(--border)}
 .pfill{height:100%;transition:width .4s ease}
@@ -152,6 +150,9 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .iexp input[type=date]:focus{border-color:var(--blue)}
 .iexp textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:7px 9px;font-size:12px;color:var(--text);font-family:inherit;outline:none;resize:vertical;min-height:50px;margin-top:3px}
 .iexp textarea:focus{border-color:var(--blue)}
+.iexp .name-edit{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px 9px;font-size:13px;color:var(--text);font-family:inherit;outline:none;font-weight:500}
+.iexp .name-edit:focus{border-color:var(--blue)}
+.inline-edit{width:100%;background:var(--bg);border:1px solid var(--blue);border-radius:4px;padding:3px 6px;font-size:12px;color:var(--text);font-family:inherit;outline:none;line-height:1.45}
 .iexp-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .mini-btn{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 9px;font-size:10px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .12s;text-decoration:none;display:inline-block}
 .mini-btn:hover{background:var(--text);color:var(--bg);border-color:var(--text)}
@@ -499,6 +500,14 @@ function deleteCat(catId){
   if(!confirm('이 카테고리를 삭제할까요? (안의 모든 항목이 사라집니다)'))return;
   DATA=DATA.filter(c=>c.id!==catId);save();render();
 }
+function renameCat(catId){
+  const c=DATA.find(x=>x.id===catId);if(!c)return;
+  const v=prompt('카테고리 이름 변경:',c.label);
+  if(v===null)return;
+  const t=v.trim();
+  if(!t||t===c.label)return;
+  c.label=t;save();render();
+}
 
 function toggleItem(catId,idx){
   const k=catId+'::'+idx;openItemKey=(openItemKey===k)?null:k;render();
@@ -511,6 +520,53 @@ function updateDue(catId,idx,v){
 function updateNotes(catId,idx,v){
   const c=DATA.find(x=>x.id===catId);if(!c||!c.items[idx])return;
   c.items[idx].notes=v;
+}
+function updateName(catId,idx,v){
+  const c=DATA.find(x=>x.id===catId);if(!c||!c.items[idx])return;
+  const trimmed=(v||'').trim();
+  if(!trimmed)return;
+  if(c.items[idx].n===trimmed)return;
+  c.items[idx].n=trimmed;
+  save();render();
+}
+// ── In-place item name editing (double-click) ──
+function editItemName(spanEl,catId,idx){
+  event.stopPropagation();
+  const c=DATA.find(x=>x.id===catId);if(!c||!c.items[idx])return;
+  const currentName=c.items[idx].n;
+  // Replace span content with an input
+  const input=document.createElement('input');
+  input.type='text';
+  input.value=currentName;
+  input.className='inline-edit';
+  // Save original content to restore on cancel
+  const original=spanEl.innerHTML;
+  spanEl.innerHTML='';
+  spanEl.appendChild(input);
+  input.focus();
+  input.select();
+  let done=false;
+  const commit=()=>{
+    if(done)return;
+    done=true;
+    const newName=input.value.trim();
+    if(!newName||newName===currentName){
+      spanEl.innerHTML=original;
+      return;
+    }
+    c.items[idx].n=newName;
+    save();render();
+  };
+  const cancel=()=>{
+    if(done)return;
+    done=true;
+    spanEl.innerHTML=original;
+  };
+  input.addEventListener('blur',commit);
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();input.blur();}
+    else if(e.key==='Escape'){e.preventDefault();cancel();}
+  });
 }
 function commitNotes(catId,idx){save()}
 
@@ -664,7 +720,7 @@ function render(){
     card.innerHTML=`
       <div class="card-head">
         <span class="card-icon">${cat.icon}</span>
-        <span class="card-label">${escapeHtml(cat.label)}</span>
+        <span class="card-label" ondblclick="renameCat('${cat.id}')" title="더블클릭하여 이름 변경">${escapeHtml(cat.label)}</span>
         <span class="card-meta">${done}/${cat.items.length} · ${pct}%</span>
         <button onclick="deleteCat('${cat.id}')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:0 0 0 8px;line-height:1" title="카테고리 삭제">×</button>
       </div>
@@ -679,10 +735,10 @@ function render(){
       const row=document.createElement('div');
       row.className='irow'+(isOpen?' open':'');
       row.innerHTML=`
-        <div class="irow-main" onclick="toggleItem('${cat.id}',${realIdx})">
+        <div class="irow-main">
           <span class="drag-handle" onclick="event.stopPropagation()" title="드래그하여 순서 변경">⋮⋮</span>
-          <span class="toggle-ind">▶</span>
-          <span class="iname">${escapeHtml(item.n)}${item.tag?`<span class="itag">${escapeHtml(item.tag)}</span>`:''}${dd?`<span class="dday ${dd.cls}">${dd.text}</span>`:''}</span>
+          <span class="toggle-ind" onclick="toggleItem('${cat.id}',${realIdx})">▶</span>
+          <span class="iname" ondblclick="editItemName(this,'${cat.id}',${realIdx})" onclick="toggleItem('${cat.id}',${realIdx})" title="더블클릭하여 이름 수정">${escapeHtml(item.n)}${item.tag?`<span class="itag">${escapeHtml(item.tag)}</span>`:''}${dd?`<span class="dday ${dd.cls}">${dd.text}</span>`:''}</span>
           <button class="badge" style="${BADGE_STYLE[item.s]}" onclick="event.stopPropagation();cycleStatus('${cat.id}',${realIdx})" title="클릭하여 상태 변경">${item.s}</button>
           <button class="del-btn" onclick="event.stopPropagation();deleteItem('${cat.id}',${realIdx})" title="삭제">×</button>
         </div>
@@ -777,9 +833,7 @@ document.getElementById('fr').addEventListener('click',e=>{
     if(window.innerWidth>700){header.classList.remove('hide');return}
     const y=window.scrollY;
     const dy=y-lastY;
-    // Show near top
     if(y<40){header.classList.remove('hide')}
-    // Hide on scroll down (after threshold), show on scroll up
     else if(dy>4){header.classList.add('hide')}
     else if(dy<-4){header.classList.remove('hide')}
     lastY=y;
@@ -787,6 +841,45 @@ document.getElementById('fr').addEventListener('click',e=>{
   }
   window.addEventListener('scroll',()=>{
     if(!ticking){requestAnimationFrame(onScroll);ticking=true}
+  },{passive:true});
+})();
+
+// ── Long-press support for mobile item name editing (delegated) ──
+(function(){
+  let timer=null;
+  let target=null;
+  let startX=0,startY=0;
+  const grid=document.getElementById('mg');
+  grid.addEventListener('touchstart',e=>{
+    const span=e.target.closest('.iname');
+    if(!span)return;
+    target=span;
+    const t=e.touches[0];
+    startX=t.clientX;startY=t.clientY;
+    timer=setTimeout(()=>{
+      if(!target)return;
+      // Find which item this is by walking up to .irow-main and looking at handlers
+      const dblHandler=target.getAttribute('ondblclick');
+      if(dblHandler){
+        // Trigger it manually
+        const fn=new Function('event',dblHandler);
+        try{fn.call(target,e);}catch(err){}
+      }
+      timer=null;
+    },550);
+  },{passive:true});
+  grid.addEventListener('touchmove',e=>{
+    if(!timer)return;
+    const t=e.touches[0];
+    if(Math.abs(t.clientX-startX)>10||Math.abs(t.clientY-startY)>10){
+      clearTimeout(timer);timer=null;target=null;
+    }
+  },{passive:true});
+  grid.addEventListener('touchend',()=>{
+    if(timer){clearTimeout(timer);timer=null;target=null;}
+  },{passive:true});
+  grid.addEventListener('touchcancel',()=>{
+    if(timer){clearTimeout(timer);timer=null;target=null;}
   },{passive:true});
 })();
 
