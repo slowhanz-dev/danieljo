@@ -141,11 +141,13 @@ button{cursor:pointer}
   padding:9px 10px;
   background:rgba(255,255,255,.88);
   border:1px solid color-mix(in srgb,var(--cat-color) 22%,var(--border) 78%);
-  border-left:6px solid var(--status-color);
+  border-left:8px solid var(--cat-color);
   border-radius:8px;
+  touch-action:none;
 }
 .irow[draggable=true]{cursor:grab}
 .irow.dragging{opacity:.45}
+.irow.touch-dragging{opacity:.55;box-shadow:0 10px 24px rgba(0,0,0,.14)}
 .iname{
   min-width:0;
   min-height:32px;
@@ -170,7 +172,7 @@ button{cursor:pointer}
   font-size:13px;
   font-weight:800;
   white-space:nowrap;
-  cursor:default;
+  cursor:pointer;
 }
 .del-btn{
   width:30px;
@@ -281,11 +283,16 @@ button{cursor:pointer}
   .del-btn{grid-column:2}
 }
 @media print{
+  @page{size:A4 landscape;margin:8mm}
   .header-actions,.toolbar .btn,.add-row,.add-cat-btn,.del-btn,.del-cat,.modal-overlay,.save-toast{display:none!important}
   .header{position:static;padding:12px 0;background:#fff;border-bottom:1px solid #ccc}
-  .main{max-width:none;padding:12px 0}
-  .grid{display:block}
+  .main{width:100%;max-width:none;padding:12px 0}
+  .stats-row{grid-template-columns:repeat(4,1fr)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .card.today{grid-column:1/-1}
   .card{break-inside:avoid;margin-bottom:12px;box-shadow:none}
+  .card-label,.iname{font-size:13px}
+  .badge{font-size:11px;padding:4px 8px}
   body{background:#fff;color:#000}
 }
 </style>
@@ -348,7 +355,7 @@ button{cursor:pointer}
 const KEY = 'bunnar_dashboard_v1';
 const TODAY_ID = 'today';
 const DONE_ID = 'done-check';
-const STATUSES = ['할일', '진행중', '완료'];
+const STATUSES = ['할일', '진행확인', '완료', '진행중'];
 const FILTERS = [
   { key:'할일', label:'할일' },
   { key:'all', label:'전체' },
@@ -357,8 +364,9 @@ const FILTERS = [
 ];
 const BADGE_STYLE = {
   '할일': { bg:'#FFE9A8', text:'#664600', line:'#E6B833' },
-  '진행중': { bg:'#BBDCF8', text:'#0C447C', line:'#378ADD' },
+  '진행확인': { bg:'#E8E3FF', text:'#4B3A92', line:'#7F77DD' },
   '완료': { bg:'#BFE9D6', text:'#085041', line:'#1D9E75' },
+  '진행중': { bg:'#BBDCF8', text:'#0C447C', line:'#378ADD' },
 };
 const COLORS = ['#378ADD','#1D9E75','#BA7517','#3B6D11','#7F77DD','#D85A30','#993556'];
 
@@ -381,12 +389,14 @@ let DATA = defaultData();
 let activeFilter = '할일';
 let unsubscribeDashboard = null;
 let draggedItemId = '';
+let touchDrag = null;
 
 function uid(){return 'id_' + Math.random().toString(36).slice(2,9) + Date.now().toString(36)}
 function escapeHtml(v){return String(v || '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function statusOf(s){
   const text = String(s || '');
   if (text.includes('완료') || text === 'done') return '완료';
+  if (text.includes('확인') || text === 'check') return '진행확인';
   if (text.includes('진행') || text.includes('수행') || text === 'doing') return '진행중';
   return '할일';
 }
@@ -428,15 +438,6 @@ function normalizeData(raw){
   if (todayIndex > 0) mapped.unshift(mapped.splice(todayIndex,1)[0]);
   mapped.find(cat=>cat.id === TODAY_ID).color = '#8E8E86';
   const done = mapped.find(cat=>cat.id === DONE_ID);
-  mapped.forEach(cat=>{
-    if (cat.id === DONE_ID) return;
-    const keep = [];
-    cat.items.forEach(item=>{
-      if (item.s === '완료') done.items.push(item);
-      else keep.push(item);
-    });
-    cat.items = keep;
-  });
   done.items.forEach(item=>item.s = '완료');
   return mapped;
 }
@@ -509,7 +510,7 @@ function calcStats(){
   return {
     total: all.length,
     done: all.filter(i=>i.s === '완료').length,
-    active: all.filter(i=>i.s === '진행중').length,
+    active: all.filter(i=>i.s === '진행중' || i.s === '진행확인').length,
     todo: all.filter(i=>i.s === '할일').length,
   };
 }
@@ -526,7 +527,7 @@ function cycleStatus(catId, itemId){
   const found = findItem(itemId);
   if (!found) return;
   found.item.s = STATUSES[(STATUSES.indexOf(found.item.s) + 1) % STATUSES.length];
-  if (found.item.s === '완료') moveItem(itemId, DONE_ID);
+  activeFilter = 'all';
   save();
   render();
 }
@@ -586,6 +587,53 @@ function autoGrow(textarea){
   textarea.style.height = textarea.scrollHeight + 'px';
 }
 
+function beginTouchDrag(row, itemId, event){
+  if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+  if (event.target.closest('button')) return;
+  touchDrag = {
+    row,
+    itemId,
+    startX: event.clientX,
+    startY: event.clientY,
+    dragging: false,
+  };
+}
+
+function moveTouchDrag(event){
+  if (!touchDrag || (event.pointerType !== 'touch' && event.pointerType !== 'pen')) return;
+  const dx = Math.abs(event.clientX - touchDrag.startX);
+  const dy = Math.abs(event.clientY - touchDrag.startY);
+  if (!touchDrag.dragging && dx + dy > 14) {
+    touchDrag.dragging = true;
+    draggedItemId = touchDrag.itemId;
+    touchDrag.row.classList.add('touch-dragging');
+  }
+  if (touchDrag.dragging) event.preventDefault();
+}
+
+function endTouchDrag(event){
+  if (!touchDrag || (event.pointerType !== 'touch' && event.pointerType !== 'pen')) return;
+  const current = touchDrag;
+  current.row.classList.remove('touch-dragging');
+  if (current.dragging) {
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const targetRow = target && target.closest('.irow');
+    const targetCard = target && target.closest('.card');
+    if (targetRow && targetRow.dataset.itemId !== current.itemId) {
+      const catId = targetRow.closest('.card').dataset.catId;
+      moveItem(current.itemId, catId, targetRow.dataset.itemId);
+      save();
+      render();
+    } else if (targetCard) {
+      moveItem(current.itemId, targetCard.dataset.catId);
+      save();
+      render();
+    }
+  }
+  draggedItemId = '';
+  touchDrag = null;
+}
+
 function render(){
   const filterBtn = document.getElementById('filterCycleBtn');
   const filter = FILTERS.find(item=>item.key === activeFilter) || FILTERS[0];
@@ -640,12 +688,11 @@ function render(){
         row.className = 'irow';
         row.draggable = true;
         row.dataset.itemId = item.id;
-        row.style.setProperty('--status-color', style.line);
         row.style.setProperty('--badge-bg', style.bg);
         row.style.setProperty('--badge-text', style.text);
         row.innerHTML = `
           <textarea class="iname" rows="1" aria-label="할일">${escapeHtml(item.n)}</textarea>
-          <span class="badge" title="상태">${item.s}</span>
+          <button class="badge" type="button" title="상태 변경">${item.s}</button>
           <button class="del-btn" type="button" title="삭제">×</button>
         `;
         const textarea = row.querySelector('.iname');
@@ -655,13 +702,24 @@ function render(){
           save();
           render();
         });
-        row.querySelector('.del-btn').addEventListener('click',()=>deleteItem(item.id));
+        row.querySelector('.badge').addEventListener('click',e=>{
+          e.stopPropagation();
+          cycleStatus(cat.id,item.id);
+        });
+        row.querySelector('.del-btn').addEventListener('click',e=>{
+          e.stopPropagation();
+          deleteItem(item.id);
+        });
         row.addEventListener('dragstart',e=>{
           draggedItemId = item.id;
           row.classList.add('dragging');
           e.dataTransfer.setData('text/plain', item.id);
         });
         row.addEventListener('dragend',()=>row.classList.remove('dragging'));
+        row.addEventListener('pointerdown',e=>beginTouchDrag(row,item.id,e));
+        row.addEventListener('pointermove',moveTouchDrag);
+        row.addEventListener('pointerup',endTouchDrag);
+        row.addEventListener('pointercancel',endTouchDrag);
         row.addEventListener('dragover',e=>{
           if (!draggedItemId || draggedItemId === item.id) return;
           e.preventDefault();
@@ -766,12 +824,25 @@ function importData(file){
   reader.readAsText(file);
 }
 
+function printDashboard(){
+  const previousFilter = activeFilter;
+  activeFilter = 'all';
+  render();
+  const restore = () => {
+    activeFilter = previousFilter;
+    render();
+    window.removeEventListener('afterprint', restore);
+  };
+  window.addEventListener('afterprint', restore);
+  setTimeout(()=>window.print(), 80);
+}
+
 document.getElementById('filterCycleBtn').addEventListener('click',()=>{
   const currentIndex = FILTERS.findIndex(item=>item.key === activeFilter);
   activeFilter = FILTERS[(currentIndex + 1) % FILTERS.length].key;
   render();
 });
-document.getElementById('printBtn').addEventListener('click',()=>window.print());
+document.getElementById('printBtn').addEventListener('click',printDashboard);
 document.getElementById('exportBtn').addEventListener('click',exportData);
 document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
 document.getElementById('importFile').addEventListener('change',e=>{
