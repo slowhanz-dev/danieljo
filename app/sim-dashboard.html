@@ -135,7 +135,7 @@ button{cursor:pointer}
 .empty{padding:16px;color:var(--text3);text-align:center;font-size:14px}
 .irow{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto auto;
+  grid-template-columns:24px minmax(0,1fr) auto auto;
   gap:8px;
   align-items:start;
   padding:9px 10px;
@@ -148,6 +148,22 @@ button{cursor:pointer}
 .irow[draggable=true]{cursor:grab}
 .irow.dragging{opacity:.45}
 .irow.touch-dragging{opacity:.55;box-shadow:0 10px 24px rgba(0,0,0,.14)}
+.drag-handle{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:24px;
+  min-height:32px;
+  border:0;
+  background:transparent;
+  color:#9ea097;
+  cursor:grab;
+  font-size:18px;
+  font-weight:800;
+  line-height:1;
+  touch-action:none;
+}
+.drag-handle:active{cursor:grabbing;color:var(--cat-color)}
 .iname{
   min-width:0;
   min-height:32px;
@@ -174,7 +190,7 @@ button{cursor:pointer}
   white-space:nowrap;
   cursor:pointer;
 }
-.del-btn{
+.color-btn,.del-btn{
   width:30px;
   height:30px;
   border:0;
@@ -184,7 +200,13 @@ button{cursor:pointer}
   font-size:18px;
   line-height:1;
 }
-.del-btn:hover{background:var(--surface2);color:var(--red)}
+.color-btn{
+  border:1px solid var(--cat-border);
+  background:var(--cat-wash);
+  color:var(--cat-color);
+  font-size:13px;
+}
+.color-btn:hover,.del-btn:hover{background:var(--surface2);color:var(--red)}
 .add-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:0 12px 12px}
 .add-input{
   min-height:42px;
@@ -279,8 +301,8 @@ button{cursor:pointer}
   .toolbar{align-items:flex-start;flex-direction:column}
   .grid{grid-template-columns:1fr}
   .card.today{grid-column:auto}
-  .irow{grid-template-columns:minmax(0,1fr) auto}
-  .del-btn{grid-column:2}
+  .irow{grid-template-columns:24px minmax(0,1fr) auto}
+  .del-btn{grid-column:3}
 }
 @media print{
   @page{size:A4 landscape;margin:8mm}
@@ -292,6 +314,7 @@ button{cursor:pointer}
   .card.today{grid-column:1/-1}
   .card{break-inside:avoid;margin-bottom:12px;box-shadow:none}
   .card-label,.iname{font-size:13px}
+  .drag-handle,.color-btn{display:none}
   .badge{font-size:11px;padding:4px 8px}
   body{background:#fff;color:#000}
 }
@@ -589,7 +612,8 @@ function autoGrow(textarea){
 
 function beginTouchDrag(row, itemId, event){
   if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-  if (event.target.closest('button')) return;
+  if (!event.target.closest('.drag-handle')) return;
+  event.preventDefault();
   touchDrag = {
     row,
     itemId,
@@ -665,7 +689,10 @@ function render(){
         <span class="card-icon">${escapeHtml(cat.icon)}</span>
         <input class="card-label" value="${escapeHtml(cat.label)}" ${cat.locked ? 'readonly' : ''} aria-label="보드 이름">
         <span class="card-meta">${done}/${cat.items.length} · ${pct}%</span>
-        ${cat.locked ? '<span></span>' : `<button class="del-cat" type="button" title="보드 삭제" data-delete-cat="${cat.id}">×</button>`}
+        <span>
+          <button class="color-btn" type="button" title="보드 컬러 변경" data-color-cat="${cat.id}">색</button>
+          ${cat.locked ? '' : `<button class="del-cat" type="button" title="보드 삭제" data-delete-cat="${cat.id}">×</button>`}
+        </span>
       </div>
       <div class="pbar"><div class="pfill" style="width:${pct}%;background:${cat.color}"></div></div>
     `;
@@ -691,6 +718,7 @@ function render(){
         row.style.setProperty('--badge-bg', style.bg);
         row.style.setProperty('--badge-text', style.text);
         row.innerHTML = `
+          <button class="drag-handle" type="button" title="드래그해서 이동" aria-label="드래그해서 이동">⋮⋮</button>
           <textarea class="iname" rows="1" aria-label="할일">${escapeHtml(item.n)}</textarea>
           <button class="badge" type="button" title="상태 변경">${item.s}</button>
           <button class="del-btn" type="button" title="삭제">×</button>
@@ -711,6 +739,10 @@ function render(){
           deleteItem(item.id);
         });
         row.addEventListener('dragstart',e=>{
+          if (!e.target.closest('.drag-handle')) {
+            e.preventDefault();
+            return;
+          }
           draggedItemId = item.id;
           row.classList.add('dragging');
           e.dataTransfer.setData('text/plain', item.id);
@@ -777,6 +809,7 @@ function render(){
   grid.appendChild(addBtn);
 
   grid.querySelectorAll('[data-delete-cat]').forEach(btn=>btn.addEventListener('click',()=>deleteCat(btn.dataset.deleteCat)));
+  grid.querySelectorAll('[data-color-cat]').forEach(btn=>btn.addEventListener('click',()=>changeCatColor(btn.dataset.colorCat)));
 }
 
 function showAddCat(){
@@ -800,6 +833,22 @@ function addCategory(){
   save();
   render();
   closeCatModalDirect();
+}
+
+function changeCatColor(catId){
+  const cat = DATA.find(c=>c.id === catId);
+  if (!cat) return;
+  const current = cat.color || COLORS[0];
+  const picked = prompt('보드 컬러를 입력해주세요. 예: #D85A30', current);
+  if (!picked) return;
+  const color = picked.trim();
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+    alert('컬러는 #D85A30 처럼 입력해주세요.');
+    return;
+  }
+  cat.color = color;
+  save();
+  render();
 }
 
 function exportData(){
