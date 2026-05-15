@@ -14,7 +14,7 @@
   .inbox-head h2,
   .qt,
   .card-label,
-  .add-cat-btn{font-size:18px;}
+  .add-cat-btn{font-size:15px;}
 
   .iname,
   .inline-edit,
@@ -22,7 +22,7 @@
   .add-input,
   .btn,
   .modal input,
-  .modal select{font-size:18px;}
+  .modal select{font-size:15px;}
 
   .fbtn,
   .hint,
