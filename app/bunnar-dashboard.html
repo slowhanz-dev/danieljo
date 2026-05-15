@@ -116,6 +116,11 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .pbar{height:2px;background:var(--border)}
 .pfill{height:100%;transition:width .4s ease}
 .items{padding:4px 0;flex:1}
+.items.empty{min-height:42px}
+.items.drop-target{outline:2px dashed var(--blue);outline-offset:-4px;background:var(--surface2)}
+.later-card{border-style:dashed}
+.later-card .card-head{background:var(--surface2)}
+.later-card .items.empty::after{content:"지금 당장 안 해도 되는 일을 여기로 드래그";display:block;padding:14px 16px;font-size:11px;color:var(--text3)}
 
 .irow{border-bottom:1px solid transparent;transition:background .12s}
 .irow:hover{background:var(--surface2)}
@@ -394,6 +399,61 @@ let openItemKey = null;
 let unsubscribeDashboard = null;
 let suppressSnapshot = false;
 
+const LATER_CAT_ID = 'later-tasks';
+const LATER_CAT_TEMPLATE = {
+  id:LATER_CAT_ID,
+  label:'나중에 해도 되는 일',
+  icon:'🕰️',
+  color:'#8A8174',
+  items:[]
+};
+
+function ensureLaterCategory(){
+  if(!Array.isArray(DATA)) DATA=[];
+  let changed=false;
+  let idx=DATA.findIndex(c=>c.id===LATER_CAT_ID);
+  if(idx<0){
+    DATA.push(JSON.parse(JSON.stringify(LATER_CAT_TEMPLATE)));
+    changed=true;
+  }else{
+    const cat=DATA[idx];
+    if(!cat.label) cat.label=LATER_CAT_TEMPLATE.label;
+    if(!cat.icon) cat.icon=LATER_CAT_TEMPLATE.icon;
+    if(!cat.color) cat.color=LATER_CAT_TEMPLATE.color;
+    if(!Array.isArray(cat.items)) cat.items=[];
+    if(idx!==DATA.length-1){
+      const [movedCat]=DATA.splice(idx,1);
+      DATA.push(movedCat);
+      changed=true;
+    }
+  }
+  return changed;
+}
+
+function getDragPayload(e){
+  const raw=e.dataTransfer.getData('text/plain');
+  if(!raw||raw.indexOf('::')<0)return null;
+  const [srcCatId,srcIdxRaw]=raw.split('::');
+  const srcIdx=parseInt(srcIdxRaw,10);
+  if(!srcCatId||Number.isNaN(srcIdx))return null;
+  return{srcCatId,srcIdx};
+}
+
+function moveItemByDrag(srcCatId,srcIdx,tgtCatId,insertAt){
+  const srcCat=DATA.find(c=>c.id===srcCatId);
+  const tgtCat=DATA.find(c=>c.id===tgtCatId);
+  if(!srcCat||!tgtCat||!srcCat.items||!tgtCat.items||!srcCat.items[srcIdx])return false;
+  const [moved]=srcCat.items.splice(srcIdx,1);
+  if(srcCat===tgtCat&&insertAt>srcIdx)insertAt--;
+  insertAt=Math.max(0,Math.min(insertAt,tgtCat.items.length));
+  tgtCat.items.splice(insertAt,0,moved);
+  ensureLaterCategory();
+  openItemKey=null;
+  save();
+  render();
+  return true;
+}
+
 function todayISO(){return new Date().toISOString().slice(0,10)}
 function daysUntil(d){if(!d)return null;const t=new Date(todayISO()+'T00:00:00');const due=new Date(d+'T00:00:00');return Math.round((due-t)/86400000)}
 function ddayLabel(d){const n=daysUntil(d);if(n===null)return null;if(n<0)return{cls:'over',text:`D+${Math.abs(n)}`};if(n===0)return{cls:'urgent',text:'D-DAY'};if(n<=3)return{cls:'urgent',text:`D-${n}`};if(n<=7)return{cls:'soon',text:`D-${n}`};return{cls:'normal',text:`D-${n}`}}
@@ -648,6 +708,7 @@ function importData(e){
       if(Array.isArray(p)){DATA=p;QUICK=[]}
       else if(p&&Array.isArray(p.items)){DATA=p.items;QUICK=Array.isArray(p.quickTasks)?p.quickTasks:[]}
       else throw new Error();
+      ensureLaterCategory();
       save();render();renderQuick();
       alert('가져오기 완료!');
     }catch(err){alert('올바른 JSON 파일이 아닙니다.')}
@@ -718,7 +779,7 @@ function render(){
     const pct=cat.items.length?Math.round(done/cat.items.length*100):0;
     const vis=activeFilter==='all'?cat.items:cat.items.filter(i=>i.s===activeFilter);
     const card=document.createElement('div');
-    card.className='card';
+    card.className='card'+(cat.id===LATER_CAT_ID?' later-card':'');
     card.innerHTML=`
       <div class="card-head">
         <span class="card-icon">${cat.icon}</span>
@@ -728,7 +789,7 @@ function render(){
       </div>
       <div class="pbar"><div class="pfill" style="width:${pct}%;background:${cat.color}"></div></div>`;
     const itemsDiv=document.createElement('div');
-    itemsDiv.className='items';
+    itemsDiv.className='items'+(vis.length===0?' empty':'');
     vis.forEach(item=>{
       const realIdx=cat.items.indexOf(item);
       const key=cat.id+'::'+realIdx;
@@ -785,27 +846,61 @@ function render(){
       });
       row.addEventListener('drop',e=>{
         e.preventDefault();
-        const src=e.dataTransfer.getData('text/plain').split('::');
-        const srcCatId=src[0],srcIdx=parseInt(src[1]);
-        const tgtCatId=cat.id,tgtIdx=realIdx;
+        e.stopPropagation();
         row.classList.remove('drop-above','drop-below');
-        if(srcCatId===tgtCatId&&srcIdx===tgtIdx)return;
-        const srcCat=DATA.find(c=>c.id===srcCatId);
-        const tgtCat=DATA.find(c=>c.id===tgtCatId);
-        if(!srcCat||!tgtCat||!srcCat.items[srcIdx])return;
+        const payload=getDragPayload(e);
+        if(!payload)return;
         const rect=row.getBoundingClientRect();
         const after=e.clientY>rect.top+rect.height/2;
-        const [moved]=srcCat.items.splice(srcIdx,1);
-        let insertAt=tgtIdx;
-        if(srcCat===tgtCat&&srcIdx<tgtIdx)insertAt--;
-        if(after)insertAt++;
-        insertAt=Math.max(0,Math.min(insertAt,tgtCat.items.length));
-        tgtCat.items.splice(insertAt,0,moved);
-        openItemKey=null;
-        save();render();
+        const insertAt=realIdx+(after?1:0);
+        moveItemByDrag(payload.srcCatId,payload.srcIdx,cat.id,insertAt);
       });
       itemsDiv.appendChild(row);
     });
+
+    function clearDropTarget(){
+      itemsDiv.classList.remove('drop-target');
+      document.querySelectorAll('.drop-above,.drop-below').forEach(el=>el.classList.remove('drop-above','drop-below'));
+    }
+
+    itemsDiv.addEventListener('dragover',e=>{
+      if(e.target.closest('.irow'))return;
+      e.preventDefault();
+      itemsDiv.classList.add('drop-target');
+    });
+    itemsDiv.addEventListener('dragleave',e=>{
+      if(!itemsDiv.contains(e.relatedTarget))itemsDiv.classList.remove('drop-target');
+    });
+    itemsDiv.addEventListener('drop',e=>{
+      if(e.target.closest('.irow'))return;
+      e.preventDefault();
+      e.stopPropagation();
+      clearDropTarget();
+      const payload=getDragPayload(e);
+      if(!payload)return;
+      const tgtCat=DATA.find(c=>c.id===cat.id);
+      moveItemByDrag(payload.srcCatId,payload.srcIdx,cat.id,tgtCat?tgtCat.items.length:0);
+    });
+
+    card.addEventListener('dragover',e=>{
+      if(e.target.closest('.irow'))return;
+      e.preventDefault();
+      itemsDiv.classList.add('drop-target');
+    });
+    card.addEventListener('dragleave',e=>{
+      if(!card.contains(e.relatedTarget))itemsDiv.classList.remove('drop-target');
+    });
+    card.addEventListener('drop',e=>{
+      if(e.target.closest('.irow'))return;
+      e.preventDefault();
+      e.stopPropagation();
+      clearDropTarget();
+      const payload=getDragPayload(e);
+      if(!payload)return;
+      const tgtCat=DATA.find(c=>c.id===cat.id);
+      moveItemByDrag(payload.srcCatId,payload.srcIdx,cat.id,tgtCat?tgtCat.items.length:0);
+    });
+
     card.appendChild(itemsDiv);
     const addRow=document.createElement('div');
     addRow.className='add-row';
@@ -941,7 +1036,9 @@ auth.onAuthStateChanged(async user=>{
   const loaded=await loadData();
   DATA=loaded.items||[];
   QUICK=loaded.quickTasks||[];
+  const laterChanged=ensureLaterCategory();
   render();renderQuick();
+  if(laterChanged)save();
 
   unsubscribeDashboard=DASHBOARD_DOC.onSnapshot(snap=>{
     if(suppressSnapshot){suppressSnapshot=false;return}
@@ -949,7 +1046,9 @@ auth.onAuthStateChanged(async user=>{
     const d=snap.data();
     if(Array.isArray(d.items))DATA=d.items;
     if(Array.isArray(d.quickTasks))QUICK=d.quickTasks;
+    const laterChanged=ensureLaterCategory();
     setLocalBackup();render();renderQuick();
+    if(laterChanged)save();
   },err=>{console.error(err)});
 });
 </script>
