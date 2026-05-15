@@ -1,0 +1,53 @@
+/* BUNNAR dashboard font-size patch
+   화면용 글씨만 아주 조금 키웁니다. 인쇄 스타일은 건드리지 않습니다. */
+@media screen {
+  body{font-size:15px;}
+  .logo{font-size:18px;}
+  .logo span{font-size:14px;}
+
+  .digest-head h2{font-size:15px;}
+  .digest-col h3,
+  .section-title{font-size:12px;}
+  .digest-item,
+  .inbox-empty{font-size:13px;}
+
+  .inbox-head h2,
+  .qt,
+  .card-label,
+  .add-cat-btn{font-size:14px;}
+
+  .iname,
+  .inline-edit,
+  .iexp textarea,
+  .add-input,
+  .btn,
+  .modal input,
+  .modal select{font-size:13px;}
+
+  .fbtn,
+  .hint,
+  .iexp-row,
+  .modal label,
+  .mini-btn,
+  .save-toast{font-size:12px;}
+
+  .badge,
+  .dday,
+  .itag,
+  .stat-label,
+  .section-title .count,
+  .inbox-head .pill,
+  .digest-item .dd{font-size:11px;}
+
+  .stat-num{font-size:25px;}
+}
+
+@media screen and (max-width:700px){
+  body{font-size:15px;}
+  .logo{font-size:15px;}
+  .header-actions .btn{font-size:12px;}
+  .fbtn{font-size:11px;}
+  .iname{font-size:14px;}
+  .badge{font-size:12px;padding:3px 10px;}
+  .stat-num{font-size:21px;}
+}

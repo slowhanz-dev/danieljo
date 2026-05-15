@@ -1,0 +1,9 @@
+1. bunnar-dashboard-font-up.css 파일을 /app/ 폴더에 업로드합니다.
+2. bunnar-dashboard.html 파일의 <head> 안에서 기존 <style>...</style> 뒤, </head> 바로 위에 아래 한 줄을 추가합니다.
+
+<link rel="stylesheet" href="/app/bunnar-dashboard-font-up.css?v=20260515">
+
+3. 저장 후 아래 주소에서 새로고침합니다.
+https://www.danieljo.com/app/bunnar-dashboard.html
+
+4. 모바일 홈화면 바로가기에 예전 화면이 남아 있으면 사파리에서 새로고침하거나, 홈화면 바로가기를 지웠다가 다시 추가합니다.
