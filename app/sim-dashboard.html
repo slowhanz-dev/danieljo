@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIMBANLE 업무 보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f4ee;
+  --paper: #fffdfa;
+  --ink: #20201c;
+  --muted: #757167;
+  --line: #ded8cb;
+  --soft: #ebe6da;
+  --todo: #fff3c6;
+  --doing: #d9ecff;
+  --done: #dff5e5;
+  --danger: #c75353;
+  --shadow: 0 10px 28px rgba(41, 35, 24, .08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Pretendard, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 17px;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px clamp(16px, 4vw, 36px);
+  background: rgba(255, 253, 250, .92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.brand strong {
+  font-size: 22px;
+  letter-spacing: .01em;
+}
+
+.brand span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 13px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.btn:hover {
+  background: #f2eee5;
+}
+
+.btn.primary {
+  border-color: #20201c;
+  background: #20201c;
+  color: #fffdfa;
+}
+
+.btn.danger {
+  border-color: rgba(199, 83, 83, .35);
+  color: var(--danger);
+}
+
+.wrap {
+  width: min(1480px, 100%);
+  margin: 0 auto;
+  padding: 22px clamp(12px, 3vw, 28px) 46px;
+}
+
+.today-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+  padding: 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.today-panel h1 {
+  margin: 0 0 12px;
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.1;
+}
+
+.quick-add {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 140px 120px;
+  gap: 8px;
+}
+
+.field,
+.select {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+}
+
+.field:focus,
+.select:focus,
+.task-title:focus,
+.task-note:focus {
+  border-color: #2f6fb2;
+  box-shadow: 0 0 0 3px rgba(47, 111, 178, .14);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(86px, 1fr));
+  gap: 8px;
+  min-width: 320px;
+}
+
+.summary-card {
+  padding: 12px;
+  background: #f8f4ea;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.summary-card strong {
+  display: block;
+  font-size: 28px;
+}
+
+.summary-card span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter {
+  min-width: 74px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 15px;
+  background: var(--paper);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.filter.on {
+  border-color: #20201c;
+  background: #20201c;
+  color: #fffdfa;
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.board {
+  min-height: 260px;
+  background: var(--paper);
+  border: 2px solid var(--board-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.board.drag-over {
+  outline: 4px solid rgba(47, 111, 178, .18);
+  outline-offset: 2px;
+}
+
+.board-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 14px;
+  background: color-mix(in srgb, var(--board-color) 16%, #fff 84%);
+  border-bottom: 1px solid color-mix(in srgb, var(--board-color) 38%, #fff 62%);
+}
+
+.board-title {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+  outline: none;
+}
+
+.board-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .72);
+  font-weight: 700;
+}
+
+.board-tools {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px 0;
+}
+
+.mini {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.mini:hover {
+  color: var(--ink);
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 156px;
+  padding: 12px 14px 14px;
+}
+
+.task {
+  border: 1px solid var(--line);
+  border-left: 7px solid var(--status-color);
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+}
+
+.task[draggable="true"] {
+  cursor: grab;
+}
+
+.task.dragging {
+  opacity: .55;
+}
+
+.task-title {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 6px;
+  resize: none;
+  color: var(--ink);
+  background: transparent;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.task-note {
+  width: 100%;
+  min-height: 32px;
+  margin-top: 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 6px;
+  resize: vertical;
+  color: var(--muted);
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.status {
+  min-height: 35px;
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: var(--status-color);
+  color: #24221c;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.empty {
+  padding: 18px 8px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 15px;
+}
+
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 40;
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  padding: 11px 15px;
+  border-radius: 8px;
+  background: #20201c;
+  color: #fffdfa;
+  transition: .2s ease;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.login-card {
+  max-width: 520px;
+  margin: 54px auto;
+  padding: 26px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.login-card h1 {
+  margin: 0 0 10px;
+}
+
+.login-card p {
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .topbar,
+  .today-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .today-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .summary {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 16px;
+  }
+
+  .topbar {
+    position: static;
+  }
+
+  .quick-add {
+    grid-template-columns: 1fr;
+  }
+
+  .summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .summary-card {
+    padding: 10px 6px;
+  }
+
+  .summary-card strong {
+    font-size: 23px;
+  }
+
+  .board-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <strong>SIMBANLE 업무 보드</strong>
+    <span id="authStatus">로그인이 필요합니다</span>
+  </div>
+  <div class="top-actions">
+    <button class="btn" id="exportBtn" type="button">내보내기</button>
+    <button class="btn" id="importBtn" type="button">가져오기</button>
+    <button class="btn" id="loginBtn" type="button">Google 로그인</button>
+    <button class="btn" id="logoutBtn" type="button" hidden>로그아웃</button>
+    <input type="file" id="importFile" accept=".json" hidden>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <section class="today-panel">
+    <div>
+      <h1>오늘의 할일</h1>
+      <form class="quick-add" id="quickAdd">
+        <input class="field" id="newTitle" type="text" placeholder="할 일을 적고 추가">
+        <select class="select" id="newBoard"></select>
+        <button class="btn primary" type="submit">추가</button>
+      </form>
+    </div>
+    <div class="summary" id="summary"></div>
+  </section>
+
+  <section class="controls">
+    <div>
+      <strong>진행확인</strong>
+      <div class="filter-group" id="filters">
+        <button class="filter" type="button" data-filter="all">전체</button>
+        <button class="filter" type="button" data-filter="done">완료</button>
+        <button class="filter" type="button" data-filter="doing">진행중</button>
+        <button class="filter on" type="button" data-filter="todo">할일</button>
+      </div>
+    </div>
+    <button class="btn primary" id="addBoardBtn" type="button">보드 추가</button>
+  </section>
+
+  <section class="board-grid" id="boards"></section>
+</main>
+
+<div class="toast" id="toast">저장되었습니다</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+const KEY = 'bunnar_dashboard_v2';
+const DONE_BOARD_ID = 'done-check';
+const STATUS_META = {
+  todo: { label: '할일', color: '#ffe58a' },
+  doing: { label: '진행중', color: '#b9dcff' },
+  done: { label: '완료', color: '#bcecc7' },
+};
+
+const BOARD_COLORS = ['#e86f51', '#2f80ed', '#27a87d', '#c6912f', '#7f6bd9', '#d55d95', '#557b2f'];
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBGBDywtb_UQwewBObvTSVxiXTTLDZQd2w",
+  authDomain: "bunnar-dashboard.firebaseapp.com",
+  projectId: "bunnar-dashboard",
+  storageBucket: "bunnar-dashboard.firebasestorage.app",
+  messagingSenderId: "170038311346",
+  appId: "1:170038311346:web:59e4eb30f65961aab80cab",
+  measurementId: "G-TDR9PS981E"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const DASHBOARD_DOC = db.collection('dashboards').doc('simbanle-main');
+
+let DATA = makeDefaultData();
+let activeFilter = 'todo';
+let unsubscribeDashboard = null;
+let saveTimer = null;
+
+function makeDefaultData() {
+  return [
+    {
+      id: 'today',
+      label: '오늘의 할일',
+      color: '#e86f51',
+      items: [
+        { id: makeId(), n: '오늘 꼭 해야 할 일 적기', s: 'todo', note: '' },
+      ],
+    },
+    {
+      id: 'daily',
+      label: '매일',
+      color: '#27a87d',
+      items: [
+        { id: makeId(), n: '매일 반복해서 챙길 일', s: 'todo', note: '' },
+      ],
+    },
+    {
+      id: 'working',
+      label: '진행중',
+      color: '#2f80ed',
+      items: [
+        { id: makeId(), n: '진행 중인 일 모아두기', s: 'doing', note: '' },
+      ],
+    },
+    {
+      id: DONE_BOARD_ID,
+      label: '다한일 한번더 확인용',
+      color: '#8b8f3d',
+      locked: true,
+      items: [],
+    },
+  ];
+}
+
+function makeId() {
+  return 'id_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[c]));
+}
+
+function normalizeStatus(status) {
+  if (['todo', 'doing', 'done'].includes(status)) return status;
+  const text = String(status || '');
+  if (text.includes('완료')) return 'done';
+  if (text.includes('진행') || text.includes('수행')) return 'doing';
+  return 'todo';
+}
+
+function normalizeData(raw) {
+  const source = Array.isArray(raw) && raw.length ? raw : makeDefaultData();
+  const boards = source.map((board, boardIndex) => ({
+    id: board.id || makeId(),
+    label: board.label || board.name || '새 보드',
+    color: board.color || BOARD_COLORS[boardIndex % BOARD_COLORS.length],
+    locked: board.id === DONE_BOARD_ID || board.locked === true,
+    items: Array.isArray(board.items) ? board.items.map(item => ({
+      id: item.id || makeId(),
+      n: item.n || item.title || '',
+      s: normalizeStatus(item.s || item.status),
+      note: item.note || item.tag || '',
+    })).filter(item => item.n.trim()) : [],
+  }));
+
+  if (!boards.some(board => board.id === DONE_BOARD_ID)) {
+    boards.push({ id: DONE_BOARD_ID, label: '다한일 한번더 확인용', color: '#8b8f3d', locked: true, items: [] });
+  }
+
+  const doneBoard = boards.find(board => board.id === DONE_BOARD_ID);
+  boards.forEach(board => {
+    if (board.id === DONE_BOARD_ID) return;
+    const stillHere = [];
+    board.items.forEach(item => {
+      if (item.s === 'done') {
+        doneBoard.items.push(item);
+      } else {
+        stillHere.push(item);
+      }
+    });
+    board.items = stillHere;
+  });
+  doneBoard.items.forEach(item => {
+    item.s = 'done';
+  });
+
+  return boards;
+}
+
+function getLocalBackupData() {
+  try {
+    const saved = localStorage.getItem(KEY);
+    return saved ? normalizeData(JSON.parse(saved)) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function loadData() {
+  try {
+    const snap = await DASHBOARD_DOC.get();
+    if (snap.exists && Array.isArray(snap.data().items)) {
+      const cloudData = normalizeData(snap.data().items);
+      localStorage.setItem(KEY, JSON.stringify(cloudData));
+      return cloudData;
+    }
+
+    const initialData = getLocalBackupData() || makeDefaultData();
+    await DASHBOARD_DOC.set({
+      items: initialData,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    localStorage.setItem(KEY, JSON.stringify(initialData));
+    return initialData;
+  } catch (e) {
+    console.error(e);
+    alert('데이터를 불러오지 못했습니다. 로그인 상태와 Firebase 설정을 확인해주세요.');
+    return getLocalBackupData() || makeDefaultData();
+  }
+}
+
+function queueSave() {
+  localStorage.setItem(KEY, JSON.stringify(DATA));
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 350);
+}
+
+async function save() {
+  if (!auth.currentUser) return;
+  try {
+    await DASHBOARD_DOC.set({
+      items: DATA,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: auth.currentUser.email || '',
+    }, { merge: true });
+    showToast();
+  } catch (e) {
+    console.error(e);
+    alert('저장하지 못했습니다. Firebase 권한이나 로그인 상태를 확인해주세요.');
+  }
+}
+
+function showToast() {
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => toast.classList.remove('show'), 1200);
+}
+
+function allItems() {
+  return DATA.flatMap(board => board.items.map(item => ({ ...item, boardId: board.id })));
+}
+
+function counts() {
+  const items = allItems();
+  return {
+    total: items.length,
+    todo: items.filter(item => item.s === 'todo').length,
+    doing: items.filter(item => item.s === 'doing').length,
+    done: items.filter(item => item.s === 'done').length,
+  };
+}
+
+function renderSummary() {
+  const stat = counts();
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-card"><strong>${stat.todo}</strong><span>할일</span></div>
+    <div class="summary-card"><strong>${stat.doing}</strong><span>진행중</span></div>
+    <div class="summary-card"><strong>${stat.done}</strong><span>완료</span></div>
+  `;
+}
+
+function renderBoardSelect() {
+  const select = document.getElementById('newBoard');
+  const current = select.value;
+  select.innerHTML = DATA
+    .filter(board => board.id !== DONE_BOARD_ID)
+    .map(board => `<option value="${board.id}">${escapeHtml(board.label)}</option>`)
+    .join('');
+  if (DATA.some(board => board.id === current)) select.value = current;
+}
+
+function renderBoards() {
+  const root = document.getElementById('boards');
+  root.innerHTML = '';
+
+  DATA.forEach(board => {
+    const visibleItems = activeFilter === 'all' ? board.items : board.items.filter(item => item.s === activeFilter);
+    const boardEl = document.createElement('article');
+    boardEl.className = 'board';
+    boardEl.style.setProperty('--board-color', board.color);
+    boardEl.dataset.boardId = board.id;
+    boardEl.innerHTML = `
+      <div class="board-head">
+        <input class="board-title" value="${escapeHtml(board.label)}" ${board.locked ? 'readonly' : ''} aria-label="보드 이름">
+        <span class="board-count">${visibleItems.length}</span>
+      </div>
+      <div class="board-tools">
+        <button class="mini" type="button" data-action="add-task" title="할일 추가">+</button>
+        <button class="mini" type="button" data-action="color" title="색상 변경">색</button>
+        ${board.locked ? '' : '<button class="mini" type="button" data-action="delete-board" title="보드 삭제">×</button>'}
+      </div>
+      <div class="task-list"></div>
+    `;
+
+    const titleInput = boardEl.querySelector('.board-title');
+    titleInput.addEventListener('change', () => {
+      board.label = titleInput.value.trim() || '새 보드';
+      queueSave();
+      render();
+    });
+
+    const list = boardEl.querySelector('.task-list');
+    if (visibleItems.length === 0) {
+      list.innerHTML = '<div class="empty">표시할 일이 없습니다</div>';
+    } else {
+      visibleItems.forEach(item => list.appendChild(renderTask(board, item)));
+    }
+
+    boardEl.addEventListener('dragover', event => {
+      event.preventDefault();
+      boardEl.classList.add('drag-over');
+    });
+    boardEl.addEventListener('dragleave', () => boardEl.classList.remove('drag-over'));
+    boardEl.addEventListener('drop', event => {
+      event.preventDefault();
+      boardEl.classList.remove('drag-over');
+      const itemId = event.dataTransfer.getData('text/plain');
+      moveItemToBoard(itemId, board.id);
+    });
+
+    boardEl.addEventListener('click', event => {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      const action = button.dataset.action;
+      if (action === 'add-task') addTaskToBoard(board.id);
+      if (action === 'delete-board') deleteBoard(board.id);
+      if (action === 'color') changeBoardColor(board.id);
+    });
+
+    root.appendChild(boardEl);
+  });
+}
+
+function renderTask(board, item) {
+  const task = document.createElement('div');
+  task.className = 'task';
+  task.draggable = true;
+  task.dataset.itemId = item.id;
+  task.style.setProperty('--status-color', STATUS_META[item.s].color);
+  task.innerHTML = `
+    <textarea class="task-title" rows="1" aria-label="할일 제목">${escapeHtml(item.n)}</textarea>
+    <textarea class="task-note" rows="1" placeholder="메모" aria-label="메모">${escapeHtml(item.note || '')}</textarea>
+    <div class="task-actions">
+      <button class="status" type="button" data-action="status">${STATUS_META[item.s].label}</button>
+      <button class="btn" type="button" data-action="move-next">다음 보드</button>
+      <button class="btn danger" type="button" data-action="delete-task">삭제</button>
+    </div>
+  `;
+
+  task.addEventListener('dragstart', event => {
+    task.classList.add('dragging');
+    event.dataTransfer.setData('text/plain', item.id);
+  });
+  task.addEventListener('dragend', () => task.classList.remove('dragging'));
+
+  const title = task.querySelector('.task-title');
+  const note = task.querySelector('.task-note');
+  title.addEventListener('change', () => {
+    item.n = title.value.trim() || '제목 없음';
+    queueSave();
+    render();
+  });
+  note.addEventListener('change', () => {
+    item.note = note.value.trim();
+    queueSave();
+  });
+
+  task.addEventListener('click', event => {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    const action = button.dataset.action;
+    if (action === 'status') cycleStatus(item.id);
+    if (action === 'move-next') moveToNextBoard(item.id);
+    if (action === 'delete-task') deleteTask(item.id);
+  });
+
+  return task;
+}
+
+function render() {
+  renderSummary();
+  renderBoardSelect();
+  renderBoards();
+}
+
+function findItem(itemId) {
+  for (const board of DATA) {
+    const index = board.items.findIndex(item => item.id === itemId);
+    if (index >= 0) return { board, item: board.items[index], index };
+  }
+  return null;
+}
+
+function addTaskToBoard(boardId, titleText) {
+  const board = DATA.find(item => item.id === boardId);
+  if (!board) return;
+  const title = titleText || prompt('추가할 일을 적어주세요');
+  if (!title || !title.trim()) return;
+  board.items.push({ id: makeId(), n: title.trim(), s: board.id === DONE_BOARD_ID ? 'done' : 'todo', note: '' });
+  queueSave();
+  render();
+}
+
+function deleteTask(itemId) {
+  const found = findItem(itemId);
+  if (!found) return;
+  found.board.items.splice(found.index, 1);
+  queueSave();
+  render();
+}
+
+function cycleStatus(itemId) {
+  const found = findItem(itemId);
+  if (!found) return;
+  const order = ['todo', 'doing', 'done'];
+  found.item.s = order[(order.indexOf(found.item.s) + 1) % order.length];
+  if (found.item.s === 'done') {
+    moveItemToBoard(itemId, DONE_BOARD_ID, false);
+  }
+  queueSave();
+  render();
+}
+
+function moveItemToBoard(itemId, boardId, shouldRender = true) {
+  const found = findItem(itemId);
+  const target = DATA.find(board => board.id === boardId);
+  if (!found || !target || found.board.id === target.id) return;
+  const [item] = found.board.items.splice(found.index, 1);
+  if (target.id === DONE_BOARD_ID) item.s = 'done';
+  if (target.id !== DONE_BOARD_ID && item.s === 'done') item.s = 'todo';
+  target.items.push(item);
+  queueSave();
+  if (shouldRender) render();
+}
+
+function moveToNextBoard(itemId) {
+  const found = findItem(itemId);
+  if (!found) return;
+  const index = DATA.findIndex(board => board.id === found.board.id);
+  const next = DATA[(index + 1) % DATA.length];
+  moveItemToBoard(itemId, next.id);
+}
+
+function addBoard() {
+  const label = prompt('새 보드 이름을 적어주세요');
+  if (!label || !label.trim()) return;
+  DATA.splice(Math.max(DATA.length - 1, 0), 0, {
+    id: makeId(),
+    label: label.trim(),
+    color: BOARD_COLORS[DATA.length % BOARD_COLORS.length],
+    items: [],
+  });
+  queueSave();
+  render();
+}
+
+function deleteBoard(boardId) {
+  const board = DATA.find(item => item.id === boardId);
+  if (!board || board.locked) return;
+  if (board.items.length && !confirm('보드 안의 할일도 함께 삭제됩니다. 삭제할까요?')) return;
+  DATA = DATA.filter(item => item.id !== boardId);
+  queueSave();
+  render();
+}
+
+function changeBoardColor(boardId) {
+  const board = DATA.find(item => item.id === boardId);
+  if (!board) return;
+  const currentIndex = BOARD_COLORS.indexOf(board.color);
+  board.color = BOARD_COLORS[(currentIndex + 1 + BOARD_COLORS.length) % BOARD_COLORS.length];
+  queueSave();
+  render();
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'simbanle-dashboard-' + new Date().toISOString().slice(0, 10) + '.json';
+  link.click();
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = event => {
+    try {
+      DATA = normalizeData(JSON.parse(event.target.result));
+      queueSave();
+      render();
+      alert('가져오기가 완료되었습니다.');
+    } catch (e) {
+      alert('올바른 JSON 파일이 아닙니다.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function login() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  auth.signInWithPopup(provider).catch(error => {
+    console.error(error);
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+      auth.signInWithRedirect(provider);
+      return;
+    }
+    alert('로그인에 실패했습니다. Firebase Authentication 설정을 확인해주세요.');
+  });
+}
+
+function logout() {
+  auth.signOut();
+}
+
+document.getElementById('quickAdd').addEventListener('submit', event => {
+  event.preventDefault();
+  const input = document.getElementById('newTitle');
+  addTaskToBoard(document.getElementById('newBoard').value, input.value);
+  input.value = '';
+  input.focus();
+});
+
+document.getElementById('filters').addEventListener('click', event => {
+  const button = event.target.closest('[data-filter]');
+  if (!button) return;
+  activeFilter = button.dataset.filter;
+  document.querySelectorAll('.filter').forEach(item => item.classList.toggle('on', item === button));
+  render();
+});
+
+document.getElementById('addBoardBtn').addEventListener('click', addBoard);
+document.getElementById('loginBtn').addEventListener('click', login);
+document.getElementById('logoutBtn').addEventListener('click', logout);
+document.getElementById('exportBtn').addEventListener('click', exportData);
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', event => {
+  if (event.target.files[0]) importData(event.target.files[0]);
+  event.target.value = '';
+});
+
+auth.onAuthStateChanged(async user => {
+  const authStatus = document.getElementById('authStatus');
+  document.getElementById('loginBtn').hidden = !!user;
+  document.getElementById('logoutBtn').hidden = !user;
+
+  if (unsubscribeDashboard) {
+    unsubscribeDashboard();
+    unsubscribeDashboard = null;
+  }
+
+  if (!user) {
+    authStatus.textContent = '로그인이 필요합니다';
+    document.getElementById('boards').innerHTML = `
+      <div class="login-card">
+        <h1>로그인 후 사용할 수 있습니다</h1>
+        <p>아내분 작업 보드는 Firebase에 저장됩니다. Google 로그인 후 같은 데이터를 계속 사용할 수 있어요.</p>
+        <button class="btn primary" type="button" onclick="login()">Google 로그인</button>
+      </div>
+    `;
+    renderSummary();
+    renderBoardSelect();
+    return;
+  }
+
+  authStatus.textContent = user.email || '로그인됨';
+  DATA = await loadData();
+  render();
+
+  unsubscribeDashboard = DASHBOARD_DOC.onSnapshot(snap => {
+    if (!snap.exists || !Array.isArray(snap.data().items)) return;
+    DATA = normalizeData(snap.data().items);
+    localStorage.setItem(KEY, JSON.stringify(DATA));
+    render();
+  }, error => {
+    console.error(error);
+  });
+});
+</script>
+</body>
+</html>
