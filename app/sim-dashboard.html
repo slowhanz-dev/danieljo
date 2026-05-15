@@ -143,7 +143,7 @@ button{cursor:pointer}
   border:1px solid color-mix(in srgb,var(--cat-color) 22%,var(--border) 78%);
   border-left:8px solid var(--cat-color);
   border-radius:8px;
-  touch-action:none;
+  touch-action:auto;
 }
 .irow[draggable=true]{cursor:grab}
 .irow.dragging{opacity:.45}
@@ -154,14 +154,13 @@ button{cursor:pointer}
   justify-content:center;
   width:24px;
   min-height:32px;
-  border:0;
-  background:transparent;
   color:#9ea097;
   cursor:grab;
-  font-size:18px;
+  font-size:22px;
   font-weight:800;
   line-height:1;
   touch-action:none;
+  user-select:none;
 }
 .drag-handle:active{cursor:grabbing;color:var(--cat-color)}
 .iname{
@@ -718,7 +717,7 @@ function render(){
         row.style.setProperty('--badge-bg', style.bg);
         row.style.setProperty('--badge-text', style.text);
         row.innerHTML = `
-          <button class="drag-handle" type="button" title="드래그해서 이동" aria-label="드래그해서 이동">⋮⋮</button>
+          <span class="drag-handle" title="드래그해서 이동">⋮</span>
           <textarea class="iname" rows="1" aria-label="할일">${escapeHtml(item.n)}</textarea>
           <button class="badge" type="button" title="상태 변경">${item.s}</button>
           <button class="del-btn" type="button" title="삭제">×</button>
@@ -739,13 +738,10 @@ function render(){
           deleteItem(item.id);
         });
         row.addEventListener('dragstart',e=>{
-          if (!e.target.closest('.drag-handle')) {
-            e.preventDefault();
-            return;
-          }
           draggedItemId = item.id;
           row.classList.add('dragging');
           e.dataTransfer.setData('text/plain', item.id);
+          e.dataTransfer.effectAllowed = 'move';
         });
         row.addEventListener('dragend',()=>row.classList.remove('dragging'));
         row.addEventListener('pointerdown',e=>beginTouchDrag(row,item.id,e));
@@ -769,6 +765,19 @@ function render(){
         requestAnimationFrame(()=>autoGrow(textarea));
       });
     }
+    itemsDiv.addEventListener('dragover',e=>{
+      if (!draggedItemId) return;
+      e.preventDefault();
+    });
+    itemsDiv.addEventListener('drop',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const droppedId = e.dataTransfer.getData('text/plain') || draggedItemId;
+      moveItem(droppedId, cat.id);
+      draggedItemId = '';
+      save();
+      render();
+    });
 
     card.addEventListener('dragover',e=>{
       if (!draggedItemId) return;
