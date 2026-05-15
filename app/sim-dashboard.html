@@ -83,6 +83,12 @@ button{cursor:pointer}
   box-shadow:0 8px 22px rgba(39,34,22,.06);
 }
 .card.today{grid-column:1/-1}
+.card.today{
+  background:linear-gradient(180deg,#eeeeec,#ffffff 170px);
+  border-color:#c9c9c2;
+}
+.card.today .card-head{background:#eeeeec;border-bottom-color:#d4d4ce}
+.card.today .card-icon{background:#8e8e86}
 .card.drag-over{outline:3px solid rgba(24,95,165,.22);outline-offset:2px}
 .card-head{
   display:grid;
@@ -164,6 +170,7 @@ button{cursor:pointer}
   font-size:13px;
   font-weight:800;
   white-space:nowrap;
+  cursor:default;
 }
 .del-btn{
   width:30px;
@@ -306,10 +313,7 @@ button{cursor:pointer}
     <div>
       <span class="filter-title">진행확인</span>
       <div class="filter-row" id="fr">
-        <button class="fbtn" type="button" data-f="all">전체</button>
-        <button class="fbtn" type="button" data-f="완료">완료</button>
-        <button class="fbtn" type="button" data-f="진행중">진행중</button>
-        <button class="fbtn on" type="button" data-f="할일">할일</button>
+        <button class="fbtn on" id="filterCycleBtn" type="button">진행확인: 할일</button>
       </div>
       <p class="hint">항목은 드래그해서 옆 보드로 옮기거나 같은 보드 안에서 위아래로 정리할 수 있습니다.</p>
     </div>
@@ -345,6 +349,12 @@ const KEY = 'bunnar_dashboard_v1';
 const TODAY_ID = 'today';
 const DONE_ID = 'done-check';
 const STATUSES = ['할일', '진행중', '완료'];
+const FILTERS = [
+  { key:'할일', label:'할일' },
+  { key:'all', label:'전체' },
+  { key:'완료', label:'완료' },
+  { key:'진행중', label:'진행중' },
+];
 const BADGE_STYLE = {
   '할일': { bg:'#FFE9A8', text:'#664600', line:'#E6B833' },
   '진행중': { bg:'#BBDCF8', text:'#0C447C', line:'#378ADD' },
@@ -383,7 +393,7 @@ function statusOf(s){
 
 function defaultData(){
   return [
-    {id:TODAY_ID,label:'오늘의 할일',icon:'✓',color:'#D85A30',locked:true,items:[]},
+    {id:TODAY_ID,label:'오늘의 할일',icon:'✓',color:'#8E8E86',locked:true,items:[]},
     {id:'daily',label:'매일',icon:'↻',color:'#1D9E75',items:[]},
     {id:'working',label:'진행중',icon:'•',color:'#378ADD',items:[]},
     {id:'support',label:'지원사업',icon:'₩',color:'#BA7517',items:[]},
@@ -408,7 +418,7 @@ function normalizeData(raw){
   }));
 
   if (!mapped.some(cat=>cat.id === TODAY_ID)) {
-    mapped.unshift({id:TODAY_ID,label:'오늘의 할일',icon:'✓',color:'#D85A30',locked:true,items:[]});
+    mapped.unshift({id:TODAY_ID,label:'오늘의 할일',icon:'✓',color:'#8E8E86',locked:true,items:[]});
   }
   if (!mapped.some(cat=>cat.id === DONE_ID)) {
     mapped.push({id:DONE_ID,label:'다한일 한번더 확인용',icon:'✓',color:'#3B6D11',locked:true,items:[]});
@@ -416,6 +426,7 @@ function normalizeData(raw){
 
   const todayIndex = mapped.findIndex(cat=>cat.id === TODAY_ID);
   if (todayIndex > 0) mapped.unshift(mapped.splice(todayIndex,1)[0]);
+  mapped.find(cat=>cat.id === TODAY_ID).color = '#8E8E86';
   const done = mapped.find(cat=>cat.id === DONE_ID);
   mapped.forEach(cat=>{
     if (cat.id === DONE_ID) return;
@@ -557,9 +568,14 @@ function moveItem(itemId, targetCatId, beforeItemId){
   const found = findItem(itemId);
   const target = DATA.find(c=>c.id === targetCatId);
   if (!found || !target) return;
-  const [item] = found.cat.items.splice(found.idx,1);
+  const shouldCopyToToday = target.id === TODAY_ID && found.cat.id !== TODAY_ID;
+  const item = shouldCopyToToday
+    ? {...found.item, id:uid()}
+    : found.cat.items.splice(found.idx,1)[0];
   if (target.id === DONE_ID) item.s = '완료';
-  if (target.id !== DONE_ID && item.s === '완료') item.s = '할일';
+  else if (target.id === TODAY_ID) item.s = '할일';
+  else if (target.label.includes('진행중')) item.s = '진행중';
+  else if (target.id !== DONE_ID && item.s === '완료') item.s = '할일';
   const insertAt = beforeItemId ? target.items.findIndex(i=>i.id === beforeItemId) : -1;
   if (insertAt >= 0) target.items.splice(insertAt,0,item);
   else target.items.push(item);
@@ -571,6 +587,9 @@ function autoGrow(textarea){
 }
 
 function render(){
+  const filterBtn = document.getElementById('filterCycleBtn');
+  const filter = FILTERS.find(item=>item.key === activeFilter) || FILTERS[0];
+  filterBtn.textContent = '진행확인: ' + filter.label;
   const s = calcStats();
   document.getElementById('sg').innerHTML = `
     <div class="stat"><div class="stat-num">${s.total}</div><div class="stat-label">전체</div></div>
@@ -626,7 +645,7 @@ function render(){
         row.style.setProperty('--badge-text', style.text);
         row.innerHTML = `
           <textarea class="iname" rows="1" aria-label="할일">${escapeHtml(item.n)}</textarea>
-          <button class="badge" type="button" title="상태 변경">${item.s}</button>
+          <span class="badge" title="상태">${item.s}</span>
           <button class="del-btn" type="button" title="삭제">×</button>
         `;
         const textarea = row.querySelector('.iname');
@@ -636,7 +655,6 @@ function render(){
           save();
           render();
         });
-        row.querySelector('.badge').addEventListener('click',()=>cycleStatus(cat.id,item.id));
         row.querySelector('.del-btn').addEventListener('click',()=>deleteItem(item.id));
         row.addEventListener('dragstart',e=>{
           draggedItemId = item.id;
@@ -748,12 +766,9 @@ function importData(file){
   reader.readAsText(file);
 }
 
-document.getElementById('fr').addEventListener('click',e=>{
-  const b = e.target.closest('[data-f]');
-  if (!b) return;
-  document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on');
-  activeFilter = b.dataset.f;
+document.getElementById('filterCycleBtn').addEventListener('click',()=>{
+  const currentIndex = FILTERS.findIndex(item=>item.key === activeFilter);
+  activeFilter = FILTERS[(currentIndex + 1) % FILTERS.length].key;
   render();
 });
 document.getElementById('printBtn').addEventListener('click',()=>window.print());
