@@ -22,7 +22,7 @@
   .add-input,
   .btn,
   .modal input,
-  .modal select{font-size:13px;}
+  .modal select{font-size:14px;}
 
   .fbtn,
   .hint,
@@ -47,7 +47,7 @@
   .logo{font-size:15px;}
   .header-actions .btn{font-size:12px;}
   .fbtn{font-size:11px;}
-  .iname{font-size:14px;}
+  .iname{font-size:15px;}
   .badge{font-size:12px;padding:3px 10px;}
   .stat-num{font-size:21px;}
 }
