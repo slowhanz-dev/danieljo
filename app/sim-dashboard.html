@@ -77,9 +77,10 @@ button{cursor:pointer}
   min-height:230px;
   flex-direction:column;
   overflow:hidden;
-  background:var(--surface);
-  border:1px solid var(--border);
+  background:linear-gradient(180deg,var(--cat-soft),var(--surface) 165px);
+  border:2px solid var(--cat-border);
   border-radius:var(--radius);
+  box-shadow:0 8px 22px rgba(39,34,22,.06);
 }
 .card.today{grid-column:1/-1}
 .card.drag-over{outline:3px solid rgba(24,95,165,.22);outline-offset:2px}
@@ -89,9 +90,21 @@ button{cursor:pointer}
   gap:10px;
   align-items:center;
   padding:15px 16px 13px;
-  border-bottom:1px solid var(--border);
+  background:var(--cat-wash);
+  border-bottom:1px solid var(--cat-border);
 }
-.card-icon{font-size:18px}
+.card-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:30px;
+  height:30px;
+  border-radius:999px;
+  background:var(--cat-color);
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+}
 .card-label{
   min-width:0;
   border:0;
@@ -110,9 +123,9 @@ button{cursor:pointer}
   line-height:1;
 }
 .del-cat:hover{color:var(--red)}
-.pbar{height:3px;background:var(--border)}
+.pbar{height:4px;background:var(--cat-soft)}
 .pfill{height:100%;transition:width .25s ease}
-.items{display:flex;flex:1;flex-direction:column;gap:8px;padding:10px 12px;min-height:130px}
+.items{display:flex;flex:1;flex-direction:column;gap:8px;padding:12px;min-height:130px}
 .empty{padding:16px;color:var(--text3);text-align:center;font-size:14px}
 .irow{
   display:grid;
@@ -120,8 +133,8 @@ button{cursor:pointer}
   gap:8px;
   align-items:start;
   padding:9px 10px;
-  background:#fff;
-  border:1px solid var(--border);
+  background:rgba(255,255,255,.88);
+  border:1px solid color-mix(in srgb,var(--cat-color) 22%,var(--border) 78%);
   border-left:6px solid var(--status-color);
   border-radius:8px;
 }
@@ -141,7 +154,7 @@ button{cursor:pointer}
   font-weight:600;
   line-height:1.45;
 }
-.iname:focus{border-color:var(--blue);background:var(--surface2);outline:none}
+.iname:focus{border-color:var(--cat-color);background:#fff;outline:none}
 .badge{
   border:0;
   border-radius:999px;
@@ -174,7 +187,7 @@ button{cursor:pointer}
   background:#fff;
   outline:none;
 }
-.add-input:focus{border-color:var(--blue);background:var(--surface2)}
+.add-input:focus{border-color:var(--cat-color);background:#fff}
 .btn{
   min-height:40px;
   border:1px solid var(--border);
@@ -576,6 +589,10 @@ function render(){
     const card = document.createElement('div');
     card.className = 'card' + (cat.id === TODAY_ID ? ' today' : '');
     card.dataset.catId = cat.id;
+    card.style.setProperty('--cat-color', cat.color);
+    card.style.setProperty('--cat-border', `color-mix(in srgb, ${cat.color} 56%, #ffffff 44%)`);
+    card.style.setProperty('--cat-wash', `color-mix(in srgb, ${cat.color} 17%, #ffffff 83%)`);
+    card.style.setProperty('--cat-soft', `color-mix(in srgb, ${cat.color} 8%, #ffffff 92%)`);
     card.innerHTML = `
       <div class="card-head">
         <span class="card-icon">${escapeHtml(cat.icon)}</span>
