@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BUNNAR · Trello Flow Dashboard</title>
+<title>BUNNAR · Trello Flow Dashboard v4</title>
 <meta name="theme-color" content="#1a1a18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -72,7 +72,7 @@ button,input,textarea,select{font-family:inherit}
 </head>
 <body>
 <div class="header">
-  <div class="brand"><img class="logo-mark" src="bunnar_work_icon.svg?v=20260517-trello" alt="BUNNAR WORK"><div><span class="logo">BUNNAR <span>· Trello Flow Dashboard</span></span><span class="mode-pill">FLOW</span></div></div>
+  <div class="brand"><img class="logo-mark" src="bunnar_work_icon.svg?v=20260517-trello" alt="BUNNAR WORK"><div><span class="logo">BUNNAR <span>· Trello Flow Dashboard v4</span></span><span class="mode-pill">FLOW</span></div></div>
   <div class="header-actions">
     <button class="btn" onclick="window.print()">🖨️ 프린트</button>
     <button class="btn" onclick="exportData()">📤 내보내기</button>
@@ -137,16 +137,15 @@ button,input,textarea,select{font-family:inherit}
       <div class="legacy-stats-row" id="legacyStats"></div>
       <div class="legacy-filter-row" id="legacyFilter">
         <button class="legacy-fbtn on" data-legacy-f="all">전체</button>
-        <button class="legacy-fbtn" data-legacy-f="지금당장">🔴 지금당장</button>
-        <button class="legacy-fbtn" data-legacy-f="완료">완료</button>
-        <button class="legacy-fbtn" data-legacy-f="수행중">수행중</button>
-        <button class="legacy-fbtn" data-legacy-f="진행중">진행중</button>
-        <button class="legacy-fbtn" data-legacy-f="심사중">심사중</button>
-        <button class="legacy-fbtn" data-legacy-f="신청완료">신청완료</button>
-        <button class="legacy-fbtn" data-legacy-f="예정">예정</button>
-        <button class="legacy-fbtn" data-legacy-f="탈락">탈락</button>
+        <button class="legacy-fbtn" data-legacy-f="priority">오늘/중요</button>
+        <button class="legacy-fbtn" data-legacy-f="pool">풀/생각</button>
+        <button class="legacy-fbtn" data-legacy-f="next">다음 행동</button>
+        <button class="legacy-fbtn" data-legacy-f="doing">진행중</button>
+        <button class="legacy-fbtn" data-legacy-f="waiting">대기/확인</button>
+        <button class="legacy-fbtn" data-legacy-f="done">완료</button>
+        <button class="legacy-fbtn" data-legacy-f="parked">나중에</button>
       </div>
-      <p class="legacy-hint"><strong>상태 배지</strong> → 순환 변경 &nbsp;·&nbsp; <strong>카드 하단 입력</strong> → 새 항목 추가 &nbsp;·&nbsp; 이 탭은 기존 <code>bunnar-dashboard.html</code>의 카드형 현황판처럼 전체 업무를 보는 공간입니다.</p>
+      <p class="legacy-hint"><strong>대시보드와 트렐로 보드는 같은 카드 데이터</strong>를 봅니다. 대시보드에서 새 카드를 만들거나 단계 배지를 바꾸면 트렐로 보드에도 바로 반영됩니다.</p>
       <div class="legacy-grid" id="legacyGrid"></div>
     </section>
 
@@ -290,87 +289,119 @@ function quickAddCard(e,colId){
   saveTrelloOnly();renderAll();
 }
 function jsArg(s){return String(s||'').replace(/\/g,'\\').replace(/'/g,"\\'")}
+function columnInfo(id){return COLUMNS.find(c=>c.id===id)||COLUMNS[0]}
+function dashboardCardVisible(c){
+  if(activeDashboardFilter==='all')return true;
+  if(activeDashboardFilter==='priority')return c.priority==='today'||c.priority==='high'||(c.due&&daysUntil(c.due)<=3&&c.column!=='done');
+  return c.column===activeDashboardFilter;
+}
+function columnBadgeStyle(col){
+  const map={
+    pool:'background:#D3D1C7;color:#444441',
+    next:'background:#B5D4F4;color:#0C447C',
+    doing:'background:#6EE7B7;color:#065F46',
+    waiting:'background:#FAC775;color:#633806',
+    done:'background:#9FE1CB;color:#085041',
+    parked:'background:#1a1a18;color:#f7f6f3'
+  };
+  return map[col]||map.pool;
+}
+function nextColumnId(col){
+  const ids=COLUMNS.map(c=>c.id);
+  const i=ids.indexOf(col);
+  return ids[(i+1+ids.length)%ids.length];
+}
 function renderDashboard(){
   const stats=document.getElementById('legacyStats');
   const grid=document.getElementById('legacyGrid');
   if(!stats||!grid)return;
-  const all=DATA.flatMap(c=>c.items||[]);
-  const done=all.filter(i=>i.s==='완료').length;
-  const active=all.filter(i=>['지금당장','수행중','진행중','심사중','신청완료'].includes(i.s)).length;
-  const plan=all.filter(i=>i.s==='예정').length;
+  const all=TRELLO;
+  const done=all.filter(c=>c.column==='done').length;
+  const active=all.filter(c=>['next','doing','waiting'].includes(c.column)).length;
+  const plan=all.filter(c=>['pool','parked'].includes(c.column)).length;
   const pct=all.length?Math.round(done/all.length*100):0;
   stats.innerHTML=`
     <div class="legacy-stat"><div class="legacy-stat-num">${all.length}</div><div class="legacy-stat-label">전체</div></div>
     <div class="legacy-stat"><div class="legacy-stat-num" style="color:var(--green)">${done}</div><div class="legacy-stat-label">완료</div></div>
     <div class="legacy-stat"><div class="legacy-stat-num" style="color:var(--blue)">${active}</div><div class="legacy-stat-label">진행중</div></div>
-    <div class="legacy-stat"><div class="legacy-stat-num" style="color:var(--text2)">${plan}</div><div class="legacy-stat-label">예정</div></div>
+    <div class="legacy-stat"><div class="legacy-stat-num" style="color:var(--text2)">${plan}</div><div class="legacy-stat-label">풀/나중에</div></div>
     <div class="legacy-stat"><div class="legacy-stat-num" style="color:${pct>=50?'var(--green)':'var(--red)'}">${pct}%</div><div class="legacy-stat-label">완료율</div></div>`;
-  if(!DATA.length){
-    grid.innerHTML='<div class="legacy-empty">기존 업무 현황판 데이터가 아직 없습니다. Trello 보드의 “기존 보드 가져오기”는 기존 데이터가 있을 때 카드로 가져옵니다.</div>';
-    const up=document.getElementById('dashUpdated');if(up)up.textContent='데이터 없음';
+  if(!TRELLO.length){
+    grid.innerHTML='<div class="legacy-empty">아직 트렐로 카드가 없습니다. 트렐로 보드 탭에서 카드를 추가하거나, “기존 보드 가져오기”를 눌러 기존 업무를 카드로 가져오세요.</div>';
+    const up=document.getElementById('dashUpdated');if(up)up.textContent='카드 없음';
     return;
   }
+  const grouped=new Map();
+  sorted(TRELLO).forEach(c=>{
+    const project=c.project||'미분류';
+    if(!grouped.has(project))grouped.set(project,[]);
+    grouped.get(project).push(c);
+  });
   grid.innerHTML='';
-  DATA.forEach(cat=>{
-    const items=cat.items||[];
-    const doneCnt=items.filter(i=>i.s==='완료').length;
-    const cpct=items.length?Math.round(doneCnt/items.length*100):0;
-    const visible=activeDashboardFilter==='all'?items:items.filter(i=>i.s===activeDashboardFilter);
+  [...grouped.entries()].sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([project,cards])=>{
+    const visible=cards.filter(dashboardCardVisible);
+    const doneCnt=cards.filter(c=>c.column==='done').length;
+    const cpct=cards.length?Math.round(doneCnt/cards.length*100):0;
     const card=document.createElement('div');
     card.className='legacy-card';
-    const catId=jsArg(cat.id||'');
+    const projectArg=jsArg(project);
     card.innerHTML=`
       <div class="legacy-card-head">
-        <span class="legacy-card-icon">${escapeHtml(cat.icon||'📌')}</span>
-        <span class="legacy-card-label">${escapeHtml(cat.label||'카테고리')}</span>
-        <span class="legacy-card-meta">${doneCnt}/${items.length} · ${cpct}%</span>
+        <span class="legacy-card-icon">📌</span>
+        <span class="legacy-card-label">${escapeHtml(project)}</span>
+        <span class="legacy-card-meta">${doneCnt}/${cards.length} · ${cpct}%</span>
       </div>
-      <div class="legacy-pbar"><div class="legacy-pfill" style="width:${cpct}%;background:${cat.color||'var(--blue)'}"></div></div>`;
+      <div class="legacy-pbar"><div class="legacy-pfill" style="width:${cpct}%;background:var(--blue)"></div></div>`;
     const list=document.createElement('div');
     list.className='legacy-items';
     if(visible.length){
-      visible.forEach(item=>{
-        const realIdx=items.indexOf(item);
-        const dd=item.due?dueLabel(item.due):null;
+      visible.forEach(c=>{
+        const dd=c.due?dueLabel(c.due):null;
+        const col=columnInfo(c.column);
         const row=document.createElement('div');
         row.className='legacy-irow';
         row.innerHTML=`
-          <span class="legacy-iname">${escapeHtml(item.n||'이름 없음')}${item.tag?`<span class="legacy-itag">${escapeHtml(item.tag)}</span>`:''}${dd?`<span class="chip ${dd.cls}">${dd.text}</span>`:''}</span>
-          <button class="legacy-badge" style="${LEGACY_BADGE_STYLE[item.s]||LEGACY_BADGE_STYLE['예정']}" onclick="cycleLegacyStatus('${catId}',${realIdx})" title="상태 변경">${escapeHtml(item.s||'예정')}</button>
-          <button class="legacy-del" onclick="deleteLegacyItem('${catId}',${realIdx})" title="삭제">×</button>`;
+          <span class="legacy-iname" ondblclick="quickEditTitle(event,'${c.id}')" title="더블클릭하여 카드 제목 수정">${escapeHtml(c.title||'이름 없음')}${c.priority==='high'?'<span class="legacy-itag">★ 중요</span>':''}${c.priority==='today'?'<span class="legacy-itag">오늘</span>':''}${dd?`<span class="chip ${dd.cls}">${dd.text}</span>`:''}</span>
+          <button class="legacy-badge" style="${columnBadgeStyle(c.column)}" onclick="cycleDashboardColumn('${c.id}')" title="단계 변경">${escapeHtml(col.title)}</button>
+          <button class="legacy-del" onclick="deleteDashboardCard('${c.id}')" title="삭제">×</button>`;
         list.appendChild(row);
       });
     }else{
-      const row=document.createElement('div');row.className='legacy-irow';row.innerHTML='<span class="legacy-iname" style="color:var(--text3)">이 필터에 해당하는 항목이 없습니다.</span>';list.appendChild(row);
+      const row=document.createElement('div');
+      row.className='legacy-irow';
+      row.innerHTML='<span class="legacy-iname" style="color:var(--text3)">이 필터에 해당하는 카드가 없습니다.</span>';
+      list.appendChild(row);
     }
     card.appendChild(list);
     const add=document.createElement('div');
     add.className='legacy-add-row';
-    add.innerHTML=`<input class="legacy-add-input" id="legacy_inp_${escapeHtml(cat.id||'')}" placeholder="+ 새 항목 추가 후 Enter" onkeydown="addLegacyItemKey(event,'${catId}')">`;
+    add.innerHTML=`<input class="legacy-add-input" id="dash_inp_${escapeHtml(project).replace(/\s+/g,'_')}" placeholder="+ 이 프로젝트에 새 카드 추가 후 Enter" onkeydown="addDashboardCardKey(event,'${projectArg}')">`;
     card.appendChild(add);
     grid.appendChild(card);
   });
-  const up=document.getElementById('dashUpdated');if(up)up.textContent=`${DATA.length}개 카테고리 · ${all.length}개 항목`;
+  const up=document.getElementById('dashUpdated');if(up)up.textContent=`${grouped.size}개 프로젝트 · ${TRELLO.length}개 카드`;
 }
-function cycleLegacyStatus(catId,idx){
-  const cat=DATA.find(c=>c.id===catId);if(!cat||!cat.items||!cat.items[idx])return;
-  const cur=cat.items[idx].s||'예정';
-  cat.items[idx].s=LEGACY_STATUSES[(LEGACY_STATUSES.indexOf(cur)+1)%LEGACY_STATUSES.length]||'예정';
-  saveAll();renderDashboard();
+function cycleDashboardColumn(id){
+  const c=TRELLO.find(x=>x.id===id);if(!c)return;
+  c.column=nextColumnId(c.column);
+  if(c.column==='next'&&c.priority==='normal')c.priority='today';
+  saveTrelloOnly();renderAll();
 }
-function deleteLegacyItem(catId,idx){
-  const cat=DATA.find(c=>c.id===catId);if(!cat||!cat.items)return;
-  if(!confirm('이 항목을 삭제할까요?'))return;
-  cat.items.splice(idx,1);saveAll();renderDashboard();
+function deleteDashboardCard(id){
+  if(!confirm('이 카드를 삭제할까요?'))return;
+  TRELLO=TRELLO.filter(c=>c.id!==id);
+  saveTrelloOnly();renderAll();
 }
-function addLegacyItemKey(e,catId){
+function addDashboardCardKey(e,project){
   if(e.key!=='Enter')return;
-  const text=e.target.value.trim();if(!text)return;
-  const cat=DATA.find(c=>c.id===catId);if(!cat)return;
-  if(!Array.isArray(cat.items))cat.items=[];
-  cat.items.push({n:text,s:'예정'});
-  e.target.value='';saveAll();renderDashboard();
-  setTimeout(()=>{const inp=document.getElementById('legacy_inp_'+catId);if(inp)inp.focus()},40);
+  const title=e.target.value.trim();if(!title)return;
+  let column='pool';
+  if(COLUMNS.some(c=>c.id===activeDashboardFilter))column=activeDashboardFilter;
+  if(activeDashboardFilter==='priority')column='next';
+  const list=sorted(TRELLO.filter(c=>c.column===column));
+  TRELLO.push({id:uid('card'),title,project:project||'미분류',column,due:'',note:'',priority:column==='next'?'today':'normal',order:list.length,source:'dashboard'});
+  e.target.value='';
+  saveTrelloOnly();renderAll();
 }
 document.addEventListener('click',e=>{
   const b=e.target.closest('#legacyFilter [data-legacy-f]');
