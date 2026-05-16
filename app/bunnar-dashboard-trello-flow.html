@@ -44,7 +44,29 @@ button,input,textarea,select{font-family:inherit}
 .quick-add{padding:8px 10px 12px;border-top:1px dashed var(--border);margin-top:auto}.quick-add input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--text);outline:none}.quick-add input:focus{background:var(--surface);border-color:var(--blue)}.col-add{margin-left:4px;border:none;background:var(--surface2);color:var(--text2);border-radius:8px;padding:3px 7px;font-size:11px;cursor:pointer}.col-add:hover{background:var(--text);color:var(--bg)}
 .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}.dash-num{font-size:26px;font-weight:700}.dash-label{font-size:11px;color:var(--text2);margin-top:2px}.dash-section{margin-top:14px}.dash-section h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px}.dash-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.dash-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12px}.dash-row strong{display:block;font-size:13px;margin-bottom:4px}.dash-row small{color:var(--text3)}.manual{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.manual h2{font-size:18px;margin-bottom:8px}.manual h3{font-size:13px;margin:14px 0 7px}.manual p,.manual li{font-size:13px;color:var(--text2)}.manual ol,.manual ul{padding-left:20px}.manual li{margin-bottom:6px}.manual-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px}.kbd{display:inline-block;border:1px solid var(--border2);background:var(--surface);border-radius:5px;padding:1px 5px;font-size:11px;color:var(--text)}
 
-@media(max-width:860px){.manual{grid-template-columns:1fr;padding:16px}.dash-grid{grid-template-columns:repeat(2,1fr)}.header{padding:10px 12px}.header-actions .btn{font-size:11px;padding:5px 8px}.logo span{display:none}.mode-pill{display:none}.main{padding:14px 12px 80px}.focus-grid{grid-template-columns:1fr}.toolbar{align-items:flex-start}.toolbar-left{width:100%}.search{min-width:0;flex:1}.kanban{display:flex;min-width:0;gap:10px}.column{min-width:82vw;min-height:500px}.board-wrap{margin-left:-2px;padding-left:2px}.auth-note{display:none}.modal-row{grid-template-columns:1fr}}
+
+/* Legacy dashboard card layout (same spirit as bunnar-dashboard.html) */
+.legacy-stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:12px 0 18px}
+.legacy-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 14px;text-align:center}
+.legacy-stat-num{font-size:24px;font-weight:700}
+.legacy-stat-label{font-size:10px;color:var(--text2);margin-top:2px;letter-spacing:.04em}
+.legacy-filter-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.legacy-fbtn{background:transparent;border:1px solid var(--border2);border-radius:20px;padding:5px 13px;font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
+.legacy-fbtn:hover,.legacy-fbtn.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.legacy-hint{font-size:11px;color:var(--text3);margin-bottom:16px;line-height:1.6}
+.legacy-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.legacy-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.legacy-card-head{display:flex;align-items:center;gap:10px;padding:13px 16px 11px;border-bottom:1px solid var(--border)}
+.legacy-card-icon{font-size:15px;flex-shrink:0}.legacy-card-label{font-size:13px;font-weight:700;flex:1}.legacy-card-meta{font-size:11px;color:var(--text3)}
+.legacy-pbar{height:2px;background:var(--border)}.legacy-pfill{height:100%;transition:width .4s ease}
+.legacy-items{padding:4px 0;flex:1}.legacy-irow{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;transition:background .12s}.legacy-irow:hover{background:var(--surface2)}
+.legacy-iname{flex:1;font-size:12px;color:var(--text);line-height:1.45;word-break:keep-all}.legacy-itag{font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;margin-left:4px;display:inline-block}
+.legacy-badge{font-size:10px;font-weight:600;padding:2px 9px;border-radius:10px;white-space:nowrap;cursor:pointer;flex-shrink:0;margin-top:1px;border:none;font-family:inherit;transition:opacity .12s}.legacy-badge:hover{opacity:.75}
+.legacy-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0 0 0 4px;opacity:0;transition:opacity .12s;line-height:1}.legacy-irow:hover .legacy-del{opacity:1}.legacy-del:hover{color:var(--red)}
+.legacy-add-row{padding:6px 14px 10px}.legacy-add-input{width:100%;background:transparent;border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--text);font-family:inherit;outline:none}.legacy-add-input:focus{border-color:var(--blue);background:var(--surface2)}.legacy-add-input::placeholder{color:var(--text3)}
+.legacy-empty{background:var(--surface);border:1px dashed var(--border2);border-radius:var(--radius);padding:24px;color:var(--text3);font-size:13px;text-align:center}
+
+@media(max-width:860px){.manual{grid-template-columns:1fr;padding:16px}.dash-grid{grid-template-columns:repeat(2,1fr)}.legacy-stats-row{grid-template-columns:repeat(3,1fr);gap:6px}.legacy-stat{padding:10px 8px}.legacy-stat-num{font-size:20px}.legacy-stats-row .legacy-stat:nth-child(4),.legacy-stats-row .legacy-stat:nth-child(5){display:none}.legacy-grid{grid-template-columns:1fr;gap:10px}.legacy-filter-row{gap:4px}.legacy-fbtn{padding:4px 10px;font-size:10px}.legacy-hint{display:none}.header{padding:10px 12px}.header-actions .btn{font-size:11px;padding:5px 8px}.logo span{display:none}.mode-pill{display:none}.main{padding:14px 12px 80px}.focus-grid{grid-template-columns:1fr}.toolbar{align-items:flex-start}.toolbar-left{width:100%}.search{min-width:0;flex:1}.kanban{display:flex;min-width:0;gap:10px}.column{min-width:82vw;min-height:500px}.board-wrap{margin-left:-2px;padding-left:2px}.auth-note{display:none}.modal-row{grid-template-columns:1fr}}
 @media print{.header,.toolbar,.project-strip,.save-toast,.modal-overlay,.task-actions{display:none!important}.main{padding:0}.focus,.column,.task-card{box-shadow:none;break-inside:avoid}.board-wrap{overflow:visible}.kanban{display:grid;grid-template-columns:repeat(3,1fr);min-width:0}.column{min-height:auto}.column-cards{min-height:auto}.task-card{page-break-inside:avoid}}
 </style>
 </head>
@@ -111,11 +133,21 @@ button,input,textarea,select{font-family:inherit}
     </section>
 
     <section id="view-dashboard" style="display:none">
-      <div class="section-title">Dashboard <span class="count" id="dashUpdated">현재 상태</span></div>
-      <div class="dash-grid" id="dashGrid"></div>
-      <div class="dash-section"><h3>진행 단계별 요약</h3><div class="dash-list" id="dashColumns"></div></div>
-      <div class="dash-section"><h3>프로젝트 / 가지별 요약</h3><div class="dash-list" id="dashProjects"></div></div>
-      <div class="dash-section"><h3>기존 업무 현황판 요약</h3><div class="dash-list" id="legacyBoard"></div></div>
+      <div class="section-title">BUNNAR 업무 현황판 <span class="count" id="dashUpdated">기존 카드 레이아웃</span></div>
+      <div class="legacy-stats-row" id="legacyStats"></div>
+      <div class="legacy-filter-row" id="legacyFilter">
+        <button class="legacy-fbtn on" data-legacy-f="all">전체</button>
+        <button class="legacy-fbtn" data-legacy-f="지금당장">🔴 지금당장</button>
+        <button class="legacy-fbtn" data-legacy-f="완료">완료</button>
+        <button class="legacy-fbtn" data-legacy-f="수행중">수행중</button>
+        <button class="legacy-fbtn" data-legacy-f="진행중">진행중</button>
+        <button class="legacy-fbtn" data-legacy-f="심사중">심사중</button>
+        <button class="legacy-fbtn" data-legacy-f="신청완료">신청완료</button>
+        <button class="legacy-fbtn" data-legacy-f="예정">예정</button>
+        <button class="legacy-fbtn" data-legacy-f="탈락">탈락</button>
+      </div>
+      <p class="legacy-hint"><strong>상태 배지</strong> → 순환 변경 &nbsp;·&nbsp; <strong>카드 하단 입력</strong> → 새 항목 추가 &nbsp;·&nbsp; 이 탭은 기존 <code>bunnar-dashboard.html</code>의 카드형 현황판처럼 전체 업무를 보는 공간입니다.</p>
+      <div class="legacy-grid" id="legacyGrid"></div>
     </section>
 
     <section id="view-manual" style="display:none">
@@ -192,12 +224,23 @@ const COLUMNS=[
 const COL_MAP={
   '지금당장':'next','수행중':'doing','진행중':'doing','심사중':'waiting','신청완료':'waiting','예정':'pool','완료':'done','탈락':'parked'
 };
+const LEGACY_STATUSES=['지금당장','완료','수행중','진행중','심사중','신청완료','예정','탈락'];
+const LEGACY_BADGE_STYLE={
+  '지금당장':'background:#FCA5A5;color:#7F1D1D',
+  '완료':'background:#9FE1CB;color:#085041',
+  '수행중':'background:#6EE7B7;color:#065F46',
+  '진행중':'background:#B5D4F4;color:#0C447C',
+  '심사중':'background:#FAC775;color:#633806',
+  '신청완료':'background:#AFA9EC;color:#3C3489',
+  '예정':'background:#D3D1C7;color:#444441',
+  '탈락':'background:#F09595;color:#791F1F'
+};
 const firebaseConfig={apiKey:"AIzaSyBGBDywtb_UQwewBObvTSVxiXTTLDZQd2w",authDomain:"bunnar-dashboard.firebaseapp.com",projectId:"bunnar-dashboard",storageBucket:"bunnar-dashboard.firebasestorage.app",messagingSenderId:"170038311346",appId:"1:170038311346:web:59e4eb30f65961aab80cab",measurementId:"G-TDR9PS981E"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth();
 const db=firebase.firestore();
 const DASHBOARD_DOC=db.collection('dashboards').doc('bunnar-main');
-let DATA=[];let QUICK=[];let FLOWS=[];let TRELLO=[];let unsubscribeDashboard=null;let suppressSnapshot=false;let activeProject='all';let draggedCardId=null;let activeView='board';
+let DATA=[];let QUICK=[];let FLOWS=[];let TRELLO=[];let unsubscribeDashboard=null;let suppressSnapshot=false;let activeProject='all';let draggedCardId=null;let activeView='board';let activeDashboardFilter='all';
 function uid(p='id'){return p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}
 function todayISO(){return new Date().toISOString().slice(0,10)}
 function daysUntil(d){if(!d)return null;const t=new Date(todayISO()+'T00:00:00');const due=new Date(d+'T00:00:00');return Math.round((due-t)/86400000)}
@@ -246,25 +289,95 @@ function quickAddCard(e,colId){
   e.target.value='';
   saveTrelloOnly();renderAll();
 }
+function jsArg(s){return String(s||'').replace(/\/g,'\\').replace(/'/g,"\\'")}
 function renderDashboard(){
-  const dashGrid=document.getElementById('dashGrid');
-  if(!dashGrid)return;
-  const total=TRELLO.length;
-  const urgent=TRELLO.filter(c=>c.priority==='high'||c.priority==='today'||(c.due&&daysUntil(c.due)<=3&&c.column!=='done')).length;
-  const doing=TRELLO.filter(c=>c.column==='doing').length;
-  const waiting=TRELLO.filter(c=>c.column==='waiting').length;
-  const done=TRELLO.filter(c=>c.column==='done').length;
-  dashGrid.innerHTML=`<div class="dash-card"><div class="dash-num">${total}</div><div class="dash-label">전체 카드</div></div><div class="dash-card"><div class="dash-num" style="color:var(--red)">${urgent}</div><div class="dash-label">오늘/중요</div></div><div class="dash-card"><div class="dash-num" style="color:var(--blue)">${doing}</div><div class="dash-label">진행중</div></div><div class="dash-card"><div class="dash-num" style="color:var(--amber)">${waiting}</div><div class="dash-label">대기/확인</div></div>`;
-  const colBox=document.getElementById('dashColumns');
-  colBox.innerHTML=COLUMNS.map(col=>{const list=TRELLO.filter(c=>c.column===col.id);return `<div class="dash-row"><strong><span style="color:${col.color}">●</span> ${escapeHtml(col.title)} · ${list.length}개</strong><small>${escapeHtml(col.sub)}</small></div>`}).join('');
-  const projectBox=document.getElementById('dashProjects');
-  const map={};TRELLO.forEach(c=>{const p=c.project||'미분류';if(!map[p])map[p]={total:0,done:0,urgent:0};map[p].total++;if(c.column==='done')map[p].done++;if(c.priority==='high'||c.priority==='today')map[p].urgent++;});
-  const rows=Object.entries(map).sort((a,b)=>b[1].urgent-a[1].urgent||b[1].total-a[1].total);
-  projectBox.innerHTML=rows.length?rows.map(([p,v])=>`<div class="dash-row"><strong>${escapeHtml(p)}</strong><small>전체 ${v.total} · 완료 ${v.done} · 오늘/중요 ${v.urgent}</small></div>`).join(''):'<div class="dash-row"><small>프로젝트가 없습니다.</small></div>';
-  const legacy=document.getElementById('legacyBoard');
-  legacy.innerHTML=DATA.length?DATA.map(cat=>{const items=cat.items||[];const doneCnt=items.filter(i=>i.s==='완료').length;return `<div class="dash-row"><strong>${escapeHtml(cat.icon||'📌')} ${escapeHtml(cat.label||'카테고리')}</strong><small>${doneCnt}/${items.length} 완료</small></div>`}).join(''):'<div class="dash-row"><small>기존 업무 현황판 데이터가 없습니다.</small></div>';
-  const up=document.getElementById('dashUpdated');if(up)up.textContent=`카드 ${total} · 완료 ${done}`;
+  const stats=document.getElementById('legacyStats');
+  const grid=document.getElementById('legacyGrid');
+  if(!stats||!grid)return;
+  const all=DATA.flatMap(c=>c.items||[]);
+  const done=all.filter(i=>i.s==='완료').length;
+  const active=all.filter(i=>['지금당장','수행중','진행중','심사중','신청완료'].includes(i.s)).length;
+  const plan=all.filter(i=>i.s==='예정').length;
+  const pct=all.length?Math.round(done/all.length*100):0;
+  stats.innerHTML=`
+    <div class="legacy-stat"><div class="legacy-stat-num">${all.length}</div><div class="legacy-stat-label">전체</div></div>
+    <div class="legacy-stat"><div class="legacy-stat-num" style="color:var(--green)">${done}</div><div class="legacy-stat-label">완료</div></div>
+    <div class="legacy-stat"><div class="legacy-stat-num" style="color:var(--blue)">${active}</div><div class="legacy-stat-label">진행중</div></div>
+    <div class="legacy-stat"><div class="legacy-stat-num" style="color:var(--text2)">${plan}</div><div class="legacy-stat-label">예정</div></div>
+    <div class="legacy-stat"><div class="legacy-stat-num" style="color:${pct>=50?'var(--green)':'var(--red)'}">${pct}%</div><div class="legacy-stat-label">완료율</div></div>`;
+  if(!DATA.length){
+    grid.innerHTML='<div class="legacy-empty">기존 업무 현황판 데이터가 아직 없습니다. Trello 보드의 “기존 보드 가져오기”는 기존 데이터가 있을 때 카드로 가져옵니다.</div>';
+    const up=document.getElementById('dashUpdated');if(up)up.textContent='데이터 없음';
+    return;
+  }
+  grid.innerHTML='';
+  DATA.forEach(cat=>{
+    const items=cat.items||[];
+    const doneCnt=items.filter(i=>i.s==='완료').length;
+    const cpct=items.length?Math.round(doneCnt/items.length*100):0;
+    const visible=activeDashboardFilter==='all'?items:items.filter(i=>i.s===activeDashboardFilter);
+    const card=document.createElement('div');
+    card.className='legacy-card';
+    const catId=jsArg(cat.id||'');
+    card.innerHTML=`
+      <div class="legacy-card-head">
+        <span class="legacy-card-icon">${escapeHtml(cat.icon||'📌')}</span>
+        <span class="legacy-card-label">${escapeHtml(cat.label||'카테고리')}</span>
+        <span class="legacy-card-meta">${doneCnt}/${items.length} · ${cpct}%</span>
+      </div>
+      <div class="legacy-pbar"><div class="legacy-pfill" style="width:${cpct}%;background:${cat.color||'var(--blue)'}"></div></div>`;
+    const list=document.createElement('div');
+    list.className='legacy-items';
+    if(visible.length){
+      visible.forEach(item=>{
+        const realIdx=items.indexOf(item);
+        const dd=item.due?dueLabel(item.due):null;
+        const row=document.createElement('div');
+        row.className='legacy-irow';
+        row.innerHTML=`
+          <span class="legacy-iname">${escapeHtml(item.n||'이름 없음')}${item.tag?`<span class="legacy-itag">${escapeHtml(item.tag)}</span>`:''}${dd?`<span class="chip ${dd.cls}">${dd.text}</span>`:''}</span>
+          <button class="legacy-badge" style="${LEGACY_BADGE_STYLE[item.s]||LEGACY_BADGE_STYLE['예정']}" onclick="cycleLegacyStatus('${catId}',${realIdx})" title="상태 변경">${escapeHtml(item.s||'예정')}</button>
+          <button class="legacy-del" onclick="deleteLegacyItem('${catId}',${realIdx})" title="삭제">×</button>`;
+        list.appendChild(row);
+      });
+    }else{
+      const row=document.createElement('div');row.className='legacy-irow';row.innerHTML='<span class="legacy-iname" style="color:var(--text3)">이 필터에 해당하는 항목이 없습니다.</span>';list.appendChild(row);
+    }
+    card.appendChild(list);
+    const add=document.createElement('div');
+    add.className='legacy-add-row';
+    add.innerHTML=`<input class="legacy-add-input" id="legacy_inp_${escapeHtml(cat.id||'')}" placeholder="+ 새 항목 추가 후 Enter" onkeydown="addLegacyItemKey(event,'${catId}')">`;
+    card.appendChild(add);
+    grid.appendChild(card);
+  });
+  const up=document.getElementById('dashUpdated');if(up)up.textContent=`${DATA.length}개 카테고리 · ${all.length}개 항목`;
 }
+function cycleLegacyStatus(catId,idx){
+  const cat=DATA.find(c=>c.id===catId);if(!cat||!cat.items||!cat.items[idx])return;
+  const cur=cat.items[idx].s||'예정';
+  cat.items[idx].s=LEGACY_STATUSES[(LEGACY_STATUSES.indexOf(cur)+1)%LEGACY_STATUSES.length]||'예정';
+  saveAll();renderDashboard();
+}
+function deleteLegacyItem(catId,idx){
+  const cat=DATA.find(c=>c.id===catId);if(!cat||!cat.items)return;
+  if(!confirm('이 항목을 삭제할까요?'))return;
+  cat.items.splice(idx,1);saveAll();renderDashboard();
+}
+function addLegacyItemKey(e,catId){
+  if(e.key!=='Enter')return;
+  const text=e.target.value.trim();if(!text)return;
+  const cat=DATA.find(c=>c.id===catId);if(!cat)return;
+  if(!Array.isArray(cat.items))cat.items=[];
+  cat.items.push({n:text,s:'예정'});
+  e.target.value='';saveAll();renderDashboard();
+  setTimeout(()=>{const inp=document.getElementById('legacy_inp_'+catId);if(inp)inp.focus()},40);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('#legacyFilter [data-legacy-f]');
+  if(!b)return;
+  document.querySelectorAll('#legacyFilter .legacy-fbtn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');activeDashboardFilter=b.dataset.legacyF;renderDashboard();
+});
 function openCardModal(id=null,defaultColumn='next'){const isEdit=!!id;const c=isEdit?TRELLO.find(x=>x.id===id):null;document.getElementById('modalTitle').textContent=isEdit?'카드 수정':'카드 추가';document.getElementById('editCardId').value=isEdit?id:'';document.getElementById('cardTitle').value=c?.title||'';document.getElementById('cardProject').value=c?.project||'';document.getElementById('cardDue').value=c?.due||'';document.getElementById('cardPriority').value=c?.priority||'normal';document.getElementById('cardNote').value=c?.note||'';document.getElementById('deleteCardBtn').style.display=isEdit?'inline-flex':'none';const colSel=document.getElementById('cardColumn');colSel.innerHTML=COLUMNS.map(col=>`<option value="${col.id}">${col.title}</option>`).join('');colSel.value=c?.column||defaultColumn||'next';document.getElementById('cardModal').style.display='flex';document.getElementById('cardTitle').focus()}
 function closeCardModal(e){if(e.target.id==='cardModal')closeCardModalDirect()}
 function closeCardModalDirect(){document.getElementById('cardModal').style.display='none'}
