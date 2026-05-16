@@ -288,7 +288,7 @@ function quickAddCard(e,colId){
   e.target.value='';
   saveTrelloOnly();renderAll();
 }
-function jsArg(s){return String(s||'').replace(/\/g,'\\').replace(/'/g,"\\'")}
+function jsArg(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
 function columnInfo(id){return COLUMNS.find(c=>c.id===id)||COLUMNS[0]}
 function dashboardCardVisible(c){
   if(activeDashboardFilter==='all')return true;
