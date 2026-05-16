@@ -109,7 +109,15 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
 
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+.card.cat-dragging{opacity:.45}
+.card.cat-drop-before{box-shadow:inset 0 3px 0 var(--blue)}
+.card.cat-drop-after{box-shadow:inset 0 -3px 0 var(--blue)}
 .card-head{display:flex;align-items:center;gap:10px;padding:13px 16px 11px;border-bottom:1px solid var(--border)}
+.cat-drag-handle{cursor:grab;color:var(--text3);font-size:13px;padding:1px 0 0;line-height:1;flex-shrink:0;user-select:none;letter-spacing:-2px;opacity:0;transition:opacity .12s}
+.card:hover .cat-drag-handle{opacity:1}
+.cat-drag-handle:hover{color:var(--text2)}
+.cat-drag-handle:active{cursor:grabbing}
+.later-card .cat-drag-handle{display:none}
 .card-icon{font-size:15px;flex-shrink:0}
 .card-label{font-size:13px;font-weight:600;flex:1;cursor:pointer}
 .card-meta{font-size:11px;color:var(--text3)}
@@ -206,7 +214,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   .filter-row{gap:4px}
   .fbtn{padding:4px 10px;font-size:10px}
   .grid{grid-template-columns:1fr;gap:10px}
-  .drag-handle{display:none !important}
+  .drag-handle,.cat-drag-handle{display:none !important}
   .del-btn{opacity:1 !important}
   .iname{font-size:13px}
   .badge{font-size:11px;padding:3px 10px}
@@ -219,7 +227,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
   body{background:#fff !important;color:#000 !important;font-size:10pt}
   .header{position:static;border:none;padding:0 0 8mm;background:transparent}
-  .header-actions,.filter-row,.hint,.add-row,.add-cat-btn,.del-btn,.drag-handle,
+  .header-actions,.filter-row,.hint,.add-row,.add-cat-btn,.del-btn,.drag-handle,.cat-drag-handle,
   .toggle-ind,.inbox-input-wrap,.inbox-actions,.save-toast,.modal-overlay,
   #qtClearDone,.iexp-actions,.iexp textarea[placeholder]:empty,.qt-del,.qt-check{display:none !important}
   .logo{font-size:14pt;color:#000 !important}
@@ -328,7 +336,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
       <button class="fbtn" data-f="예정">예정</button>
       <button class="fbtn" data-f="탈락">탈락</button>
     </div>
-    <p class="hint"><strong>▶ 클릭</strong> → 마감일·메모 펼치기 &nbsp;·&nbsp; <strong>항목명 더블클릭</strong> → 이름 수정 &nbsp;·&nbsp; <strong>상태 배지</strong> → 순환 변경 &nbsp;·&nbsp; <strong>카드 하단 입력</strong> → 새 항목 추가<br>D-day는 마감일을 설정하면 자동 표시됩니다. 모든 변경사항은 Firebase에 자동 저장됩니다.</p>
+    <p class="hint"><strong>카테고리 제목줄의 ⋮⋮</strong> → 카테고리 순서 변경 &nbsp;·&nbsp; <strong>항목의 ⋮⋮</strong> → 항목 이동/카테고리 이동<br><strong>▶ 클릭</strong> → 마감일·메모 펼치기 &nbsp;·&nbsp; <strong>항목명 더블클릭</strong> → 이름 수정 &nbsp;·&nbsp; <strong>상태 배지</strong> → 순환 변경 &nbsp;·&nbsp; 모든 변경사항은 Firebase에 자동 저장됩니다.</p>
     <div class="grid" id="mg"></div>
   </div>
 
@@ -398,6 +406,7 @@ let activeFilter = 'all';
 let openItemKey = null;
 let unsubscribeDashboard = null;
 let suppressSnapshot = false;
+let activeDragType = null;
 
 const LATER_CAT_ID = 'later-tasks';
 const LATER_CAT_TEMPLATE = {
@@ -433,10 +442,51 @@ function ensureLaterCategory(){
 function getDragPayload(e){
   const raw=e.dataTransfer.getData('text/plain');
   if(!raw||raw.indexOf('::')<0)return null;
+  // New format: item::categoryId::index
+  if(raw.startsWith('item::')){
+    const [,srcCatId,srcIdxRaw]=raw.split('::');
+    const srcIdx=parseInt(srcIdxRaw,10);
+    if(!srcCatId||Number.isNaN(srcIdx))return null;
+    return{srcCatId,srcIdx};
+  }
+  // Backward-compatible old format: categoryId::index
+  if(raw.startsWith('category::'))return null;
   const [srcCatId,srcIdxRaw]=raw.split('::');
   const srcIdx=parseInt(srcIdxRaw,10);
   if(!srcCatId||Number.isNaN(srcIdx))return null;
   return{srcCatId,srcIdx};
+}
+
+function getCategoryDragPayload(e){
+  const raw=e.dataTransfer.getData('text/plain');
+  if(!raw||!raw.startsWith('category::'))return null;
+  const [,srcCatId]=raw.split('::');
+  return srcCatId?{srcCatId}:null;
+}
+
+function clearCategoryDropMarks(){
+  document.querySelectorAll('.cat-drop-before,.cat-drop-after').forEach(el=>el.classList.remove('cat-drop-before','cat-drop-after'));
+}
+
+function moveCategoryByDrag(srcCatId,tgtCatId,after){
+  if(!srcCatId||!tgtCatId||srcCatId===tgtCatId)return false;
+  // The later bucket should remain at the bottom.
+  if(srcCatId===LATER_CAT_ID)return false;
+  const srcIdx=DATA.findIndex(c=>c.id===srcCatId);
+  let tgtIdx=DATA.findIndex(c=>c.id===tgtCatId);
+  if(srcIdx<0||tgtIdx<0)return false;
+  // Dropping onto the later bucket places the category just before it.
+  if(tgtCatId===LATER_CAT_ID)after=false;
+  const [moved]=DATA.splice(srcIdx,1);
+  tgtIdx=DATA.findIndex(c=>c.id===tgtCatId);
+  let insertAt=tgtIdx+(after?1:0);
+  insertAt=Math.max(0,Math.min(insertAt,DATA.length));
+  DATA.splice(insertAt,0,moved);
+  ensureLaterCategory();
+  openItemKey=null;
+  save();
+  render();
+  return true;
 }
 
 function moveItemByDrag(srcCatId,srcIdx,tgtCatId,insertAt){
@@ -782,6 +832,7 @@ function render(){
     card.className='card'+(cat.id===LATER_CAT_ID?' later-card':'');
     card.innerHTML=`
       <div class="card-head">
+        <span class="cat-drag-handle" onclick="event.stopPropagation()" title="카테고리 순서 변경">⋮⋮</span>
         <span class="card-icon">${cat.icon}</span>
         <span class="card-label" ondblclick="renameCat('${cat.id}')" title="더블클릭하여 이름 변경">${escapeHtml(cat.label)}</span>
         <span class="card-meta">${done}/${cat.items.length} · ${pct}%</span>
@@ -825,16 +876,20 @@ function render(){
       handle.addEventListener('mousedown',enableDrag);
       handle.addEventListener('touchstart',enableDrag,{passive:true});
       row.addEventListener('dragstart',e=>{
+        activeDragType='item';
         e.dataTransfer.effectAllowed='move';
-        e.dataTransfer.setData('text/plain',`${cat.id}::${realIdx}`);
+        e.dataTransfer.setData('text/plain',`item::${cat.id}::${realIdx}`);
         row.classList.add('dragging');
       });
       row.addEventListener('dragend',()=>{
+        activeDragType=null;
         row.classList.remove('dragging');
         row.draggable=false;
         document.querySelectorAll('.drop-above,.drop-below').forEach(el=>el.classList.remove('drop-above','drop-below'));
+        clearCategoryDropMarks();
       });
       row.addEventListener('dragover',e=>{
+        if(activeDragType==='category')return;
         e.preventDefault();
         const rect=row.getBoundingClientRect();
         const after=e.clientY>rect.top+rect.height/2;
@@ -845,6 +900,7 @@ function render(){
         if(!row.contains(e.relatedTarget))row.classList.remove('drop-above','drop-below');
       });
       row.addEventListener('drop',e=>{
+        if(activeDragType==='category')return;
         e.preventDefault();
         e.stopPropagation();
         row.classList.remove('drop-above','drop-below');
@@ -864,6 +920,7 @@ function render(){
     }
 
     itemsDiv.addEventListener('dragover',e=>{
+      if(activeDragType==='category')return;
       if(e.target.closest('.irow'))return;
       e.preventDefault();
       itemsDiv.classList.add('drop-target');
@@ -872,6 +929,7 @@ function render(){
       if(!itemsDiv.contains(e.relatedTarget))itemsDiv.classList.remove('drop-target');
     });
     itemsDiv.addEventListener('drop',e=>{
+      if(activeDragType==='category')return;
       if(e.target.closest('.irow'))return;
       e.preventDefault();
       e.stopPropagation();
@@ -883,6 +941,7 @@ function render(){
     });
 
     card.addEventListener('dragover',e=>{
+      if(activeDragType==='category')return;
       if(e.target.closest('.irow'))return;
       e.preventDefault();
       itemsDiv.classList.add('drop-target');
@@ -891,6 +950,7 @@ function render(){
       if(!card.contains(e.relatedTarget))itemsDiv.classList.remove('drop-target');
     });
     card.addEventListener('drop',e=>{
+      if(activeDragType==='category')return;
       if(e.target.closest('.irow'))return;
       e.preventDefault();
       e.stopPropagation();
@@ -900,6 +960,52 @@ function render(){
       const tgtCat=DATA.find(c=>c.id===cat.id);
       moveItemByDrag(payload.srcCatId,payload.srcIdx,cat.id,tgtCat?tgtCat.items.length:0);
     });
+
+    // ── Category card drag and drop setup ──
+    const catHandle=card.querySelector('.cat-drag-handle');
+    if(catHandle){
+      const enableCatDrag=()=>{if(cat.id!==LATER_CAT_ID)card.draggable=true};
+      catHandle.addEventListener('mousedown',enableCatDrag);
+      catHandle.addEventListener('touchstart',enableCatDrag,{passive:true});
+      card.addEventListener('dragstart',e=>{
+        if(!card.draggable||cat.id===LATER_CAT_ID)return;
+        activeDragType='category';
+        e.dataTransfer.effectAllowed='move';
+        e.dataTransfer.setData('text/plain',`category::${cat.id}`);
+        card.classList.add('cat-dragging');
+      });
+      card.addEventListener('dragend',()=>{
+        activeDragType=null;
+        card.classList.remove('cat-dragging');
+        card.draggable=false;
+        clearCategoryDropMarks();
+        document.querySelectorAll('.drop-above,.drop-below').forEach(el=>el.classList.remove('drop-above','drop-below'));
+      });
+      card.addEventListener('dragover',e=>{
+        if(activeDragType!=='category')return;
+        const payload=getCategoryDragPayload(e);
+        if(!payload||payload.srcCatId===cat.id)return;
+        e.preventDefault();
+        const rect=card.getBoundingClientRect();
+        const after=e.clientY>rect.top+rect.height/2;
+        clearCategoryDropMarks();
+        card.classList.add(after?'cat-drop-after':'cat-drop-before');
+      });
+      card.addEventListener('dragleave',e=>{
+        if(activeDragType!=='category')return;
+        if(!card.contains(e.relatedTarget))card.classList.remove('cat-drop-before','cat-drop-after');
+      });
+      card.addEventListener('drop',e=>{
+        if(activeDragType!=='category')return;
+        e.preventDefault();
+        e.stopPropagation();
+        const payload=getCategoryDragPayload(e);
+        const rect=card.getBoundingClientRect();
+        const after=e.clientY>rect.top+rect.height/2;
+        clearCategoryDropMarks();
+        if(payload)moveCategoryByDrag(payload.srcCatId,cat.id,after);
+      });
+    }
 
     card.appendChild(itemsDiv);
     const addRow=document.createElement('div');
