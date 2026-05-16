@@ -39,7 +39,12 @@ button,input,textarea,select{font-family:inherit}
 .task-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 5px 14px rgba(25,24,20,.05);padding:10px 10px 9px;cursor:grab;transition:background .12s,box-shadow .12s,transform .12s;border-left:4px solid var(--border2)}.task-card:hover{background:var(--surface2);box-shadow:0 8px 18px rgba(25,24,20,.08)}.task-card:active{cursor:grabbing}.task-card.dragging{opacity:.35;transform:rotate(1deg)}.task-card.drop-above{box-shadow:inset 0 3px 0 var(--blue)}.task-card.drop-below{box-shadow:inset 0 -3px 0 var(--blue)}.task-card.priority-high{border-left-color:var(--red)}.task-card.priority-today{border-left-color:var(--blue)}.task-top{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px}.handle{color:var(--text3);font-size:14px;line-height:1;letter-spacing:-2px;user-select:none;margin-top:2px}.task-title{font-size:13px;font-weight:700;line-height:1.42;flex:1;word-break:keep-all}.task-actions{display:flex;gap:2px}.icon-btn{border:none;background:transparent;color:var(--text3);font-size:13px;cursor:pointer;line-height:1;padding:2px}.icon-btn:hover{color:var(--text)}.task-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:5px}.chip{font-size:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:999px;padding:1px 6px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chip.project{font-weight:700}.chip.high{background:#fee2e2;color:#991b1b;border-color:#fecaca}.chip.today{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}.chip.due-urgent{background:#fecaca;color:#991b1b;border-color:#fca5a5}.chip.due-soon{background:#fde68a;color:#854d0e;border-color:#fcd34d}.chip.due-normal{background:var(--surface);color:var(--text2)}.chip.due-over{background:var(--text);color:var(--bg);border-color:var(--text)}.task-note{font-size:11px;color:var(--text2);line-height:1.35;margin-top:7px;white-space:pre-wrap;border-top:1px dashed var(--border);padding-top:7px}.column-empty{font-size:12px;color:var(--text3);font-style:italic;padding:12px;text-align:center;border:1px dashed var(--border);border-radius:10px;margin:2px}
 .project-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.project-pill{font-size:11px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:5px 9px;color:var(--text2);cursor:pointer}.project-pill:hover,.project-pill.on{background:var(--text);color:var(--bg);border-color:var(--text)}
 .logged-out{padding:28px}.logged-out h2{font-size:18px}.logged-out p{color:var(--text2);margin:8px 0 16px}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:90;padding:20px}.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;width:100%;max-width:460px}.modal h3{font-size:16px;margin-bottom:12px}.modal label{display:block;font-size:11px;color:var(--text2);margin:10px 0 4px}.modal input,.modal select,.modal textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 10px;outline:none}.modal textarea{min-height:82px;resize:vertical}.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.save-toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:var(--bg);border-radius:10px;padding:8px 16px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:120}.save-toast.show{opacity:1}
-@media(max-width:860px){.header{padding:10px 12px}.header-actions .btn{font-size:11px;padding:5px 8px}.logo span{display:none}.mode-pill{display:none}.main{padding:14px 12px 80px}.focus-grid{grid-template-columns:1fr}.toolbar{align-items:flex-start}.toolbar-left{width:100%}.search{min-width:0;flex:1}.kanban{display:flex;min-width:0;gap:10px}.column{min-width:82vw;min-height:500px}.board-wrap{margin-left:-2px;padding-left:2px}.auth-note{display:none}.modal-row{grid-template-columns:1fr}}
+
+.tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}.tab{background:transparent;border:1px solid var(--border2);border-radius:999px;padding:7px 14px;font-size:12px;color:var(--text2);cursor:pointer}.tab:hover,.tab.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.quick-add{padding:8px 10px 12px;border-top:1px dashed var(--border);margin-top:auto}.quick-add input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--text);outline:none}.quick-add input:focus{background:var(--surface);border-color:var(--blue)}.col-add{margin-left:4px;border:none;background:var(--surface2);color:var(--text2);border-radius:8px;padding:3px 7px;font-size:11px;cursor:pointer}.col-add:hover{background:var(--text);color:var(--bg)}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}.dash-num{font-size:26px;font-weight:700}.dash-label{font-size:11px;color:var(--text2);margin-top:2px}.dash-section{margin-top:14px}.dash-section h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px}.dash-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.dash-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12px}.dash-row strong{display:block;font-size:13px;margin-bottom:4px}.dash-row small{color:var(--text3)}.manual{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.manual h2{font-size:18px;margin-bottom:8px}.manual h3{font-size:13px;margin:14px 0 7px}.manual p,.manual li{font-size:13px;color:var(--text2)}.manual ol,.manual ul{padding-left:20px}.manual li{margin-bottom:6px}.manual-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px}.kbd{display:inline-block;border:1px solid var(--border2);background:var(--surface);border-radius:5px;padding:1px 5px;font-size:11px;color:var(--text)}
+
+@media(max-width:860px){.manual{grid-template-columns:1fr;padding:16px}.dash-grid{grid-template-columns:repeat(2,1fr)}.header{padding:10px 12px}.header-actions .btn{font-size:11px;padding:5px 8px}.logo span{display:none}.mode-pill{display:none}.main{padding:14px 12px 80px}.focus-grid{grid-template-columns:1fr}.toolbar{align-items:flex-start}.toolbar-left{width:100%}.search{min-width:0;flex:1}.kanban{display:flex;min-width:0;gap:10px}.column{min-width:82vw;min-height:500px}.board-wrap{margin-left:-2px;padding-left:2px}.auth-note{display:none}.modal-row{grid-template-columns:1fr}}
 @media print{.header,.toolbar,.project-strip,.save-toast,.modal-overlay,.task-actions{display:none!important}.main{padding:0}.focus,.column,.task-card{box-shadow:none;break-inside:avoid}.board-wrap{overflow:visible}.kanban{display:grid;grid-template-columns:repeat(3,1fr);min-width:0}.column{min-height:auto}.column-cards{min-height:auto}.task-card{page-break-inside:avoid}}
 </style>
 </head>
@@ -81,21 +86,67 @@ button,input,textarea,select{font-family:inherit}
       <div class="statline" id="statLine"></div>
     </section>
 
-    <div class="toolbar">
-      <div>
-        <div class="section-title">Trello Flow Board <span class="count" id="cardCount">0개 카드</span></div>
-        <p>카드는 좌우로 옮기고, 같은 열 안에서는 위아래 순서가 곧 우선순위입니다.</p>
-      </div>
-      <div class="toolbar-left">
-        <input class="search" id="searchInput" placeholder="검색: 고객명, 지원사업, 메모" oninput="renderBoard()">
-        <select class="select" id="projectFilter" onchange="renderBoard()"><option value="all">모든 프로젝트</option></select>
-        <button class="btn" onclick="createCardsFromCurrentBoard(false)">기존 보드 가져오기</button>
-        <button class="btn btn-primary" onclick="openCardModal()">+ 카드</button>
-      </div>
+    <div class="tabs">
+      <button class="tab on" data-view="board" onclick="setView('board')">트렐로 보드</button>
+      <button class="tab" data-view="dashboard" onclick="setView('dashboard')">대시보드</button>
+      <button class="tab" data-view="manual" onclick="setView('manual')">사용설명서</button>
     </div>
 
-    <div class="project-strip" id="projectStrip"></div>
-    <div class="board-wrap"><div class="kanban" id="kanban"></div></div>
+    <section id="view-board">
+      <div class="toolbar">
+        <div>
+          <div class="section-title">Trello Flow Board <span class="count" id="cardCount">0개 카드</span></div>
+          <p>카드는 좌우로 옮기고, 같은 열 안에서는 위아래 순서가 곧 우선순위입니다. 각 열 하단에서 바로 새 카드를 적을 수 있습니다.</p>
+        </div>
+        <div class="toolbar-left">
+          <input class="search" id="searchInput" placeholder="검색: 고객명, 지원사업, 메모" oninput="renderBoard()">
+          <select class="select" id="projectFilter" onchange="renderBoard()"><option value="all">모든 프로젝트</option></select>
+          <button class="btn" onclick="createCardsFromCurrentBoard(false)">기존 보드 가져오기</button>
+          <button class="btn btn-primary" onclick="openCardModal(null,'next')">+ 카드</button>
+        </div>
+      </div>
+
+      <div class="project-strip" id="projectStrip"></div>
+      <div class="board-wrap"><div class="kanban" id="kanban"></div></div>
+    </section>
+
+    <section id="view-dashboard" style="display:none">
+      <div class="section-title">Dashboard <span class="count" id="dashUpdated">현재 상태</span></div>
+      <div class="dash-grid" id="dashGrid"></div>
+      <div class="dash-section"><h3>진행 단계별 요약</h3><div class="dash-list" id="dashColumns"></div></div>
+      <div class="dash-section"><h3>프로젝트 / 가지별 요약</h3><div class="dash-list" id="dashProjects"></div></div>
+      <div class="dash-section"><h3>기존 업무 현황판 요약</h3><div class="dash-list" id="legacyBoard"></div></div>
+    </section>
+
+    <section id="view-manual" style="display:none">
+      <div class="panel manual">
+        <div class="manual-card">
+          <h2>사용설명서</h2>
+          <h3>1. 기본 원리</h3>
+          <p>이 화면은 마인드맵과 프로젝트 관리가 섞인 방식입니다. <strong>프로젝트/가지</strong>는 맥락을 잡고, <strong>열</strong>은 일이 진행되는 단계를 보여줍니다.</p>
+          <h3>2. 하루 시작</h3>
+          <ol>
+            <li><span class="kbd">오늘/중요</span> 영역을 먼저 봅니다.</li>
+            <li><span class="kbd">다음 행동</span> 열에서 오늘 움직일 카드를 1~3개만 고릅니다.</li>
+            <li>실제로 진행하면 카드를 <span class="kbd">진행중</span>으로 옮깁니다.</li>
+            <li>답변·심사·외부 응답을 기다리면 <span class="kbd">대기 / 확인</span>으로 옮깁니다.</li>
+          </ol>
+        </div>
+        <div class="manual-card">
+          <h3>카드 추가</h3>
+          <ul>
+            <li>각 열 하단의 <span class="kbd">+ 이 열에 새 카드</span> 입력칸에 적고 Enter를 누르면 바로 추가됩니다.</li>
+            <li>상단 <span class="kbd">+ 카드</span> 버튼을 누르면 프로젝트, 마감일, 중요도, 메모까지 함께 입력할 수 있습니다.</li>
+          </ul>
+          <h3>우선순위 조정</h3>
+          <ul>
+            <li>같은 열 안에서는 위에 있을수록 우선순위가 높습니다.</li>
+            <li>카드를 좌우로 드래그하면 진행 단계가 바뀝니다.</li>
+            <li>카드의 ○/●/★ 버튼으로 보통 → 오늘 → 중요을 순환합니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -146,7 +197,7 @@ firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth();
 const db=firebase.firestore();
 const DASHBOARD_DOC=db.collection('dashboards').doc('bunnar-main');
-let DATA=[];let QUICK=[];let FLOWS=[];let TRELLO=[];let unsubscribeDashboard=null;let suppressSnapshot=false;let activeProject='all';let draggedCardId=null;
+let DATA=[];let QUICK=[];let FLOWS=[];let TRELLO=[];let unsubscribeDashboard=null;let suppressSnapshot=false;let activeProject='all';let draggedCardId=null;let activeView='board';
 function uid(p='id'){return p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}
 function todayISO(){return new Date().toISOString().slice(0,10)}
 function daysUntil(d){if(!d)return null;const t=new Date(todayISO()+'T00:00:00');const due=new Date(d+'T00:00:00');return Math.round((due-t)/86400000)}
@@ -166,12 +217,13 @@ function logout(){auth.signOut()}
 auth.onAuthStateChanged(async user=>{document.getElementById('loginBtn').style.display=user?'none':'inline-flex';document.getElementById('logoutBtn').style.display=user?'inline-flex':'none';document.getElementById('authStatus').style.display=user?'inline':'none';document.getElementById('authStatus').textContent=user?`로그인: ${user.email||''}`:'';if(unsubscribeDashboard){unsubscribeDashboard();unsubscribeDashboard=null}if(!user){document.getElementById('app').style.display='none';document.getElementById('loggedOut').style.display='block';return}document.getElementById('loggedOut').style.display='none';document.getElementById('app').style.display='block';await loadData();renderAll();unsubscribeDashboard=DASHBOARD_DOC.onSnapshot(snap=>{if(suppressSnapshot){suppressSnapshot=false;return}if(!snap.exists)return;const d=snap.data();DATA=Array.isArray(d.items)?d.items:DATA;QUICK=Array.isArray(d.quickTasks)?d.quickTasks:QUICK;FLOWS=Array.isArray(d.flows)?d.flows:FLOWS;if(Array.isArray(d.trelloCards))TRELLO=d.trelloCards.map(normalizeCard);setLocalBackup();renderAll()},err=>console.error(err))});
 function filteredCards(){const q=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();const pf=document.getElementById('projectFilter')?.value||activeProject||'all';return TRELLO.filter(c=>{if(pf!=='all'&&c.project!==pf)return false;if(q){const hay=[c.title,c.project,c.note,c.column].join(' ').toLowerCase();if(!hay.includes(q))return false}return true})}
 function sorted(list){return [...list].sort((a,b)=>(a.order||0)-(b.order||0))}
-function renderAll(){renderFocus();renderProjectControls();renderBoard()}
+function renderAll(){renderFocus();renderProjectControls();renderBoard();renderDashboard()}
+function setView(v){activeView=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));['board','dashboard','manual'].forEach(x=>{const el=document.getElementById('view-'+x);if(el)el.style.display=x===v?'block':'none'});if(v==='dashboard')renderDashboard()}
 function renderProjectControls(){const projects=[...new Set(TRELLO.map(c=>c.project||'미분류'))].sort();const select=document.getElementById('projectFilter');const current=select.value||'all';select.innerHTML='<option value="all">모든 프로젝트</option>'+projects.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');select.value=projects.includes(current)?current:'all';const strip=document.getElementById('projectStrip');strip.innerHTML=`<button class="project-pill ${select.value==='all'?'on':''}" onclick="setProjectFilter('all')">전체</button>`+projects.map(p=>`<button class="project-pill ${select.value===p?'on':''}" onclick="setProjectFilter('${escapeHtml(p).replace(/'/g,'&#39;')}')">${escapeHtml(p)}</button>`).join('')}
 function setProjectFilter(p){document.getElementById('projectFilter').value=p;renderBoard();renderProjectControls()}
 function renderFocus(){document.getElementById('todayDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});const all=sorted(TRELLO);const priority=all.filter(c=>c.priority==='high'||c.priority==='today'||(c.due&&daysUntil(c.due)<=3&&c.column!=='done')).slice(0,6);const next=all.filter(c=>c.column==='next').slice(0,6);const waiting=all.filter(c=>c.column==='waiting').slice(0,6);document.getElementById('focusPriority').innerHTML=priority.length?priority.map(focusItem).join(''):'<div class="empty">오늘/중요 카드가 없습니다.</div>';document.getElementById('focusNext').innerHTML=next.length?next.map(focusItem).join(''):'<div class="empty">다음 행동 열이 비어 있습니다.</div>';document.getElementById('focusWaiting').innerHTML=waiting.length?waiting.map(focusItem).join(''):'<div class="empty">대기 중인 카드가 없습니다.</div>';const done=TRELLO.filter(c=>c.column==='done').length;document.getElementById('statLine').innerHTML=`<span>카드 ${TRELLO.length}개</span><span>프로젝트 ${new Set(TRELLO.map(c=>c.project)).size}개</span><span>진행중 ${TRELLO.filter(c=>c.column==='doing').length}개</span><span>완료 ${done}개</span>`}
 function focusItem(c){const due=c.due?dueLabel(c.due):null;return `<div class="focus-item"><span class="dot" style="background:${c.priority==='high'?'var(--red)':c.priority==='today'?'var(--blue)':'var(--text3)'}"></span><div><strong>${escapeHtml(c.title)}</strong><small>${escapeHtml(c.project)}${due?' · '+escapeHtml(due.text):''}</small></div></div>`}
-function renderBoard(){const board=document.getElementById('kanban');const cards=filteredCards();document.getElementById('cardCount').textContent=`${cards.length}개 카드`;board.innerHTML=COLUMNS.map(col=>{const list=sorted(cards.filter(c=>c.column===col.id));return `<section class="column" data-col="${col.id}" ondragover="onColumnDragOver(event,'${col.id}')" ondrop="onColumnDrop(event,'${col.id}')" ondragleave="this.classList.remove('drag-over')"><div class="column-head"><span class="column-dot" style="background:${col.color}"></span><div><div class="column-title">${escapeHtml(col.title)}</div><div class="column-sub">${escapeHtml(col.sub)}</div></div><div class="column-count">${list.length}</div></div><div class="column-cards">${list.length?list.map(renderCard).join(''):'<div class="column-empty">여기에 카드를 드래그하세요.</div>'}</div></section>`}).join('')}
+function renderBoard(){const board=document.getElementById('kanban');if(!board)return;const cards=filteredCards();document.getElementById('cardCount').textContent=`${cards.length}개 카드`;board.innerHTML=COLUMNS.map(col=>{const list=sorted(cards.filter(c=>c.column===col.id));return `<section class="column" data-col="${col.id}" ondragover="onColumnDragOver(event,'${col.id}')" ondrop="onColumnDrop(event,'${col.id}')" ondragleave="this.classList.remove('drag-over')"><div class="column-head"><span class="column-dot" style="background:${col.color}"></span><div><div class="column-title">${escapeHtml(col.title)}</div><div class="column-sub">${escapeHtml(col.sub)}</div></div><div class="column-count">${list.length}</div><button class="col-add" onclick="openCardModal(null,'${col.id}')" title="이 열에 카드 추가">＋</button></div><div class="column-cards">${list.length?list.map(renderCard).join(''):'<div class="column-empty">여기에 카드를 드래그하세요.</div>'}</div><div class="quick-add"><input placeholder="+ 이 열에 새 카드 입력 후 Enter" onkeydown="quickAddCard(event,'${col.id}')"></div></section>`}).join('')}
 function renderCard(c){const due=c.due?dueLabel(c.due):null;const pClass=c.priority==='high'?'priority-high':c.priority==='today'?'priority-today':'';return `<article class="task-card ${pClass}" draggable="true" data-id="${c.id}" ondragstart="onCardDragStart(event,'${c.id}')" ondragend="onCardDragEnd(event)" ondragover="onCardDragOver(event,'${c.id}')" ondragleave="onCardDragLeave(event)" ondrop="onCardDrop(event,'${c.id}')"><div class="task-top"><span class="handle">⋮⋮</span><div class="task-title" ondblclick="quickEditTitle(event,'${c.id}')">${escapeHtml(c.title)}</div><div class="task-actions"><button class="icon-btn" title="중요/오늘" onclick="togglePriority(event,'${c.id}')">${c.priority==='high'?'★':c.priority==='today'?'●':'○'}</button><button class="icon-btn" title="수정" onclick="openCardModal('${c.id}')">✎</button></div></div><div class="task-meta"><span class="chip project">${escapeHtml(c.project||'미분류')}</span>${c.priority==='high'?'<span class="chip high">중요</span>':''}${c.priority==='today'?'<span class="chip today">오늘</span>':''}${due?`<span class="chip ${due.cls}">${due.text}</span>`:''}</div>${c.note?`<div class="task-note">${escapeHtml(c.note)}</div>`:''}</article>`}
 function onCardDragStart(e,id){draggedCardId=id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',id);e.currentTarget.classList.add('dragging')}
 function onCardDragEnd(e){e.currentTarget.classList.remove('dragging');document.querySelectorAll('.drop-above,.drop-below,.drag-over').forEach(el=>el.classList.remove('drop-above','drop-below','drag-over'));draggedCardId=null}
@@ -183,7 +235,37 @@ function onCardDrop(e,targetId){e.preventDefault();e.stopPropagation();const id=
 function moveCard(id,targetCol,targetId=null,after=false){const moved=TRELLO.find(c=>c.id===id);if(!moved)return;const oldCol=moved.column;moved.column=targetCol;const targetList=sorted(TRELLO.filter(c=>c.column===targetCol&&c.id!==id));let insertAt=targetList.length;if(targetId){const idx=targetList.findIndex(c=>c.id===targetId);if(idx>=0)insertAt=idx+(after?1:0)}targetList.splice(insertAt,0,moved);targetList.forEach((c,i)=>c.order=i);if(oldCol!==targetCol){sorted(TRELLO.filter(c=>c.column===oldCol)).forEach((c,i)=>c.order=i)}saveTrelloOnly();renderAll()}
 function togglePriority(ev,id){ev.stopPropagation();const c=TRELLO.find(x=>x.id===id);if(!c)return;c.priority=c.priority==='normal'?'today':c.priority==='today'?'high':'normal';saveTrelloOnly();renderAll()}
 function quickEditTitle(ev,id){ev.preventDefault();ev.stopPropagation();const c=TRELLO.find(x=>x.id===id);if(!c)return;const v=prompt('카드 제목 수정:',c.title);if(v===null)return;const t=v.trim();if(!t)return;c.title=t;saveTrelloOnly();renderAll()}
-function openCardModal(id=null){const isEdit=!!id;const c=isEdit?TRELLO.find(x=>x.id===id):null;document.getElementById('modalTitle').textContent=isEdit?'카드 수정':'카드 추가';document.getElementById('editCardId').value=isEdit?id:'';document.getElementById('cardTitle').value=c?.title||'';document.getElementById('cardProject').value=c?.project||'';document.getElementById('cardDue').value=c?.due||'';document.getElementById('cardPriority').value=c?.priority||'normal';document.getElementById('cardNote').value=c?.note||'';document.getElementById('deleteCardBtn').style.display=isEdit?'inline-flex':'none';const colSel=document.getElementById('cardColumn');colSel.innerHTML=COLUMNS.map(col=>`<option value="${col.id}">${col.title}</option>`).join('');colSel.value=c?.column||'next';document.getElementById('cardModal').style.display='flex';document.getElementById('cardTitle').focus()}
+function quickAddCard(e,colId){
+  if(e.key!=='Enter')return;
+  const title=e.target.value.trim();
+  if(!title)return;
+  const projectSel=document.getElementById('projectFilter')?.value||'all';
+  const project=projectSel!=='all'?projectSel:'미분류';
+  const list=sorted(TRELLO.filter(c=>c.column===colId));
+  TRELLO.push({id:uid('card'),title,project,column:colId,due:'',note:'',priority:colId==='next'?'today':'normal',order:list.length,source:'quick'});
+  e.target.value='';
+  saveTrelloOnly();renderAll();
+}
+function renderDashboard(){
+  const dashGrid=document.getElementById('dashGrid');
+  if(!dashGrid)return;
+  const total=TRELLO.length;
+  const urgent=TRELLO.filter(c=>c.priority==='high'||c.priority==='today'||(c.due&&daysUntil(c.due)<=3&&c.column!=='done')).length;
+  const doing=TRELLO.filter(c=>c.column==='doing').length;
+  const waiting=TRELLO.filter(c=>c.column==='waiting').length;
+  const done=TRELLO.filter(c=>c.column==='done').length;
+  dashGrid.innerHTML=`<div class="dash-card"><div class="dash-num">${total}</div><div class="dash-label">전체 카드</div></div><div class="dash-card"><div class="dash-num" style="color:var(--red)">${urgent}</div><div class="dash-label">오늘/중요</div></div><div class="dash-card"><div class="dash-num" style="color:var(--blue)">${doing}</div><div class="dash-label">진행중</div></div><div class="dash-card"><div class="dash-num" style="color:var(--amber)">${waiting}</div><div class="dash-label">대기/확인</div></div>`;
+  const colBox=document.getElementById('dashColumns');
+  colBox.innerHTML=COLUMNS.map(col=>{const list=TRELLO.filter(c=>c.column===col.id);return `<div class="dash-row"><strong><span style="color:${col.color}">●</span> ${escapeHtml(col.title)} · ${list.length}개</strong><small>${escapeHtml(col.sub)}</small></div>`}).join('');
+  const projectBox=document.getElementById('dashProjects');
+  const map={};TRELLO.forEach(c=>{const p=c.project||'미분류';if(!map[p])map[p]={total:0,done:0,urgent:0};map[p].total++;if(c.column==='done')map[p].done++;if(c.priority==='high'||c.priority==='today')map[p].urgent++;});
+  const rows=Object.entries(map).sort((a,b)=>b[1].urgent-a[1].urgent||b[1].total-a[1].total);
+  projectBox.innerHTML=rows.length?rows.map(([p,v])=>`<div class="dash-row"><strong>${escapeHtml(p)}</strong><small>전체 ${v.total} · 완료 ${v.done} · 오늘/중요 ${v.urgent}</small></div>`).join(''):'<div class="dash-row"><small>프로젝트가 없습니다.</small></div>';
+  const legacy=document.getElementById('legacyBoard');
+  legacy.innerHTML=DATA.length?DATA.map(cat=>{const items=cat.items||[];const doneCnt=items.filter(i=>i.s==='완료').length;return `<div class="dash-row"><strong>${escapeHtml(cat.icon||'📌')} ${escapeHtml(cat.label||'카테고리')}</strong><small>${doneCnt}/${items.length} 완료</small></div>`}).join(''):'<div class="dash-row"><small>기존 업무 현황판 데이터가 없습니다.</small></div>';
+  const up=document.getElementById('dashUpdated');if(up)up.textContent=`카드 ${total} · 완료 ${done}`;
+}
+function openCardModal(id=null,defaultColumn='next'){const isEdit=!!id;const c=isEdit?TRELLO.find(x=>x.id===id):null;document.getElementById('modalTitle').textContent=isEdit?'카드 수정':'카드 추가';document.getElementById('editCardId').value=isEdit?id:'';document.getElementById('cardTitle').value=c?.title||'';document.getElementById('cardProject').value=c?.project||'';document.getElementById('cardDue').value=c?.due||'';document.getElementById('cardPriority').value=c?.priority||'normal';document.getElementById('cardNote').value=c?.note||'';document.getElementById('deleteCardBtn').style.display=isEdit?'inline-flex':'none';const colSel=document.getElementById('cardColumn');colSel.innerHTML=COLUMNS.map(col=>`<option value="${col.id}">${col.title}</option>`).join('');colSel.value=c?.column||defaultColumn||'next';document.getElementById('cardModal').style.display='flex';document.getElementById('cardTitle').focus()}
 function closeCardModal(e){if(e.target.id==='cardModal')closeCardModalDirect()}
 function closeCardModalDirect(){document.getElementById('cardModal').style.display='none'}
 function saveCardFromModal(){const id=document.getElementById('editCardId').value;const title=document.getElementById('cardTitle').value.trim();if(!title){alert('카드 제목을 입력하세요.');return}const obj={title,project:document.getElementById('cardProject').value.trim()||'미분류',column:document.getElementById('cardColumn').value,due:document.getElementById('cardDue').value,note:document.getElementById('cardNote').value.trim(),priority:document.getElementById('cardPriority').value};if(id){const c=TRELLO.find(x=>x.id===id);if(!c)return;Object.assign(c,obj)}else{const list=sorted(TRELLO.filter(c=>c.column===obj.column));TRELLO.push({...obj,id:uid('card'),order:list.length,source:'manual'})}closeCardModalDirect();saveTrelloOnly();renderAll()}
