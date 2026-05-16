@@ -126,9 +126,22 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .items{padding:4px 0;flex:1}
 .items.empty{min-height:42px}
 .items.drop-target{outline:2px dashed var(--blue);outline-offset:-4px;background:var(--surface2)}
-.later-card{border-style:dashed}
-.later-card .card-head{background:var(--surface2)}
-.later-card .items.empty::after{content:"지금 당장 안 해도 되는 일을 여기로 드래그";display:block;padding:14px 16px;font-size:11px;color:var(--text3)}
+/* Later bucket: intentionally fixed at the bottom and visually separated */
+.later-card{background:#1a1a18;border-color:#1a1a18;color:#f7f6f3;border-style:solid}
+.later-card .card-head{background:#1a1a18;border-bottom-color:#33332f;color:#f7f6f3}
+.later-card .card-label,.later-card .card-icon{color:#f7f6f3}
+.later-card .card-meta{color:#b8b5aa}
+.later-card .pbar{background:#33332f}
+.later-card .items{background:#1a1a18}
+.later-card .irow:hover,.later-card .irow.open{background:#262620}
+.later-card .irow.open{border-bottom-color:#3a3a34}
+.later-card .iname{color:#f7f6f3}
+.later-card .toggle-ind,.later-card .drag-handle,.later-card .del-btn{color:#b8b5aa}
+.later-card .iexp{background:#1a1a18;border-top-color:#3a3a34}
+.later-card .iexp textarea,.later-card .iexp input[type=date],.later-card .add-input{background:#262620;border-color:#3a3a34;color:#f7f6f3}
+.later-card .add-input::placeholder{color:#8f8c83}
+.later-card .items.drop-target{outline:2px dashed #f7f6f3;background:#262620}
+.later-card .items.empty::after{content:"지금 당장 안 해도 되는 일을 여기로 드래그";display:block;padding:14px 16px;font-size:11px;color:#b8b5aa}
 
 .irow{border-bottom:1px solid transparent;transition:background .12s}
 .irow:hover{background:var(--surface2)}
@@ -407,6 +420,7 @@ let openItemKey = null;
 let unsubscribeDashboard = null;
 let suppressSnapshot = false;
 let activeDragType = null;
+let activeCategoryDragId = null;
 
 const LATER_CAT_ID = 'later-tasks';
 const LATER_CAT_TEMPLATE = {
@@ -466,6 +480,16 @@ function getCategoryDragPayload(e){
 
 function clearCategoryDropMarks(){
   document.querySelectorAll('.cat-drop-before,.cat-drop-after').forEach(el=>el.classList.remove('cat-drop-before','cat-drop-after'));
+}
+
+function getCategoryDropAfter(e,card){
+  const rect=card.getBoundingClientRect();
+  const centerX=rect.left+rect.width/2;
+  const centerY=rect.top+rect.height/2;
+  const dx=Math.abs(e.clientX-centerX);
+  const dy=Math.abs(e.clientY-centerY);
+  // In a CSS grid, cards often sit side-by-side. Use the stronger movement axis.
+  return dx>dy ? e.clientX>centerX : e.clientY>centerY;
 }
 
 function moveCategoryByDrag(srcCatId,tgtCatId,after){
@@ -964,30 +988,35 @@ function render(){
     // ── Category card drag and drop setup ──
     const catHandle=card.querySelector('.cat-drag-handle');
     if(catHandle){
-      const enableCatDrag=()=>{if(cat.id!==LATER_CAT_ID)card.draggable=true};
+      const enableCatDrag=()=>{
+        if(cat.id!==LATER_CAT_ID){
+          card.draggable=true;
+          catHandle.draggable=true;
+        }
+      };
       catHandle.addEventListener('mousedown',enableCatDrag);
       catHandle.addEventListener('touchstart',enableCatDrag,{passive:true});
       card.addEventListener('dragstart',e=>{
         if(!card.draggable||cat.id===LATER_CAT_ID)return;
         activeDragType='category';
+        activeCategoryDragId=cat.id;
         e.dataTransfer.effectAllowed='move';
         e.dataTransfer.setData('text/plain',`category::${cat.id}`);
         card.classList.add('cat-dragging');
       });
       card.addEventListener('dragend',()=>{
         activeDragType=null;
+        activeCategoryDragId=null;
         card.classList.remove('cat-dragging');
         card.draggable=false;
+        catHandle.draggable=false;
         clearCategoryDropMarks();
         document.querySelectorAll('.drop-above,.drop-below').forEach(el=>el.classList.remove('drop-above','drop-below'));
       });
       card.addEventListener('dragover',e=>{
-        if(activeDragType!=='category')return;
-        const payload=getCategoryDragPayload(e);
-        if(!payload||payload.srcCatId===cat.id)return;
+        if(activeDragType!=='category'||!activeCategoryDragId||activeCategoryDragId===cat.id)return;
         e.preventDefault();
-        const rect=card.getBoundingClientRect();
-        const after=e.clientY>rect.top+rect.height/2;
+        const after=getCategoryDropAfter(e,card);
         clearCategoryDropMarks();
         card.classList.add(after?'cat-drop-after':'cat-drop-before');
       });
@@ -999,11 +1028,10 @@ function render(){
         if(activeDragType!=='category')return;
         e.preventDefault();
         e.stopPropagation();
-        const payload=getCategoryDragPayload(e);
-        const rect=card.getBoundingClientRect();
-        const after=e.clientY>rect.top+rect.height/2;
+        const payload=getCategoryDragPayload(e)||{srcCatId:activeCategoryDragId};
+        const after=getCategoryDropAfter(e,card);
         clearCategoryDropMarks();
-        if(payload)moveCategoryByDrag(payload.srcCatId,cat.id,after);
+        if(payload&&payload.srcCatId)moveCategoryByDrag(payload.srcCatId,cat.id,after);
       });
     }
 
