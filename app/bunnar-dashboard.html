@@ -248,6 +248,31 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .one-thing-date{font-size:11px;color:rgba(255,255,255,.3)}
 .one-thing-reset{background:transparent;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:3px 10px;font-size:10px;color:rgba(255,255,255,.3);cursor:pointer;font-family:inherit;transition:all .15s}
 .one-thing-reset:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6)}
+/* ─── 지원사업 현황판 ─── */
+.support-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.support-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.support-card-head{display:flex;align-items:center;gap:8px;padding:11px 14px 9px;border-bottom:1px solid var(--border)}
+.support-card-icon{font-size:15px;flex-shrink:0}
+.support-card-name{font-size:12px;font-weight:600;flex:1;line-height:1.35;cursor:pointer}
+.support-card-name:hover{text-decoration:underline}
+.support-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;white-space:nowrap;cursor:pointer;border:none;font-family:inherit;flex-shrink:0;transition:opacity .12s}
+.support-badge:hover{opacity:.75}
+.support-card-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0 0 0 4px;opacity:0;line-height:1;transition:opacity .12s}
+.support-card:hover .support-card-del{opacity:1}
+.support-card-del:hover{color:var(--red)}
+.support-card-body{padding:8px 14px 10px;display:flex;flex-direction:column;gap:4px}
+.support-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text2)}
+.support-row strong{color:var(--text);font-size:11px;font-weight:500}
+.support-memo{font-size:11px;color:var(--text3);line-height:1.5;margin-top:2px;cursor:text;outline:none;min-height:16px}
+.support-dday{font-size:10px;font-weight:600;padding:1px 6px;border-radius:6px;margin-left:4px;display:inline-block}
+.s-선정완료{background:#E1F5EE;color:#085041}
+.s-심사중{background:#FAEEDA;color:#633806}
+.s-신청완료{background:#E6F1FB;color:#0C447C}
+.s-미선정{background:#FCEBEB;color:#791F1F}
+.s-예정{background:var(--surface2);color:var(--text2)}
+.s-대기중{background:#EDE9FE;color:#4C1D95}
+.s-지원완료{background:#D1FAE5;color:#065F46}
+
 .google-calendar-panel{padding:16px 18px 18px}
 .google-calendar-panel .digest-head{align-items:flex-start;margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:nowrap;gap:12px}
 .google-calendar-panel .digest-head h2{font-size:16px;font-weight:700;flex-shrink:0}
@@ -444,6 +469,16 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
         <button class="one-thing-reset" onclick="resetOneThing()" title="오늘 날짜로 초기화">↺ 오늘 날짜 초기화</button>
       </div>
     </div>
+  </div>
+
+  <!-- ── 2026 지원사업 현황판 ── -->
+  <div id="supportBox" style="display:none;margin-bottom:24px">
+    <div class="section-title" style="margin-bottom:12px">
+      📋 2026 지원사업 현황
+      <span class="count" id="supportCount"></span>
+      <button onclick="addSupportItem()" style="margin-left:auto;background:transparent;border:1px solid var(--border2);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit">+ 추가</button>
+    </div>
+    <div id="supportGrid"></div>
   </div>
 
   <div class="section" id="projectsSection" style="display:none">
@@ -1285,7 +1320,136 @@ document.addEventListener('click',e=>{
   }
 });
 
-// ── 오늘의 1 Thing ────────────────────────
+// ── 2026 지원사업 현황판 ────────────────────────
+const SP_DOC=()=>db.collection('dashboards').doc('bunnar-support');
+const SP_STATUSES=['선정완료','심사중','신청완료','미선정','대기중','예정','지원완료'];
+const SP_ICONS={
+  '선정완료':'✅','심사중':'⏳','신청완료':'📬','미선정':'❌','대기중':'🔔','예정':'📅','지원완료':'🏁'
+};
+
+const SP_DEFAULT=[
+  {id:'sp1',name:'판판대로 SNS마케팅 지원사업',org:'한국중소벤처기업유통원',status:'선정완료',deadline:'',memo:''},
+  {id:'sp2',name:'판판대로 상품개선 지원사업',org:'한국중소벤처기업유통원',status:'선정완료',deadline:'',memo:''},
+  {id:'sp3',name:'화성e샵 복지몰 입점 지원',org:'화성산업진흥원',status:'선정완료',deadline:'',memo:'300만 임직원 폐쇄몰'},
+  {id:'sp4',name:'판판셀러 온라인쇼핑몰 통합관리시스템',org:'한국중소벤처기업유통원',status:'선정완료',deadline:'',memo:''},
+  {id:'sp5',name:'판판대로 TOPS 온라인 브랜드 육성',org:'한국중소벤처기업유통원',status:'미선정',deadline:'',memo:''},
+  {id:'sp6',name:'소공인 자생력강화사업 (제품개선)',org:'소상공인시장진흥공단',status:'심사중',deadline:'2026-05-15',memo:'10피스 테이블웨어 몰드 제작'},
+  {id:'sp7',name:'소공인 스마트제조 지원사업',org:'소상공인시장진흥공단',status:'예정',deadline:'',memo:'4월말~5월 공고 예정 / 소형가마+3D프린터 목표'},
+  {id:'sp8',name:'화성산업진흥원 마케팅 활성화',org:'화성산업진흥원',status:'예정',deadline:'',memo:'공장 등록 후 하반기 신청 예정 (가점 확보)'},
+  {id:'sp9',name:'브랜드 소상공인 점프업',org:'중소벤처기업부',status:'대기중',deadline:'2026-05-29',memo:'판판대로 신청 / 가볍게 도전'},
+  {id:'sp10',name:'이천 세라믹 테카르트 공모전',org:'이천시·한국세라믹기술원',status:'대기중',deadline:'2026-06-21',memo:'결 KYUL — 파인다이닝 식기 / 진지하게 도전'},
+];
+
+let SP_DATA=[];
+
+async function initSupport(){
+  try{
+    const snap=await SP_DOC().get();
+    if(snap.exists && Array.isArray(snap.data().items) && snap.data().items.length>0){
+      SP_DATA=snap.data().items;
+    }else{
+      SP_DATA=JSON.parse(JSON.stringify(SP_DEFAULT));
+      await saveSupport();
+    }
+  }catch(e){ SP_DATA=JSON.parse(JSON.stringify(SP_DEFAULT)); }
+  renderSupport();
+}
+
+async function saveSupport(){
+  if(!auth.currentUser)return;
+  try{ await SP_DOC().set({items:SP_DATA,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); }
+  catch(e){ console.error('지원사업 저장 실패',e); }
+}
+
+function daysLeft(dateStr){
+  if(!dateStr)return null;
+  const today=new Date(todayISO()+'T00:00:00');
+  const due=new Date(dateStr+'T00:00:00');
+  return Math.round((due-today)/86400000);
+}
+
+function ddayBadge(dateStr){
+  const n=daysLeft(dateStr);
+  if(n===null)return'';
+  let cls='normal',label=`D-${n}`;
+  if(n<0){cls='over';label=`D+${Math.abs(n)}`;}
+  else if(n===0){cls='urgent';label='D-DAY';}
+  else if(n<=7)cls='urgent';
+  else if(n<=14)cls='soon';
+  return`<span class="dday ${cls} support-dday">${label}</span>`;
+}
+
+function renderSupport(){
+  const grid=document.getElementById('supportGrid');
+  const countEl=document.getElementById('supportCount');
+  if(!grid)return;
+  const selected=SP_DATA.filter(x=>x.status==='선정완료').length;
+  if(countEl)countEl.textContent=`${SP_DATA.length}건 · 선정 ${selected}건`;
+
+  grid.className='support-grid';
+  grid.innerHTML='';
+  SP_DATA.forEach((item,idx)=>{
+    const cls=`s-${item.status}`;
+    const icon=SP_ICONS[item.status]||'📌';
+    const dd=ddayBadge(item.deadline);
+    const card=document.createElement('div');
+    card.className='support-card';
+    card.innerHTML=`
+      <div class="support-card-head">
+        <span class="support-card-icon">${icon}</span>
+        <span class="support-card-name" ondblclick="editSupportName(${idx})">${escapeHtml(item.name)}</span>
+        <button class="support-badge ${cls}" onclick="cycleSupportStatus(${idx})">${item.status}</button>
+        <button class="support-card-del" onclick="deleteSupportItem(${idx})" title="삭제">×</button>
+      </div>
+      <div class="support-card-body">
+        <div class="support-row">
+          <span>${escapeHtml(item.org)}</span>
+          <span>${item.deadline?`<strong>${item.deadline}</strong>${dd}`:''}</span>
+        </div>
+        <div class="support-memo" contenteditable="true" spellcheck="false"
+          onblur="updateSupportMemo(${idx},this.innerText)"
+          data-placeholder="메모...">${escapeHtml(item.memo||'')}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function cycleSupportStatus(idx){
+  const cur=SP_STATUSES.indexOf(SP_DATA[idx].status);
+  SP_DATA[idx].status=SP_STATUSES[(cur+1)%SP_STATUSES.length];
+  saveSupport();renderSupport();
+}
+function updateSupportMemo(idx,val){
+  SP_DATA[idx].memo=val.trim();
+  saveSupport();
+}
+function editSupportName(idx){
+  const v=prompt('사업명 수정:',SP_DATA[idx].name);
+  if(v&&v.trim()&&v.trim()!==SP_DATA[idx].name){
+    SP_DATA[idx].name=v.trim();saveSupport();renderSupport();
+  }
+}
+function deleteSupportItem(idx){
+  if(!confirm('이 항목을 삭제할까요?'))return;
+  SP_DATA.splice(idx,1);saveSupport();renderSupport();
+}
+function addSupportItem(){
+  const name=prompt('지원사업명:');
+  if(!name)return;
+  const org=prompt('주관기관:','');
+  const deadline=prompt('마감일 (예: 2026-06-30, 없으면 엔터)','');
+  SP_DATA.push({
+    id:'sp'+Date.now(),
+    name:name.trim(),
+    org:(org||'').trim(),
+    status:'예정',
+    deadline:deadline||'',
+    memo:''
+  });
+  saveSupport();renderSupport();
+}
+
+
 const OT_DOC=()=>db.collection('dashboards').doc('bunnar-onething');
 let otSaveTimer=null;
 
@@ -1360,6 +1524,8 @@ auth.onAuthStateChanged(async user=>{
     projectsSection.style.display='none';
     const otb=document.getElementById('oneThingBox');
     if(otb)otb.style.display='none';
+    const spb=document.getElementById('supportBox');
+    if(spb)spb.style.display='none';
     loggedOut.style.display='block';
     return;
   }
@@ -1374,7 +1540,10 @@ auth.onAuthStateChanged(async user=>{
   projectsSection.style.display='block';
   const otb=document.getElementById('oneThingBox');
   if(otb)otb.style.display='block';
+  const spb=document.getElementById('supportBox');
+  if(spb)spb.style.display='block';
   loggedOut.style.display='none';
+  initSupport();
   initOneThing();
 
   const loaded=await loadData();
