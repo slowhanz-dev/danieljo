@@ -234,6 +234,31 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   .hint{display:none}
 }
 
+
+/* ─── Google Calendar / Tasks sync panel ─── */
+.google-sync-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+.google-sync-status{font-size:12px;color:var(--text2)}
+.gcal-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.gcal-day{background:rgba(255,255,255,.56);border:1px solid var(--line);border-radius:14px;min-height:170px;padding:10px}
+.gcal-day.today{box-shadow:inset 0 0 0 2px rgba(55,138,221,.25)}
+.gcal-day-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px;color:var(--text2)}
+.gcal-day-num{font-size:20px;font-weight:700;color:var(--text)}
+.gcal-events{display:flex;flex-direction:column;gap:6px}
+.gcal-event{border:1px solid rgba(55,138,221,.22);background:#fff;border-radius:10px;padding:7px 8px;font-size:12px;line-height:1.35;cursor:pointer}
+.gcal-event:hover{border-color:rgba(55,138,221,.55)}
+.gcal-event-time{font-size:10px;color:var(--blue);font-weight:700;margin-bottom:2px}
+.gcal-event-title{color:var(--text)}
+.gcal-event-actions{display:flex;gap:5px;margin-top:6px}
+.gcal-mini{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 6px;font-size:10px;cursor:pointer;color:var(--text2)}
+.gcal-empty{grid-column:1/-1;color:var(--text2);font-size:13px;padding:18px;border:1px dashed var(--line);border-radius:14px;background:rgba(255,255,255,.45)}
+.gt-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.gt-row.done .gt-title{text-decoration:line-through;color:var(--text3)}
+.gt-check{width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer}
+.gt-check.done{background:var(--green);border-color:var(--green);color:#fff}
+.gt-title{flex:1;font-size:13px}
+.gt-del{border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:16px}
+@media (max-width:900px){.gcal-week{grid-template-columns:1fr}.gcal-day{min-height:auto}}
+
 /* ─── Print ─── */
 @media print{
   @page{size:A4;margin:12mm 10mm}
@@ -308,30 +333,33 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 </div>
 
 <div class="main">
-  <div class="digest" id="digest" style="display:none">
+  <div class="digest google-calendar-panel" id="digest" style="display:none">
     <div class="digest-head">
-      <h2>오늘의 다이제스트</h2>
+      <h2>이번 주 Google Calendar</h2>
       <span class="date" id="todayDate"></span>
     </div>
-    <div class="digest-grid">
-      <div class="digest-col"><h3>🔴 지금 당장</h3><div id="digUrgent"></div></div>
-      <div class="digest-col"><h3>🟡 이번 주</h3><div id="digSoon"></div></div>
-      <div class="digest-col"><h3>⚪ 진행 중</h3><div id="digActive"></div></div>
+    <div class="google-sync-toolbar">
+      <button class="btn btn-primary" id="googleConnectBtn" onclick="connectGoogleWorkspace()">Google Calendar/Tasks 연결</button>
+      <button class="btn" id="googleRefreshBtn" onclick="refreshGoogleWorkspace()" style="display:none">새로고침</button>
+      <button class="btn" id="googleAddEventBtn" onclick="createGoogleEvent()" style="display:none">+ 일정</button>
+      <button class="btn" id="googleDisconnectBtn" onclick="disconnectGoogleWorkspace()" style="display:none">연결 해제</button>
+      <span class="google-sync-status" id="googleSyncStatus">서비스 로그인 계정과 별개로 캘린더/태스크 계정을 연결할 수 있습니다.</span>
+    </div>
+    <div class="gcal-week" id="gcalWeek">
+      <div class="gcal-empty">Google 계정을 연결하면 주간 일정이 표시됩니다.</div>
     </div>
   </div>
 
-  <div class="inbox" id="inboxBox" style="display:none">
+  <div class="inbox google-task-panel" id="inboxBox" style="display:none">
     <div class="inbox-head">
-      <h2>📥 잔업 (Quick Inbox)</h2>
-      <span class="pill" id="qtCount">0개 남음</span>
+      <h2>Google Tasks · 잔업</h2>
+      <span class="pill" id="gtCount">연결 대기</span>
     </div>
     <div class="inbox-input-wrap">
-      <input type="text" id="qtInput" class="inbox-input" placeholder="빠르게 적기 → Enter (예: 세무사 전화, 샘플 박스 라벨)" onkeydown="addQuickTask(event)">
+      <input type="text" id="gtInput" class="inbox-input" placeholder="Google Tasks에 추가 → Enter" onkeydown="addGoogleTask(event)">
     </div>
-    <div class="inbox-list" id="qtList"></div>
-    <div class="inbox-actions">
-      <span id="qtDoneInfo"></span>
-      <a id="qtClearDone" onclick="clearDoneQt()" style="display:none">완료된 항목 비우기</a>
+    <div class="inbox-list" id="gtList">
+      <div class="inbox-empty">Google 계정을 연결하면 Tasks가 표시됩니다.</div>
     </div>
   </div>
 
@@ -383,6 +411,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <script>
 const KEY = 'bunnar_dashboard_v1';
@@ -413,6 +442,9 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const DASHBOARD_DOC = db.collection('dashboards').doc('bunnar-main');
 
+const GOOGLE_CLIENT_ID = '281308186420-orapn1qc6687or4bimjlv864ke3ed9ii.apps.googleusercontent.com';
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks';
+
 let DATA = [];
 let QUICK = [];
 let activeFilter = 'all';
@@ -421,6 +453,11 @@ let unsubscribeDashboard = null;
 let suppressSnapshot = false;
 let activeDragType = null;
 let activeCategoryDragId = null;
+let googleTokenClient = null;
+let googleAccessToken = null;
+let googleTaskListId = null;
+let googleEventsCache = [];
+let googleTasksCache = [];
 
 const LATER_CAT_ID = 'later-tasks';
 const LATER_CAT_TEMPLATE = {
@@ -792,6 +829,7 @@ function importData(e){
 
 function renderQuick(){
   const list=document.getElementById('qtList');
+  if(!list)return;
   const count=document.getElementById('qtCount');
   const doneInfo=document.getElementById('qtDoneInfo');
   const clearBtn=document.getElementById('qtClearDone');
@@ -814,20 +852,10 @@ function renderQuick(){
 
 function renderDigest(){
   const dateEl=document.getElementById('todayDate');
-  dateEl.textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
-  const all=[];
-  DATA.forEach(cat=>{
-    cat.items.forEach((it,idx)=>{
-      all.push({...it,catLabel:cat.label,catColor:cat.color,catId:cat.id,idx});
-    });
-  });
-  const urgent=all.filter(i=>!['완료','탈락'].includes(i.s)).filter(i=>i.s==='지금당장'||(i.due&&daysUntil(i.due)<=3)).sort((a,b)=>{const da=a.due?daysUntil(a.due):999;const db=b.due?daysUntil(b.due):999;return da-db});
-  const soon=all.filter(i=>i.due&&!['완료','탈락'].includes(i.s)).filter(i=>{const n=daysUntil(i.due);return n>3&&n<=14}).sort((a,b)=>daysUntil(a.due)-daysUntil(b.due));
-  const active=all.filter(i=>!i.due&&i.s==='수행중').slice(0,6);
-  document.getElementById('digUrgent').innerHTML=renderDigestList(urgent,true);
-  document.getElementById('digSoon').innerHTML=renderDigestList(soon,true);
-  document.getElementById('digActive').innerHTML=renderDigestList(active,false);
+  if(dateEl)dateEl.textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  renderGoogleCalendarWeek();
 }
+
 function renderDigestList(items,showDday){
   if(items.length===0)return'<div class="digest-empty">없음</div>';
   return items.slice(0,6).map(i=>{
@@ -1188,3 +1216,265 @@ auth.onAuthStateChanged(async user=>{
 </script>
 </body>
 </html>
+// ── Google Calendar / Tasks integration ────────────────────────
+function setGoogleStatus(msg){
+  const el=document.getElementById('googleSyncStatus');
+  if(el)el.textContent=msg;
+}
+function updateGoogleButtons(connected){
+  ['googleRefreshBtn','googleAddEventBtn','googleDisconnectBtn'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.style.display=connected?'inline-block':'none';
+  });
+  const connect=document.getElementById('googleConnectBtn');
+  if(connect)connect.style.display=connected?'none':'inline-block';
+}
+function initGoogleTokenClient(){
+  if(googleTokenClient)return true;
+  if(!window.google || !google.accounts || !google.accounts.oauth2){
+    setGoogleStatus('Google 로그인 모듈을 불러오는 중입니다. 잠시 후 다시 눌러주세요.');
+    return false;
+  }
+  googleTokenClient=google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: GOOGLE_SCOPES,
+    prompt: 'consent',
+    callback: async (tokenResponse)=>{
+      if(tokenResponse && tokenResponse.access_token){
+        googleAccessToken=tokenResponse.access_token;
+        updateGoogleButtons(true);
+        setGoogleStatus('Google Calendar/Tasks 연결됨');
+        await refreshGoogleWorkspace();
+      }else{
+        setGoogleStatus('Google 연결이 취소되었습니다.');
+      }
+    }
+  });
+  return true;
+}
+function connectGoogleWorkspace(){
+  if(!initGoogleTokenClient())return;
+  googleTokenClient.requestAccessToken({prompt:'consent'});
+}
+function disconnectGoogleWorkspace(){
+  if(googleAccessToken && window.google?.accounts?.oauth2){
+    google.accounts.oauth2.revoke(googleAccessToken,()=>{});
+  }
+  googleAccessToken=null;
+  googleTaskListId=null;
+  googleEventsCache=[];
+  googleTasksCache=[];
+  updateGoogleButtons(false);
+  setGoogleStatus('연결 해제됨');
+  renderGoogleCalendarWeek();
+  renderGoogleTasks();
+}
+async function googleFetch(url, options={}){
+  if(!googleAccessToken)throw new Error('Google 계정 연결이 필요합니다.');
+  const res=await fetch(url,{
+    ...options,
+    headers:{
+      'Authorization':'Bearer '+googleAccessToken,
+      'Content-Type':'application/json',
+      ...(options.headers||{})
+    }
+  });
+  if(res.status===401){
+    googleAccessToken=null;
+    updateGoogleButtons(false);
+    throw new Error('Google 연결이 만료되었습니다. 다시 연결해주세요.');
+  }
+  if(!res.ok){
+    const text=await res.text();
+    throw new Error(text||('Google API 오류: '+res.status));
+  }
+  if(res.status===204)return null;
+  return res.json();
+}
+function startOfWeek(date=new Date()){
+  const d=new Date(date);
+  const day=(d.getDay()+6)%7;
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()-day);
+  return d;
+}
+function addDays(date,n){
+  const d=new Date(date); d.setDate(d.getDate()+n); return d;
+}
+function toApiDateTime(d){return d.toISOString();}
+function isSameDate(a,b){return a.toDateString()===b.toDateString();}
+function eventStartDate(ev){
+  return ev.start?.dateTime ? new Date(ev.start.dateTime) : new Date((ev.start?.date||todayISO())+'T00:00:00');
+}
+function eventEndDate(ev){
+  return ev.end?.dateTime ? new Date(ev.end.dateTime) : new Date((ev.end?.date||todayISO())+'T00:00:00');
+}
+function eventTimeLabel(ev){
+  if(ev.start?.date)return '종일';
+  const s=eventStartDate(ev);
+  return s.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+}
+async function refreshGoogleWorkspace(){
+  if(!googleAccessToken){
+    setGoogleStatus('먼저 Google Calendar/Tasks를 연결해주세요.');
+    return;
+  }
+  setGoogleStatus('Google Calendar/Tasks 불러오는 중...');
+  try{
+    await Promise.all([loadGoogleCalendarWeek(),loadGoogleTasks()]);
+    setGoogleStatus('동기화 완료 · '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){
+    console.error(e);
+    setGoogleStatus(e.message||'동기화 실패');
+  }
+}
+async function loadGoogleCalendarWeek(){
+  const start=startOfWeek();
+  const end=addDays(start,7);
+  const url='https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&timeMin='+
+    encodeURIComponent(toApiDateTime(start))+'&timeMax='+encodeURIComponent(toApiDateTime(end));
+  const data=await googleFetch(url);
+  googleEventsCache=data.items||[];
+  renderGoogleCalendarWeek();
+}
+function renderGoogleCalendarWeek(){
+  const wrap=document.getElementById('gcalWeek');
+  if(!wrap)return;
+  if(!googleAccessToken){
+    wrap.innerHTML='<div class="gcal-empty">Google 계정을 연결하면 주간 일정이 표시됩니다. 서비스 로그인 계정과 다른 Google 계정을 선택할 수 있습니다.</div>';
+    return;
+  }
+  const start=startOfWeek();
+  const today=new Date();
+  const days=['월','화','수','목','금','토','일'];
+  wrap.innerHTML='';
+  for(let i=0;i<7;i++){
+    const day=addDays(start,i);
+    const dayEvents=googleEventsCache.filter(ev=>isSameDate(eventStartDate(ev),day));
+    const col=document.createElement('div');
+    col.className='gcal-day'+(isSameDate(day,today)?' today':'');
+    col.innerHTML=`<div class="gcal-day-head"><span>${days[i]}</span><span class="gcal-day-num">${day.getDate()}</span></div><div class="gcal-events"></div>`;
+    const eventsEl=col.querySelector('.gcal-events');
+    if(dayEvents.length===0){
+      eventsEl.innerHTML='<div style="font-size:12px;color:var(--text3)">일정 없음</div>';
+    }else{
+      dayEvents.forEach(ev=>{
+        const item=document.createElement('div');
+        item.className='gcal-event';
+        item.innerHTML=`<div class="gcal-event-time">${eventTimeLabel(ev)}</div><div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>
+          <div class="gcal-event-actions">
+            <button class="gcal-mini" onclick="editGoogleEventTitle('${ev.id}')">수정</button>
+            <button class="gcal-mini" onclick="deleteGoogleEvent('${ev.id}')">삭제</button>
+          </div>`;
+        eventsEl.appendChild(item);
+      });
+    }
+    wrap.appendChild(col);
+  }
+}
+async function createGoogleEvent(){
+  if(!googleAccessToken)return connectGoogleWorkspace();
+  const title=prompt('일정 제목을 입력하세요');
+  if(!title)return;
+  const date=prompt('날짜를 입력하세요. 예: 2026-05-18', todayISO());
+  if(!date)return;
+  try{
+    await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+      method:'POST',
+      body:JSON.stringify({summary:title,start:{date},end:{date:addDays(new Date(date+'T00:00:00'),1).toISOString().slice(0,10)}})
+    });
+    await refreshGoogleWorkspace();
+  }catch(e){alert(e.message||'일정 추가 실패')}
+}
+async function editGoogleEventTitle(id){
+  const ev=googleEventsCache.find(x=>x.id===id);
+  if(!ev)return;
+  const title=prompt('새 일정 제목', ev.summary||'');
+  if(!title || title===ev.summary)return;
+  try{
+    await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/'+encodeURIComponent(id),{
+      method:'PATCH',
+      body:JSON.stringify({summary:title})
+    });
+    await refreshGoogleWorkspace();
+  }catch(e){alert(e.message||'일정 수정 실패')}
+}
+async function deleteGoogleEvent(id){
+  if(!confirm('이 일정을 Google Calendar에서 삭제할까요?'))return;
+  try{
+    await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/'+encodeURIComponent(id),{method:'DELETE'});
+    await refreshGoogleWorkspace();
+  }catch(e){alert(e.message||'일정 삭제 실패')}
+}
+async function loadGoogleTasks(){
+  const lists=await googleFetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists');
+  const taskList=(lists.items||[])[0];
+  if(!taskList){
+    googleTaskListId=null;
+    googleTasksCache=[];
+    renderGoogleTasks();
+    return;
+  }
+  googleTaskListId=taskList.id;
+  const data=await googleFetch('https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(googleTaskListId)+'/tasks?showCompleted=true&maxResults=50');
+  googleTasksCache=data.items||[];
+  renderGoogleTasks();
+}
+function renderGoogleTasks(){
+  const list=document.getElementById('gtList');
+  const count=document.getElementById('gtCount');
+  if(!list)return;
+  if(!googleAccessToken){
+    list.innerHTML='<div class="inbox-empty">Google 계정을 연결하면 Tasks가 표시됩니다.</div>';
+    if(count)count.textContent='연결 대기';
+    return;
+  }
+  const open=googleTasksCache.filter(t=>t.status!=='completed');
+  if(count)count.textContent=`${open.length}개 남음`;
+  if(googleTasksCache.length===0){
+    list.innerHTML='<div class="inbox-empty">Google Tasks에 잔업이 없습니다.</div>';
+    return;
+  }
+  list.innerHTML=googleTasksCache.map(t=>`
+    <div class="gt-row ${t.status==='completed'?'done':''}">
+      <button class="gt-check ${t.status==='completed'?'done':''}" onclick="toggleGoogleTask('${t.id}')" title="완료 토글">${t.status==='completed'?'✓':''}</button>
+      <span class="gt-title">${escapeHtml(t.title||'(제목 없음)')}</span>
+      <button class="gt-del" onclick="deleteGoogleTask('${t.id}')" title="삭제">×</button>
+    </div>`).join('');
+}
+async function addGoogleTask(e){
+  if(e.key!=='Enter')return;
+  const title=e.target.value.trim();
+  if(!title)return;
+  if(!googleAccessToken)return connectGoogleWorkspace();
+  if(!googleTaskListId)await loadGoogleTasks();
+  try{
+    await googleFetch('https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(googleTaskListId)+'/tasks',{
+      method:'POST',
+      body:JSON.stringify({title})
+    });
+    e.target.value='';
+    await loadGoogleTasks();
+  }catch(err){alert(err.message||'Tasks 추가 실패')}
+}
+async function toggleGoogleTask(id){
+  const t=googleTasksCache.find(x=>x.id===id);
+  if(!t||!googleTaskListId)return;
+  const completed=t.status!=='completed';
+  try{
+    await googleFetch('https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(googleTaskListId)+'/tasks/'+encodeURIComponent(id),{
+      method:'PATCH',
+      body:JSON.stringify(completed?{status:'completed',completed:new Date().toISOString()}:{status:'needsAction',completed:null})
+    });
+    await loadGoogleTasks();
+  }catch(e){alert(e.message||'Tasks 수정 실패')}
+}
+async function deleteGoogleTask(id){
+  if(!confirm('이 항목을 Google Tasks에서 삭제할까요?'))return;
+  try{
+    await googleFetch('https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(googleTaskListId)+'/tasks/'+encodeURIComponent(id),{method:'DELETE'});
+    await loadGoogleTasks();
+  }catch(e){alert(e.message||'Tasks 삭제 실패')}
+}
+
+
+
