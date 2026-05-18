@@ -290,6 +290,17 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .gcal-event.active .gcal-event-actions{display:flex}
 .gcal-event.active{overflow:visible;z-index:20;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .gcal-mini{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.2);border-radius:6px;padding:2px 5px;font-size:10px;cursor:pointer;color:inherit}
+
+/* 클릭 팝업 카드 */
+.gcal-popup{position:absolute;left:3px;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);padding:10px 12px;z-index:100;min-width:160px;display:none;flex-direction:column;gap:6px}
+.gcal-popup.show{display:flex}
+.gcal-popup-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.4;word-break:keep-all}
+.gcal-popup-time{font-size:11px;color:var(--text2);margin-bottom:2px}
+.gcal-popup-actions{display:flex;gap:6px;margin-top:2px}
+.gcal-popup-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--text);cursor:pointer;font-family:inherit;transition:all .12s}
+.gcal-popup-btn:hover{background:var(--text);color:var(--bg)}
+.gcal-popup-btn.del{color:var(--red)}
+.gcal-popup-btn.del:hover{background:var(--red);color:#fff;border-color:var(--red)}
 .gcal-now-line{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:4;pointer-events:none}
 .gcal-now-line::before{content:"";position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#ea4335}
 .gcal-drop-indicator{position:absolute;left:3px;right:3px;height:3px;background:var(--blue);border-radius:2px;pointer-events:none;z-index:15}
@@ -1318,6 +1329,32 @@ function setGoogleStatus(msg){
   const el=document.getElementById('googleSyncStatus');
   if(el)el.textContent=msg;
 }
+
+// 캘린더 이벤트 팝업 표시
+function showGcalPopup(anchorEl, ev, isAllDay){
+  closeGcalPopup();
+  const popup=document.createElement('div');
+  popup.className='gcal-popup show';
+  popup.id='gcal-active-popup';
+  const timeStr=isAllDay?'종일':eventTimeRangeLabel(ev);
+  popup.innerHTML=`
+    <div class="gcal-popup-time">${timeStr}</div>
+    <div class="gcal-popup-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>
+    <div class="gcal-popup-actions">
+      <button class="gcal-popup-btn" onclick="closeGcalPopup();editGoogleEventTitle('${ev.id}')">수정</button>
+      <button class="gcal-popup-btn del" onclick="closeGcalPopup();deleteGoogleEvent('${ev.id}')">삭제</button>
+    </div>`;
+  // 화면 오른쪽 끝에서 잘리지 않도록 방향 조정
+  anchorEl.style.position='relative';
+  anchorEl.appendChild(popup);
+  const popRect=popup.getBoundingClientRect();
+  if(popRect.right>window.innerWidth-10) popup.style.left='auto';
+  if(popRect.bottom>window.innerHeight-10) popup.style.top='auto';
+}
+function closeGcalPopup(){
+  const p=document.getElementById('gcal-active-popup');
+  if(p)p.remove();
+}
 function updateGoogleButtons(connected){
   ['googleRefreshBtn','googleAddEventBtn','googleDisconnectBtn'].forEach(id=>{
     const el=document.getElementById(id); if(el)el.style.display=connected?'inline-block':'none';
@@ -1534,10 +1571,33 @@ function renderGoogleCalendarWeek(){
       item.style.background=color.bg;
       item.style.color=color.fg;
       item.dataset.evId=ev.id;
-      item.innerHTML=`<div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div><div class="gcal-event-actions"><button class="gcal-mini" onclick="event.stopPropagation();editGoogleEventTitle('${ev.id}')">수정</button><button class="gcal-mini" onclick="event.stopPropagation();deleteGoogleEvent('${ev.id}')">삭제</button></div>`;
+      item.innerHTML=`<div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>`;
+      item.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(item.dataset.wasDragged==='1'){item.dataset.wasDragged='0';return;}
+        const isActive=document.getElementById('gcal-active-popup')?.closest('[data-ev-id]')?.dataset.evId===ev.id;
+        closeGcalPopup();
+        if(!isActive) showGcalPopup(item,ev,true);
+      });
       item.addEventListener('mousedown',e=>{
         e.stopPropagation();
-        adDragEvId=ev.id;adDragOrigEl=item;item.style.opacity='0.4';
+        const startX=e.clientX,startY=e.clientY;
+        let moved=false;
+        const onMove=mv=>{
+          if(moved)return;
+          if(Math.abs(mv.clientX-startX)>5||Math.abs(mv.clientY-startY)>5){
+            moved=true;
+            adDragEvId=ev.id;adDragOrigEl=item;
+            item.style.opacity='0.4';
+            item.dataset.wasDragged='1';
+          }
+        };
+        const onUp=()=>{
+          window.removeEventListener('mousemove',onMove);
+          window.removeEventListener('mouseup',onUp);
+        };
+        window.addEventListener('mousemove',onMove);
+        window.addEventListener('mouseup',onUp);
       });
       col.appendChild(item);
     });
@@ -1656,15 +1716,15 @@ function renderGoogleCalendarWeek(){
       const height=Math.max(24,((endMin-startMin)/60)*rowH-2);
       item.style.top=topPx+'px';
       item.style.height=height+'px';
-      item.innerHTML=`<div class="gcal-event-time">${eventTimeRangeLabel(ev)}</div><div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div><div class="gcal-event-actions"><button class="gcal-mini" onclick="event.stopPropagation();editGoogleEventTitle('${ev.id}')">수정</button><button class="gcal-mini" onclick="event.stopPropagation();deleteGoogleEvent('${ev.id}')">삭제</button></div>`;
+      item.innerHTML=`<div class="gcal-event-time">${eventTimeRangeLabel(ev)}</div><div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>`;
 
-      // 클릭으로 수정/삭제 토글
+      // 클릭으로 팝업 토글
       item.addEventListener('click',e=>{
         e.stopPropagation();
         if(item.dataset.wasDragged==='1'){item.dataset.wasDragged='0';return;}
-        const isActive=item.classList.contains('active');
-        document.querySelectorAll('.gcal-event.active').forEach(el=>el.classList.remove('active'));
-        if(!isActive) item.classList.add('active');
+        const isActive=document.getElementById('gcal-active-popup')?.closest('[data-ev-id]')?.dataset.evId===ev.id;
+        closeGcalPopup();
+        if(!isActive) showGcalPopup(item,ev,false);
       });
 
       item.addEventListener('mousedown',e=>{
@@ -1712,11 +1772,9 @@ function renderGoogleCalendarWeek(){
   }
   board.appendChild(dropIndicator);
 
-  // 빈 곳 클릭 시 active 해제
+  // 빈 곳 클릭 시 팝업 닫기
   board.addEventListener('click',e=>{
-    if(!e.target.closest('.gcal-event')){
-      document.querySelectorAll('.gcal-event.active').forEach(el=>el.classList.remove('active'));
-    }
+    if(!e.target.closest('.gcal-event')&&!e.target.closest('.gcal-popup')) closeGcalPopup();
   });
 
   board.addEventListener('mousemove',e=>{
