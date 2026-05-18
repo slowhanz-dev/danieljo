@@ -236,52 +236,45 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 
 
 /* ─── Google Calendar / Tasks sync panel ─── */
-.google-calendar-panel{padding:16px 18px 18px}
-.google-calendar-panel .digest-head{align-items:center;margin-bottom:10px}
-.google-calendar-panel .digest-head h2{font-size:16px;font-weight:700}
-.google-calendar-panel .date{font-size:13px;color:var(--text);font-weight:600;white-space:nowrap}
-.google-sync-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.google-calendar-panel{padding:16px 18px 20px}
+.google-calendar-panel .digest-head{align-items:center;margin-bottom:6px}
+.google-calendar-panel .digest-head h2{font-size:15px}
+.google-calendar-panel .date{font-size:12px;color:var(--text2);font-weight:600}
+.google-sync-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+.google-sync-toolbar .btn{padding:7px 12px;border-radius:10px}
 .google-sync-status{font-size:12px;color:var(--text2)}
-.gcal-week{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.035)}
-.gcal-board{display:grid;grid-template-columns:64px repeat(7,minmax(0,1fr));height:360px;background:#fff}
-.gcal-corner{border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);background:#fff}
-.gcal-day-header{border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:42px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:600;background:#fff}
-.gcal-day-header:last-child{border-right:none}
-.gcal-day-header.today{color:var(--blue)}
-.gcal-day-header.sun{color:#d93025}
-.gcal-day-header.sat{color:#1967d2;background:#f8fbff}
-.gcal-day-header .num{font-size:18px;font-weight:700}
-.gcal-time-axis{grid-column:1;grid-row:2;border-right:1px solid var(--line);position:relative;background:#fff}
-.gcal-time-label{position:absolute;left:0;right:8px;transform:translateY(-50%);text-align:right;font-size:11px;color:var(--text3)}
-.gcal-day-col{position:relative;border-right:1px solid var(--line);background:linear-gradient(to bottom,rgba(0,0,0,.07) 1px,transparent 1px);background-size:100% var(--gcal-row-h,26px)}
-.gcal-day-col:last-child{border-right:none}
-.gcal-day-col.sat{background-color:#f8fbff}
-.gcal-day-col.today{background-color:#f7fbff}
-.gcal-all-day{position:absolute;left:6px;right:6px;top:6px;display:flex;flex-direction:column;gap:4px;z-index:2}
-.gcal-event{position:absolute;left:8px;right:8px;border:1px solid rgba(26,115,232,.24);background:#e8f0fe;border-radius:7px;padding:5px 7px;font-size:11px;line-height:1.25;cursor:pointer;overflow:hidden;color:#174ea6;box-shadow:0 1px 2px rgba(0,0,0,.06)}
-.gcal-event.all-day{position:relative;left:auto;right:auto;top:auto;min-height:30px;border-radius:8px}
-.gcal-event:hover{filter:brightness(.985);box-shadow:0 2px 6px rgba(0,0,0,.10)}
-.gcal-event-time{font-size:10px;font-weight:700;margin-bottom:2px;opacity:.9}
-.gcal-event-title{font-weight:600;word-break:keep-all}
-.gcal-event-actions{display:none;gap:5px;margin-top:5px}
-.gcal-event:hover .gcal-event-actions{display:flex}
-.gcal-mini{border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.7);border-radius:6px;padding:2px 5px;font-size:10px;cursor:pointer;color:inherit}
-.gcal-now-line{position:absolute;left:0;right:0;height:1px;background:#ea4335;z-index:4}
-.gcal-now-line::before{content:"";position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#ea4335}
-.gcal-empty{color:var(--text2);font-size:13px;padding:24px;border:1px dashed var(--line);border-radius:14px;background:rgba(255,255,255,.45)}
-.google-task-panel{padding:16px 18px;margin-top:14px}
-.google-task-panel .inbox-head{margin-bottom:10px}
-.google-task-panel .inbox-list{max-height:180px;overflow:auto}
-.gt-row{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.gcal-week{width:100%;overflow:auto;border:1px solid var(--line);border-radius:16px;background:#fff}
+.gcal-empty{color:var(--text2);font-size:13px;padding:26px;border-radius:14px;background:rgba(255,255,255,.45)}
+.gcal-google{display:grid;grid-template-columns:76px repeat(7,minmax(130px,1fr));min-width:980px;max-height:430px;overflow:auto;background:#fff}
+.gcal-time-head,.gcal-head,.gcal-allday-label,.gcal-allday,.gcal-time,.gcal-slot{border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb}
+.gcal-time-head{position:sticky;top:0;z-index:5;background:#fff;padding:10px 8px;font-size:11px;color:#5f6368;text-align:center}
+.gcal-head{position:sticky;top:0;z-index:5;background:#fff;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 6px;font-size:12px;color:#3c4043}
+.gcal-head strong{font-size:19px}
+.gcal-head.today strong{background:#1a73e8;color:#fff;border-radius:50%;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center}
+.gcal-head.sun{color:#d93025}.gcal-head.sat{color:#1967d2}
+.gcal-allday-label{background:#fff;color:#5f6368;font-size:11px;padding:8px;text-align:center}
+.gcal-allday{min-height:50px;padding:5px;background:#fff}
+.gcal-allday.today,.gcal-slot.today{background:#f8fbff}
+.gcal-chip{border-left:4px solid #1a73e8;border-radius:8px;padding:5px 6px;margin:0 0 4px;font-size:11px;font-weight:700;line-height:1.3}
+.gcal-chip button{border:0;background:transparent;color:inherit;opacity:.7;font-size:10px;margin-left:5px;cursor:pointer}
+.gcal-more{font-size:11px;color:#5f6368}
+.gcal-time{background:#fff;color:#5f6368;font-size:11px;text-align:right;padding:8px 8px 0 0;min-height:42px}
+.gcal-slot{position:relative;min-height:42px;padding:3px;background:#fff}
+.gcal-event{border:1px solid #1a73e8;border-left-width:4px;border-radius:8px;padding:5px 6px;font-size:11px;line-height:1.25;box-shadow:0 1px 2px rgba(60,64,67,.12)}
+.gcal-event-time{font-size:10px;font-weight:800;margin-bottom:2px}
+.gcal-event-title{font-weight:700;color:inherit}
+.gcal-event-actions{display:flex;gap:5px;margin-top:4px}
+.gcal-mini{border:0;background:rgba(255,255,255,.55);border-radius:6px;padding:2px 5px;font-size:10px;cursor:pointer;color:inherit}
+.google-task-panel{padding:14px 18px}
+.google-task-panel .inbox-head h2{font-size:15px}
+.google-task-panel .inbox-input{height:34px}
+.gt-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line)}
 .gt-row.done .gt-title{text-decoration:line-through;color:var(--text3)}
-.gt-check{width:18px;height:18px;border-radius:4px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.gt-check{width:18px;height:18px;border-radius:4px;border:1px solid #c7cbd1;background:#fff;cursor:pointer}
 .gt-check.done{background:var(--green);border-color:var(--green);color:#fff}
-.gt-title{flex:1;font-size:14px}
+.gt-title{flex:1;font-size:13px}
 .gt-del{border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:16px}
-@media (max-width:900px){
-  .gcal-board{grid-template-columns:44px repeat(7,minmax(120px,1fr));overflow:auto}
-  .gcal-week{overflow:auto}
-}
+@media (max-width:900px){.gcal-google{min-width:820px;max-height:400px}.google-calendar-panel{padding:14px}}
 /* ─── Print ─── */
 @media print{
   @page{size:A4;margin:12mm 10mm}
@@ -359,7 +352,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   <div class="digest google-calendar-panel" id="digest" style="display:none">
     <div class="digest-head">
       <h2>이번 주 Google Calendar</h2>
-      <span class="date" id="todayDate">현재 시간 표시</span>
+      <span class="date" id="todayDate"></span>
     </div>
     <div class="google-sync-toolbar">
       <button class="btn btn-primary" id="googleConnectBtn" onclick="connectGoogleWorkspace()">Google Calendar/Tasks 연결</button>
@@ -462,9 +455,6 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>{
-  console.warn('Firebase auth persistence 설정 실패:', err);
-});
 const db = firebase.firestore();
 const DASHBOARD_DOC = db.collection('dashboards').doc('bunnar-main');
 
@@ -876,18 +866,9 @@ function renderQuick(){
   clearBtn.style.display=done.length>0?'inline':'none';
 }
 
-function updateGoogleClock(){
-  const dateEl=document.getElementById('todayDate');
-  if(!dateEl)return;
-  dateEl.textContent=new Date().toLocaleString('ko-KR',{
-    year:'numeric',month:'long',day:'numeric',weekday:'long',
-    hour:'2-digit',minute:'2-digit'
-  });
-}
-setInterval(updateGoogleClock,30000);
-
 function renderDigest(){
-  updateGoogleClock();
+  const dateEl=document.getElementById('todayDate');
+  if(dateEl)dateEl.textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
   renderGoogleCalendarWeek();
 }
 
@@ -1235,6 +1216,8 @@ auth.onAuthStateChanged(async user=>{
   QUICK=loaded.quickTasks||[];
   const laterChanged=ensureLaterCategory();
   render();renderQuick();
+  if(typeof renderGoogleCalendarWeek==='function')renderGoogleCalendarWeek();
+  if(typeof restoreGoogleWorkspace==='function')setTimeout(restoreGoogleWorkspace,700);
   if(laterChanged)save();
 
   unsubscribeDashboard=DASHBOARD_DOC.onSnapshot(snap=>{
@@ -1249,6 +1232,16 @@ auth.onAuthStateChanged(async user=>{
   },err=>{console.error(err)});
 });
 
+
+
+function updateDashboardClock(){
+  const el=document.getElementById('todayDate');
+  if(!el)return;
+  const now=new Date();
+  el.textContent='현재 시간 · '+now.toLocaleString('ko-KR',{month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateDashboardClock,30000);
+document.addEventListener('DOMContentLoaded',updateDashboardClock);
 
 // ── Google Calendar / Tasks integration ────────────────────────
 function setGoogleStatus(msg){
@@ -1275,6 +1268,7 @@ function initGoogleTokenClient(){
     callback: async (tokenResponse)=>{
       if(tokenResponse && tokenResponse.access_token){
         googleAccessToken=tokenResponse.access_token;
+        localStorage.setItem('bunnarGoogleWorkspaceConnected','1');
         updateGoogleButtons(true);
         setGoogleStatus('Google Calendar/Tasks 연결됨');
         await refreshGoogleWorkspace();
@@ -1289,11 +1283,24 @@ function connectGoogleWorkspace(){
   if(!initGoogleTokenClient())return;
   googleTokenClient.requestAccessToken({prompt:'consent'});
 }
+function restoreGoogleWorkspace(){
+  if(localStorage.getItem('bunnarGoogleWorkspaceConnected')!=='1')return;
+  if(!initGoogleTokenClient())return;
+  setGoogleStatus('Google Calendar/Tasks 자동 연결 중...');
+  try{
+    googleTokenClient.requestAccessToken({prompt:''});
+  }catch(e){
+    console.warn(e);
+    setGoogleStatus('자동 연결 실패 · 연결 버튼을 다시 눌러주세요.');
+    updateGoogleButtons(false);
+  }
+}
 function disconnectGoogleWorkspace(){
   if(googleAccessToken && window.google?.accounts?.oauth2){
     google.accounts.oauth2.revoke(googleAccessToken,()=>{});
   }
   googleAccessToken=null;
+  localStorage.removeItem('bunnarGoogleWorkspaceConnected');
   googleTaskListId=null;
   googleEventsCache=[];
   googleTasksCache=[];
@@ -1345,7 +1352,9 @@ function eventEndDate(ev){
 function eventTimeLabel(ev){
   if(ev.start?.date)return '종일';
   const s=eventStartDate(ev);
-  return s.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  const e=eventEndDate(ev);
+  const fmt=d=>d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
+  return fmt(s)+'–'+fmt(e);
 }
 async function refreshGoogleWorkspace(){
   if(!googleAccessToken){
@@ -1370,22 +1379,13 @@ async function loadGoogleCalendarWeek(){
   googleEventsCache=data.items||[];
   renderGoogleCalendarWeek();
 }
-function getGoogleEventColor(ev){
+function gcalEventColor(ev){
   const colors={
-    '1':['#a4bdfc','#174ea6'],'2':['#7ae7bf','#0b6b4b'],'3':['#dbadff','#5b2aa0'],
-    '4':['#ff887c','#9c1c14'],'5':['#fbd75b','#7a4d00'],'6':['#ffb878','#7a3b00'],
-    '7':['#46d6db','#07575b'],'8':['#e1e1e1','#444746'],'9':['#5484ed','#174ea6'],
-    '10':['#51b749','#0b6b4b'],'11':['#dc2127','#8b0000']
+    '1':['#7986cb','#eef0ff'],'2':['#33b679','#e7f6ee'],'3':['#8e24aa','#f5e9f8'],'4':['#e67c73','#fdecea'],
+    '5':['#f6bf26','#fff7dd'],'6':['#f4511e','#fff0e9'],'7':['#039be5','#e7f5fd'],'8':['#616161','#f1f3f4'],
+    '9':['#3f51b5','#edf0ff'],'10':['#0b8043','#e6f4ea'],'11':['#d50000','#fde7e7']
   };
-  const c=colors[ev.colorId||'9']||colors['9'];
-  return{bg:c[0],fg:c[1],border:c[1]};
-}
-function eventTimeRangeLabel(ev){
-  if(ev.start?.date)return '종일';
-  const s=eventStartDate(ev);
-  const e=eventEndDate(ev);
-  const opts={hour:'2-digit',minute:'2-digit',hour12:false};
-  return s.toLocaleTimeString('ko-KR',opts)+' - '+e.toLocaleTimeString('ko-KR',opts);
+  return colors[String(ev.colorId||'') ] || ['#1a73e8','#e8f0fe'];
 }
 function renderGoogleCalendarWeek(){
   const wrap=document.getElementById('gcalWeek');
@@ -1394,88 +1394,80 @@ function renderGoogleCalendarWeek(){
     wrap.innerHTML='<div class="gcal-empty">Google 계정을 연결하면 주간 일정이 표시됩니다. 서비스 로그인 계정과 다른 Google 계정을 선택할 수 있습니다.</div>';
     return;
   }
+
   const start=startOfWeek();
   const today=new Date();
   const days=['월','화','수','목','금','토','일'];
-  const hours=[];
-  for(let h=8;h<=20;h++)hours.push(h);
-  const rowH=26;
-  const topPad=28; // 종일 일정 영역
-  const bodyH=(hours.length-1)*rowH+topPad;
-  const board=document.createElement('div');
-  board.className='gcal-board';
-  board.style.setProperty('--gcal-row-h',rowH+'px');
-  board.innerHTML='<div class="gcal-corner">GMT+9</div>';
-  for(let i=0;i<7;i++){
-    const day=addDays(start,i);
-    const cls=['gcal-day-header',isSameDate(day,today)?'today':'',i===5?'sat':'',i===6?'sun':''].filter(Boolean).join(' ');
-    board.innerHTML+=`<div class="${cls}"><span>${days[i]}</span><span class="num">${day.getDate()}</span></div>`;
-  }
-  const axis=document.createElement('div');
-  axis.className='gcal-time-axis';
-  axis.style.height=bodyH+'px';
-  hours.forEach((h,idx)=>{
-    const label=document.createElement('div');
-    label.className='gcal-time-label';
-    label.style.top=(topPad+idx*rowH)+'px';
-    const ampm=h<12?'오전':(h===12?'오후':'오후');
-    const hour12=h<=12?h:h-12;
-    label.textContent=ampm+' '+hour12+'시';
-    axis.appendChild(label);
+  const hours=[9,10,11,12,13,14,15,16,17,18];
+  const rangeEnd=addDays(start,7);
+
+  const events=googleEventsCache.slice().sort((a,b)=>eventStartDate(a)-eventStartDate(b));
+  const allDayByDay=Array.from({length:7},()=>[]);
+  const timedByDay=Array.from({length:7},()=>[]);
+
+  events.forEach(ev=>{
+    const s=eventStartDate(ev);
+    if(s<start || s>=rangeEnd)return;
+    const idx=Math.floor((new Date(s.getFullYear(),s.getMonth(),s.getDate())-start)/86400000);
+    if(idx<0 || idx>6)return;
+    if(ev.start?.date) allDayByDay[idx].push(ev);
+    else timedByDay[idx].push(ev);
   });
-  board.appendChild(axis);
 
+  const nowLabel=today.toLocaleString('ko-KR',{month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'});
+  const dateEl=document.getElementById('todayDate');
+  if(dateEl)dateEl.textContent='현재 시간 · '+nowLabel;
+
+  let html='<div class="gcal-google">';
+  html+='<div class="gcal-time-head">GMT+9</div>';
   for(let i=0;i<7;i++){
     const day=addDays(start,i);
-    const dayEvents=googleEventsCache.filter(ev=>isSameDate(eventStartDate(ev),day));
-    const col=document.createElement('div');
-    col.className=['gcal-day-col',isSameDate(day,today)?'today':'',i===5?'sat':''].filter(Boolean).join(' ');
-    col.style.height=bodyH+'px';
-    const allDayWrap=document.createElement('div');
-    allDayWrap.className='gcal-all-day';
-    col.appendChild(allDayWrap);
-
-    dayEvents.forEach((ev,idx)=>{
-      const color=getGoogleEventColor(ev);
-      const item=document.createElement('div');
-      const isAllDay=!!ev.start?.date;
-      item.className='gcal-event'+(isAllDay?' all-day':'');
-      item.style.background=color.bg;
-      item.style.borderColor=color.border;
-      item.style.color=color.fg;
-      item.innerHTML=`<div class="gcal-event-time">${eventTimeRangeLabel(ev)}</div><div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>
-        <div class="gcal-event-actions">
-          <button class="gcal-mini" onclick="editGoogleEventTitle('${ev.id}')">수정</button>
-          <button class="gcal-mini" onclick="deleteGoogleEvent('${ev.id}')">삭제</button>
-        </div>`;
-      if(isAllDay){
-        allDayWrap.appendChild(item);
-      }else{
-        const s=eventStartDate(ev);
-        const e=eventEndDate(ev);
-        const startMin=Math.max(0,(s.getHours()-8)*60+s.getMinutes());
-        const endMin=Math.max(startMin+30,(e.getHours()-8)*60+e.getMinutes());
-        const top=topPad+(startMin/60)*rowH;
-        const height=Math.max(28,((endMin-startMin)/60)*rowH-2);
-        item.style.top=top+'px';
-        item.style.height=height+'px';
-        col.appendChild(item);
-      }
-    });
-
-    if(isSameDate(day,today)){
-      const h=today.getHours()+today.getMinutes()/60;
-      if(h>=8&&h<=20){
-        const line=document.createElement('div');
-        line.className='gcal-now-line';
-        line.style.top=(topPad+(h-8)*rowH)+'px';
-        col.appendChild(line);
-      }
-    }
-    board.appendChild(col);
+    html+=`<div class="gcal-head ${isSameDate(day,today)?'today':''} ${i===5?'sat':''} ${i===6?'sun':''}">
+      <span>${days[i]}</span><strong>${day.getDate()}</strong>
+    </div>`;
   }
-  wrap.innerHTML='';
-  wrap.appendChild(board);
+
+  html+='<div class="gcal-allday-label">종일</div>';
+  for(let i=0;i<7;i++){
+    const items=allDayByDay[i];
+    html+=`<div class="gcal-allday ${isSameDate(addDays(start,i),today)?'today':''}">`;
+    if(items.length){
+      items.slice(0,4).forEach(ev=>{
+        const [border,bg]=gcalEventColor(ev);
+        html+=`<div class="gcal-chip" style="border-color:${border};background:${bg};color:${border}">
+          <span>${escapeHtml(ev.summary||'(제목 없음)')}</span>
+          <button onclick="editGoogleEventTitle('${ev.id}')" title="수정">수정</button>
+          <button onclick="deleteGoogleEvent('${ev.id}')" title="삭제">삭제</button>
+        </div>`;
+      });
+      if(items.length>4)html+=`<div class="gcal-more">+${items.length-4}개 더보기</div>`;
+    }
+    html+='</div>';
+  }
+
+  hours.forEach(h=>{
+    html+=`<div class="gcal-time">${h<12?'오전 '+h:(h===12?'오후 12':'오후 '+(h-12))}</div>`;
+    for(let i=0;i<7;i++){
+      const day=addDays(start,i);
+      html+=`<div class="gcal-slot ${isSameDate(day,today)?'today':''}">`;
+      timedByDay[i].filter(ev=>eventStartDate(ev).getHours()===h).forEach(ev=>{
+        const [border,bg]=gcalEventColor(ev);
+        const label=eventTimeLabel(ev);
+        html+=`<div class="gcal-event" style="border-color:${border};background:${bg};color:${border}">
+          <div class="gcal-event-time">${label}</div>
+          <div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>
+          <div class="gcal-event-actions">
+            <button class="gcal-mini" onclick="editGoogleEventTitle('${ev.id}')">수정</button>
+            <button class="gcal-mini" onclick="deleteGoogleEvent('${ev.id}')">삭제</button>
+          </div>
+        </div>`;
+      });
+      html+='</div>';
+    }
+  });
+
+  html+='</div>';
+  wrap.innerHTML=html;
 }
 async function createGoogleEvent(){
   if(!googleAccessToken)return connectGoogleWorkspace();
