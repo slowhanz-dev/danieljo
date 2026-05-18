@@ -442,7 +442,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const DASHBOARD_DOC = db.collection('dashboards').doc('bunnar-main');
 
-const GOOGLE_CLIENT_ID = '281308186420-orapn1qc6687or4bimjlv864ke3ed9ii.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '281308186420-5hfbsncde6odclh8gffd0nt7bebpisc6.apps.googleusercontent.com';
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks';
 
 let DATA = [];
@@ -1213,6 +1213,267 @@ auth.onAuthStateChanged(async user=>{
     if(laterChanged)save();
   },err=>{console.error(err)});
 });
+
+
+// ── Google Calendar / Tasks integration ────────────────────────
+function setGoogleStatus(msg){
+  const el=document.getElementById('googleSyncStatus');
+  if(el)el.textContent=msg;
+}
+function updateGoogleButtons(connected){
+  ['googleRefreshBtn','googleAddEventBtn','googleDisconnectBtn'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.style.display=connected?'inline-block':'none';
+  });
+  const connect=document.getElementById('googleConnectBtn');
+  if(connect)connect.style.display=connected?'none':'inline-block';
+}
+function initGoogleTokenClient(){
+  if(googleTokenClient)return true;
+  if(!window.google || !google.accounts || !google.accounts.oauth2){
+    setGoogleStatus('Google 로그인 모듈을 불러오는 중입니다. 잠시 후 다시 눌러주세요.');
+    return false;
+  }
+  googleTokenClient=google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: GOOGLE_SCOPES,
+    prompt: 'consent',
+    callback: async (tokenResponse)=>{
+      if(tokenResponse && tokenResponse.access_token){
+        googleAccessToken=tokenResponse.access_token;
+        updateGoogleButtons(true);
+        setGoogleStatus('Google Calendar/Tasks 연결됨');
+        await refreshGoogleWorkspace();
+      }else{
+        setGoogleStatus('Google 연결이 취소되었습니다.');
+      }
+    }
+  });
+  return true;
+}
+function connectGoogleWorkspace(){
+  if(!initGoogleTokenClient())return;
+  googleTokenClient.requestAccessToken({prompt:'consent'});
+}
+function disconnectGoogleWorkspace(){
+  if(googleAccessToken && window.google?.accounts?.oauth2){
+    google.accounts.oauth2.revoke(googleAccessToken,()=>{});
+  }
+  googleAccessToken=null;
+  googleTaskListId=null;
+  googleEventsCache=[];
+  googleTasksCache=[];
+  updateGoogleButtons(false);
+  setGoogleStatus('연결 해제됨');
+  renderGoogleCalendarWeek();
+  renderGoogleTasks();
+}
+async function googleFetch(url, options={}){
+  if(!googleAccessToken)throw new Error('Google 계정 연결이 필요합니다.');
+  const res=await fetch(url,{
+    ...options,
+    headers:{
+      'Authorization':'Bearer '+googleAccessToken,
+      'Content-Type':'application/json',
+      ...(options.headers||{})
+    }
+  });
+  if(res.status===401){
+    googleAccessToken=null;
+    updateGoogleButtons(false);
+    throw new Error('Google 연결이 만료되었습니다. 다시 연결해주세요.');
+  }
+  if(!res.ok){
+    const text=await res.text();
+    throw new Error(text||('Google API 오류: '+res.status));
+  }
+  if(res.status===204)return null;
+  return res.json();
+}
+function startOfWeek(date=new Date()){
+  const d=new Date(date);
+  const day=(d.getDay()+6)%7;
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()-day);
+  return d;
+}
+function addDays(date,n){
+  const d=new Date(date); d.setDate(d.getDate()+n); return d;
+}
+function toApiDateTime(d){return d.toISOString();}
+function isSameDate(a,b){return a.toDateString()===b.toDateString();}
+function eventStartDate(ev){
+  return ev.start?.dateTime ? new Date(ev.start.dateTime) : new Date((ev.start?.date||todayISO())+'T00:00:00');
+}
+function eventEndDate(ev){
+  return ev.end?.dateTime ? new Date(ev.end.dateTime) : new Date((ev.end?.date||todayISO())+'T00:00:00');
+}
+function eventTimeLabel(ev){
+  if(ev.start?.date)return '종일';
+  const s=eventStartDate(ev);
+  return s.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+}
+async function refreshGoogleWorkspace(){
+  if(!googleAccessToken){
+    setGoogleStatus('먼저 Google Calendar/Tasks를 연결해주세요.');
+    return;
+  }
+  setGoogleStatus('Google Calendar/Tasks 불러오는 중...');
+  try{
+    await Promise.all([loadGoogleCalendarWeek(),loadGoogleTasks()]);
+    setGoogleStatus('동기화 완료 · '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){
+    console.error(e);
+    setGoogleStatus(e.message||'동기화 실패');
+  }
+}
+async function loadGoogleCalendarWeek(){
+  const start=startOfWeek();
+  const end=addDays(start,7);
+  const url='https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&timeMin='+
+    encodeURIComponent(toApiDateTime(start))+'&timeMax='+encodeURIComponent(toApiDateTime(end));
+  const data=await googleFetch(url);
+  googleEventsCache=data.items||[];
+  renderGoogleCalendarWeek();
+}
+function renderGoogleCalendarWeek(){
+  const wrap=document.getElementById('gcalWeek');
+  if(!wrap)return;
+  if(!googleAccessToken){
+    wrap.innerHTML='<div class="gcal-empty">Google 계정을 연결하면 주간 일정이 표시됩니다. 서비스 로그인 계정과 다른 Google 계정을 선택할 수 있습니다.</div>';
+    return;
+  }
+  const start=startOfWeek();
+  const today=new Date();
+  const days=['월','화','수','목','금','토','일'];
+  wrap.innerHTML='';
+  for(let i=0;i<7;i++){
+    const day=addDays(start,i);
+    const dayEvents=googleEventsCache.filter(ev=>isSameDate(eventStartDate(ev),day));
+    const col=document.createElement('div');
+    col.className='gcal-day'+(isSameDate(day,today)?' today':'');
+    col.innerHTML=`<div class="gcal-day-head"><span>${days[i]}</span><span class="gcal-day-num">${day.getDate()}</span></div><div class="gcal-events"></div>`;
+    const eventsEl=col.querySelector('.gcal-events');
+    if(dayEvents.length===0){
+      eventsEl.innerHTML='<div style="font-size:12px;color:var(--text3)">일정 없음</div>';
+    }else{
+      dayEvents.forEach(ev=>{
+        const item=document.createElement('div');
+        item.className='gcal-event';
+        item.innerHTML=`<div class="gcal-event-time">${eventTimeLabel(ev)}</div><div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>
+          <div class="gcal-event-actions">
+            <button class="gcal-mini" onclick="editGoogleEventTitle('${ev.id}')">수정</button>
+            <button class="gcal-mini" onclick="deleteGoogleEvent('${ev.id}')">삭제</button>
+          </div>`;
+        eventsEl.appendChild(item);
+      });
+    }
+    wrap.appendChild(col);
+  }
+}
+async function createGoogleEvent(){
+  if(!googleAccessToken)return connectGoogleWorkspace();
+  const title=prompt('일정 제목을 입력하세요');
+  if(!title)return;
+  const date=prompt('날짜를 입력하세요. 예: 2026-05-18', todayISO());
+  if(!date)return;
+  try{
+    await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+      method:'POST',
+      body:JSON.stringify({summary:title,start:{date},end:{date:addDays(new Date(date+'T00:00:00'),1).toISOString().slice(0,10)}})
+    });
+    await refreshGoogleWorkspace();
+  }catch(e){alert(e.message||'일정 추가 실패')}
+}
+async function editGoogleEventTitle(id){
+  const ev=googleEventsCache.find(x=>x.id===id);
+  if(!ev)return;
+  const title=prompt('새 일정 제목', ev.summary||'');
+  if(!title || title===ev.summary)return;
+  try{
+    await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/'+encodeURIComponent(id),{
+      method:'PATCH',
+      body:JSON.stringify({summary:title})
+    });
+    await refreshGoogleWorkspace();
+  }catch(e){alert(e.message||'일정 수정 실패')}
+}
+async function deleteGoogleEvent(id){
+  if(!confirm('이 일정을 Google Calendar에서 삭제할까요?'))return;
+  try{
+    await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/'+encodeURIComponent(id),{method:'DELETE'});
+    await refreshGoogleWorkspace();
+  }catch(e){alert(e.message||'일정 삭제 실패')}
+}
+async function loadGoogleTasks(){
+  const lists=await googleFetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists');
+  const taskList=(lists.items||[])[0];
+  if(!taskList){
+    googleTaskListId=null;
+    googleTasksCache=[];
+    renderGoogleTasks();
+    return;
+  }
+  googleTaskListId=taskList.id;
+  const data=await googleFetch('https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(googleTaskListId)+'/tasks?showCompleted=true&maxResults=50');
+  googleTasksCache=data.items||[];
+  renderGoogleTasks();
+}
+function renderGoogleTasks(){
+  const list=document.getElementById('gtList');
+  const count=document.getElementById('gtCount');
+  if(!list)return;
+  if(!googleAccessToken){
+    list.innerHTML='<div class="inbox-empty">Google 계정을 연결하면 Tasks가 표시됩니다.</div>';
+    if(count)count.textContent='연결 대기';
+    return;
+  }
+  const open=googleTasksCache.filter(t=>t.status!=='completed');
+  if(count)count.textContent=`${open.length}개 남음`;
+  if(googleTasksCache.length===0){
+    list.innerHTML='<div class="inbox-empty">Google Tasks에 잔업이 없습니다.</div>';
+    return;
+  }
+  list.innerHTML=googleTasksCache.map(t=>`
+    <div class="gt-row ${t.status==='completed'?'done':''}">
+      <button class="gt-check ${t.status==='completed'?'done':''}" onclick="toggleGoogleTask('${t.id}')" title="완료 토글">${t.status==='completed'?'✓':''}</button>
+      <span class="gt-title">${escapeHtml(t.title||'(제목 없음)')}</span>
+      <button class="gt-del" onclick="deleteGoogleTask('${t.id}')" title="삭제">×</button>
+    </div>`).join('');
+}
+async function addGoogleTask(e){
+  if(e.key!=='Enter')return;
+  const title=e.target.value.trim();
+  if(!title)return;
+  if(!googleAccessToken)return connectGoogleWorkspace();
+  if(!googleTaskListId)await loadGoogleTasks();
+  try{
+    await googleFetch('https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(googleTaskListId)+'/tasks',{
+      method:'POST',
+      body:JSON.stringify({title})
+    });
+    e.target.value='';
+    await loadGoogleTasks();
+  }catch(err){alert(err.message||'Tasks 추가 실패')}
+}
+async function toggleGoogleTask(id){
+  const t=googleTasksCache.find(x=>x.id===id);
+  if(!t||!googleTaskListId)return;
+  const completed=t.status!=='completed';
+  try{
+    await googleFetch('https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(googleTaskListId)+'/tasks/'+encodeURIComponent(id),{
+      method:'PATCH',
+      body:JSON.stringify(completed?{status:'completed',completed:new Date().toISOString()}:{status:'needsAction',completed:null})
+    });
+    await loadGoogleTasks();
+  }catch(e){alert(e.message||'Tasks 수정 실패')}
+}
+async function deleteGoogleTask(id){
+  if(!confirm('이 항목을 Google Tasks에서 삭제할까요?'))return;
+  try{
+    await googleFetch('https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(googleTaskListId)+'/tasks/'+encodeURIComponent(id),{method:'DELETE'});
+    await loadGoogleTasks();
+  }catch(e){alert(e.message||'Tasks 삭제 실패')}
+}
 </script>
 </body>
 </html>
