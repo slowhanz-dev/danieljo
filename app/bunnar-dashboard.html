@@ -242,33 +242,34 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .google-calendar-panel .date{font-size:13px;color:var(--text);font-weight:600;white-space:nowrap}
 .google-sync-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
 .google-sync-status{font-size:12px;color:var(--text2)}
-.gcal-week{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.035)}
-.gcal-board{display:grid;grid-template-columns:64px repeat(7,minmax(0,1fr));height:360px;background:#fff}
-.gcal-corner{border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);background:#fff}
-.gcal-day-header{border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:42px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:600;background:#fff}
+.gcal-week{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.035);max-height:520px;overflow-y:auto}
+.gcal-board{display:grid;grid-template-columns:64px repeat(7,minmax(0,1fr));background:#fff}
+.gcal-corner{border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);background:#fff}
+.gcal-day-header{border-right:1px solid var(--border);border-bottom:1px solid var(--border);height:42px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:600;background:#fff}
 .gcal-day-header:last-child{border-right:none}
 .gcal-day-header.today{color:var(--blue)}
 .gcal-day-header.sun{color:#d93025}
 .gcal-day-header.sat{color:#1967d2;background:#f8fbff}
 .gcal-day-header .num{font-size:18px;font-weight:700}
-.gcal-time-axis{grid-column:1;grid-row:2;border-right:1px solid var(--line);position:relative;background:#fff}
+.gcal-time-axis{grid-column:1;grid-row:2;border-right:1px solid var(--border);position:relative;background:#fff}
 .gcal-time-label{position:absolute;left:0;right:8px;transform:translateY(-50%);text-align:right;font-size:11px;color:var(--text3)}
-.gcal-day-col{position:relative;border-right:1px solid var(--line);background:linear-gradient(to bottom,rgba(0,0,0,.07) 1px,transparent 1px);background-size:100% var(--gcal-row-h,26px)}
+.gcal-day-col{position:relative;border-right:1px solid var(--border);background:linear-gradient(to bottom,rgba(0,0,0,.07) 1px,transparent 1px);background-size:100% var(--gcal-row-h,26px)}
 .gcal-day-col:last-child{border-right:none}
 .gcal-day-col.sat{background-color:#f8fbff}
 .gcal-day-col.today{background-color:#f7fbff}
 .gcal-all-day{position:absolute;left:6px;right:6px;top:6px;display:flex;flex-direction:column;gap:4px;z-index:2}
-.gcal-event{position:absolute;left:8px;right:8px;border:1px solid rgba(26,115,232,.24);background:#e8f0fe;border-radius:7px;padding:5px 7px;font-size:11px;line-height:1.25;cursor:pointer;overflow:hidden;color:#174ea6;box-shadow:0 1px 2px rgba(0,0,0,.06)}
-.gcal-event.all-day{position:relative;left:auto;right:auto;top:auto;min-height:30px;border-radius:8px}
-.gcal-event:hover{filter:brightness(.985);box-shadow:0 2px 6px rgba(0,0,0,.10)}
-.gcal-event-time{font-size:10px;font-weight:700;margin-bottom:2px;opacity:.9}
-.gcal-event-title{font-weight:600;word-break:keep-all}
+.gcal-event{position:absolute;left:8px;right:8px;border-radius:7px;padding:5px 8px;font-size:11px;line-height:1.3;cursor:pointer;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.18);color:#fff}
+.gcal-event.all-day{position:relative;left:auto;right:auto;top:auto;min-height:26px;border-radius:6px}
+.gcal-event:hover{filter:brightness(.92);box-shadow:0 2px 6px rgba(0,0,0,.22)}
+.gcal-event-time{font-size:10px;font-weight:600;margin-bottom:2px;opacity:.85;display:none}
+.gcal-event:hover .gcal-event-time{display:block}
+.gcal-event-title{font-weight:500;word-break:keep-all;font-size:11px}
 .gcal-event-actions{display:none;gap:5px;margin-top:5px}
 .gcal-event:hover .gcal-event-actions{display:flex}
-.gcal-mini{border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.7);border-radius:6px;padding:2px 5px;font-size:10px;cursor:pointer;color:inherit}
-.gcal-now-line{position:absolute;left:0;right:0;height:1px;background:#ea4335;z-index:4}
+.gcal-mini{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.2);border-radius:6px;padding:2px 5px;font-size:10px;cursor:pointer;color:inherit}
+.gcal-now-line{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:4}
 .gcal-now-line::before{content:"";position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#ea4335}
-.gcal-empty{color:var(--text2);font-size:13px;padding:24px;border:1px dashed var(--line);border-radius:14px;background:rgba(255,255,255,.45)}
+.gcal-empty{color:var(--text2);font-size:13px;padding:24px;border:1px dashed var(--border);border-radius:14px;background:rgba(255,255,255,.45)}
 .google-task-panel{padding:16px 18px;margin-top:14px}
 .google-task-panel .inbox-head{margin-bottom:10px}
 .google-task-panel .inbox-list{max-height:180px;overflow:auto}
@@ -1406,21 +1407,48 @@ async function refreshGoogleWorkspace(){
 async function loadGoogleCalendarWeek(){
   const start=startOfWeek();
   const end=addDays(start,7);
-  const url='https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&timeMin='+
-    encodeURIComponent(toApiDateTime(start))+'&timeMax='+encodeURIComponent(toApiDateTime(end));
-  const data=await googleFetch(url);
-  googleEventsCache=data.items||[];
+  // 모든 캘린더 목록 + 색상 가져오기
+  let calendars=[];
+  try{
+    const calList=await googleFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList');
+    calendars=(calList.items||[]).filter(c=>c.selected!==false);
+  }catch(e){
+    calendars=[{id:'primary',backgroundColor:'#4285f4',foregroundColor:'#ffffff'}];
+  }
+  const calColorMap={};
+  calendars.forEach(cal=>{
+    calColorMap[cal.id]={bg:cal.backgroundColor||'#4285f4',fg:cal.foregroundColor||'#ffffff'};
+  });
+  // 모든 캘린더 병렬 로드
+  const allEvents=[];
+  await Promise.all(calendars.map(async cal=>{
+    try{
+      const url='https://www.googleapis.com/calendar/v3/calendars/'+
+        encodeURIComponent(cal.id)+'/events?singleEvents=true&orderBy=startTime&timeMin='+
+        encodeURIComponent(toApiDateTime(start))+'&timeMax='+encodeURIComponent(toApiDateTime(end));
+      const data=await googleFetch(url);
+      (data.items||[]).forEach(ev=>{
+        ev._calBg=calColorMap[cal.id]?.bg||'#4285f4';
+        ev._calFg=calColorMap[cal.id]?.fg||'#ffffff';
+        allEvents.push(ev);
+      });
+    }catch(e){}
+  }));
+  googleEventsCache=allEvents;
   renderGoogleCalendarWeek();
 }
 function getGoogleEventColor(ev){
-  const colors={
-    '1':['#a4bdfc','#174ea6'],'2':['#7ae7bf','#0b6b4b'],'3':['#dbadff','#5b2aa0'],
-    '4':['#ff887c','#9c1c14'],'5':['#fbd75b','#7a4d00'],'6':['#ffb878','#7a3b00'],
-    '7':['#46d6db','#07575b'],'8':['#e1e1e1','#444746'],'9':['#5484ed','#174ea6'],
-    '10':['#51b749','#0b6b4b'],'11':['#dc2127','#8b0000']
-  };
-  const c=colors[ev.colorId||'9']||colors['9'];
-  return{bg:c[0],fg:c[1],border:c[1]};
+  if(ev.colorId){
+    const colors={
+      '1':['#4a86e8','#fff'],'2':['#33b679','#fff'],'3':['#8e24aa','#fff'],
+      '4':['#e67c73','#fff'],'5':['#f6c026','#333'],'6':['#f5511d','#fff'],
+      '7':['#039be5','#fff'],'8':['#616161','#fff'],'9':['#3f51b5','#fff'],
+      '10':['#0b8043','#fff'],'11':['#d60000','#fff']
+    };
+    const c=colors[ev.colorId]||colors['9'];
+    return{bg:c[0],fg:c[1]};
+  }
+  return{bg:ev._calBg||'#4285f4',fg:ev._calFg||'#ffffff'};
 }
 function eventTimeRangeLabel(ev){
   if(ev.start?.date)return '종일';
@@ -1440,9 +1468,9 @@ function renderGoogleCalendarWeek(){
   const today=new Date();
   const days=['월','화','수','목','금','토','일'];
   const hours=[];
-  for(let h=8;h<=20;h++)hours.push(h);
-  const rowH=26;
-  const topPad=28; // 종일 일정 영역
+  for(let h=7;h<=22;h++)hours.push(h);
+  const rowH=28;
+  const topPad=32;
   const bodyH=(hours.length-1)*rowH+topPad;
   const board=document.createElement('div');
   board.className='gcal-board';
@@ -1483,7 +1511,6 @@ function renderGoogleCalendarWeek(){
       const isAllDay=!!ev.start?.date;
       item.className='gcal-event'+(isAllDay?' all-day':'');
       item.style.background=color.bg;
-      item.style.borderColor=color.border;
       item.style.color=color.fg;
       item.innerHTML=`<div class="gcal-event-time">${eventTimeRangeLabel(ev)}</div><div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>
         <div class="gcal-event-actions">
@@ -1495,10 +1522,10 @@ function renderGoogleCalendarWeek(){
       }else{
         const s=eventStartDate(ev);
         const e=eventEndDate(ev);
-        const startMin=Math.max(0,(s.getHours()-8)*60+s.getMinutes());
-        const endMin=Math.max(startMin+30,(e.getHours()-8)*60+e.getMinutes());
+        const startMin=Math.max(0,(s.getHours()-7)*60+s.getMinutes());
+        const endMin=Math.max(startMin+30,(e.getHours()-7)*60+e.getMinutes());
         const top=topPad+(startMin/60)*rowH;
-        const height=Math.max(28,((endMin-startMin)/60)*rowH-2);
+        const height=Math.max(26,((endMin-startMin)/60)*rowH-2);
         item.style.top=top+'px';
         item.style.height=height+'px';
         col.appendChild(item);
@@ -1507,10 +1534,10 @@ function renderGoogleCalendarWeek(){
 
     if(isSameDate(day,today)){
       const h=today.getHours()+today.getMinutes()/60;
-      if(h>=8&&h<=20){
+      if(h>=7&&h<=22){
         const line=document.createElement('div');
         line.className='gcal-now-line';
-        line.style.top=(topPad+(h-8)*rowH)+'px';
+        line.style.top=(topPad+(h-7)*rowH)+'px';
         col.appendChild(line);
       }
     }
