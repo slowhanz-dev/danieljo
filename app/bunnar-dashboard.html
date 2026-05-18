@@ -1661,6 +1661,7 @@ function renderGoogleCalendarWeek(){
       // 클릭으로 수정/삭제 토글
       item.addEventListener('click',e=>{
         e.stopPropagation();
+        if(item.dataset.wasDragged==='1'){item.dataset.wasDragged='0';return;}
         const isActive=item.classList.contains('active');
         document.querySelectorAll('.gcal-event.active').forEach(el=>el.classList.remove('active'));
         if(!isActive) item.classList.add('active');
@@ -1668,11 +1669,27 @@ function renderGoogleCalendarWeek(){
 
       item.addEventListener('mousedown',e=>{
         e.stopPropagation();
-        dragEvId=ev.id;dragOrigEl=item;
-        const rect=item.getBoundingClientRect();
-        dragOffsetMin=Math.round(((e.clientY-rect.top)/rowH)*60);
-        item.classList.add('dragging');
-        scrollBody.classList.add('dragging-event');
+        const startX=e.clientX, startY=e.clientY;
+        let dragging=false;
+
+        const onMove=mv=>{
+          if(dragging)return;
+          if(Math.abs(mv.clientX-startX)>5||Math.abs(mv.clientY-startY)>5){
+            dragging=true;
+            dragEvId=ev.id;dragOrigEl=item;
+            const rect=item.getBoundingClientRect();
+            dragOffsetMin=Math.round(((startY-rect.top)/rowH)*60);
+            item.classList.add('dragging');
+            item.dataset.wasDragged='1';
+            scrollBody.classList.add('dragging-event');
+          }
+        };
+        const onUp=()=>{
+          window.removeEventListener('mousemove',onMove);
+          window.removeEventListener('mouseup',onUp);
+        };
+        window.addEventListener('mousemove',onMove);
+        window.addEventListener('mouseup',onUp);
       });
       col.appendChild(item);
     });
