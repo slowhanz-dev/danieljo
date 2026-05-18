@@ -247,9 +247,9 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .gcal-week{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.035)}
 
 /* 헤더 행(요일) + 종일: sticky 고정 */
-.gcal-header-row{display:grid;grid-template-columns:64px repeat(7,minmax(0,1fr));background:#fff;position:sticky;top:0;z-index:20;border-bottom:2px solid var(--border)}
-.gcal-allday-row{display:grid;grid-template-columns:64px repeat(7,minmax(0,1fr));background:#fff;position:sticky;top:42px;z-index:18;border-bottom:1px solid var(--border);min-height:0}
-.gcal-allday-row.has-events{padding:4px 0}
+.gcal-header-row{display:grid;grid-template-columns:64px repeat(7,minmax(0,1fr));background:#fff;position:sticky;top:0;z-index:20;border-bottom:2px solid var(--border);padding-right:var(--gcal-sb-w,0px)}
+.gcal-allday-row{display:grid;grid-template-columns:64px repeat(7,minmax(0,1fr));background:#fff;position:sticky;top:42px;z-index:18;border-bottom:1px solid var(--border);min-height:0;padding-right:var(--gcal-sb-w,0px)}
+.gcal-allday-row.has-events{padding-top:4px;padding-bottom:4px}
 .gcal-allday-corner{border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);padding:4px 0}
 .gcal-allday-col{border-right:1px solid var(--border);padding:2px 3px;display:flex;flex-direction:column;gap:2px}
 .gcal-allday-col:last-child{border-right:none}
@@ -1743,6 +1743,44 @@ function renderGoogleCalendarWeek(){
 
   scrollBody.appendChild(board);
   wrap.appendChild(scrollBody);
+
+  // ── 스크롤바 너비 측정 → CSS 변수로 헤더/종일 행 보정 ──
+  requestAnimationFrame(()=>{
+    const sbW=scrollBody.offsetWidth-scrollBody.clientWidth;
+    wrap.style.setProperty('--gcal-sb-w', sbW+'px');
+  });
+
+  // ── 더블클릭으로 일정 추가 ──
+  board.addEventListener('dblclick',async e=>{
+    if(e.target.closest('.gcal-event'))return;
+    const colEl=e.target.closest('.gcal-day-col');
+    if(!colEl)return;
+    const rect=colEl.getBoundingClientRect();
+    const yPx=e.clientY-rect.top+scrollBody.scrollTop;
+    const totalMin=Math.max(HOUR_START*60,Math.min(HOUR_END*60,Math.round((yPx/rowH)*60+HOUR_START*60)));
+    const snapped=Math.round(totalMin/15)*15;
+    const startH=Math.floor(snapped/60);
+    const startM=snapped%60;
+    const endH=Math.floor((snapped+60)/60);
+    const endM=(snapped+60)%60;
+    const dayIdx=parseInt(colEl.dataset.dayIndex||0);
+    const newDay=addDays(weekStart,dayIdx);
+    const pad=n=>String(n).padStart(2,'0');
+    const toLocalDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const dateStr=toLocalDate(newDay);
+    const title=prompt(`${dateStr} ${pad(startH)}:${pad(startM)} 일정 제목`);
+    if(!title)return;
+    const startDT=new Date(newDay.getFullYear(),newDay.getMonth(),newDay.getDate(),startH,startM,0,0);
+    const endDT=new Date(newDay.getFullYear(),newDay.getMonth(),newDay.getDate(),endH,endM,0,0);
+    try{
+      await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+        method:'POST',
+        body:JSON.stringify({summary:title,start:{dateTime:startDT.toISOString(),timeZone:'Asia/Seoul'},end:{dateTime:endDT.toISOString(),timeZone:'Asia/Seoul'}})
+      });
+      await refreshGoogleWorkspace();
+    }catch(err){alert(err.message||'일정 추가 실패');}
+  });
+
   const initH=Math.max(HOUR_START,Math.min(HOUR_END,today.getHours()));
   setTimeout(()=>{ scrollBody.scrollTop=Math.max(0,(initH-HOUR_START-1)*rowH); },50);
 }
@@ -1750,12 +1788,22 @@ async function createGoogleEvent(){
   if(!googleAccessToken)return connectGoogleWorkspace();
   const title=prompt('일정 제목을 입력하세요');
   if(!title)return;
-  const date=prompt('날짜를 입력하세요. 예: 2026-05-18', todayISO());
-  if(!date)return;
+  const pad=n=>String(n).padStart(2,'0');
+  const now=new Date();
+  const toLocalDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const defaultDate=toLocalDate(now);
+  const defaultTime=`${pad(now.getHours())}:${pad(now.getMinutes()<30?0:30)}`;
+  const dateStr=prompt('날짜 (예: 2026-05-18)',defaultDate);
+  if(!dateStr)return;
+  const timeStr=prompt('시작 시간 (예: 10:00)',defaultTime);
+  if(!timeStr)return;
+  const [hh,mm]=(timeStr||'09:00').split(':').map(Number);
+  const startDT=new Date(`${dateStr}T${pad(hh||9)}:${pad(mm||0)}:00`);
+  const endDT=new Date(startDT.getTime()+60*60*1000);
   try{
     await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
       method:'POST',
-      body:JSON.stringify({summary:title,start:{date},end:{date:addDays(new Date(date+'T00:00:00'),1).toISOString().slice(0,10)}})
+      body:JSON.stringify({summary:title,start:{dateTime:startDT.toISOString(),timeZone:'Asia/Seoul'},end:{dateTime:endDT.toISOString(),timeZone:'Asia/Seoul'}})
     });
     await refreshGoogleWorkspace();
   }catch(e){alert(e.message||'일정 추가 실패')}
