@@ -1540,6 +1540,22 @@ function renderGoogleCalendarWeek(){
     });
     col.addEventListener('mouseenter',()=>{ if(adDragEvId) col.style.outline='2px dashed var(--blue)'; });
     col.addEventListener('mouseleave',()=>{ col.style.outline=''; });
+    col.addEventListener('dblclick',async e=>{
+      if(e.target.closest('.gcal-event'))return;
+      const pad=n=>String(n).padStart(2,'0');
+      const toLocalDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const dateStr=toLocalDate(day);
+      const title=prompt(`${dateStr} 종일 일정 제목`);
+      if(!title)return;
+      const nextDateStr=toLocalDate(addDays(day,1));
+      try{
+        await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+          method:'POST',
+          body:JSON.stringify({summary:title,start:{date:dateStr},end:{date:nextDateStr}})
+        });
+        await refreshGoogleWorkspace();
+      }catch(err){alert(err.message||'종일 일정 추가 실패');}
+    });
     col.addEventListener('mouseup',async e=>{
       e.stopPropagation();
       col.style.outline='';
