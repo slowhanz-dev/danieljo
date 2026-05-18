@@ -1540,7 +1540,8 @@ function renderGoogleCalendarWeek(){
     });
     col.addEventListener('mouseenter',()=>{ if(adDragEvId) col.style.outline='2px dashed var(--blue)'; });
     col.addEventListener('mouseleave',()=>{ col.style.outline=''; });
-    col.addEventListener('mouseup',async()=>{
+    col.addEventListener('mouseup',async e=>{
+      e.stopPropagation();
       col.style.outline='';
       if(!adDragEvId)return;
       const evId=adDragEvId; adDragEvId=null;
@@ -1549,26 +1550,40 @@ function renderGoogleCalendarWeek(){
       if(!ev)return;
       const dayIdx=parseInt(col.dataset.dayIndex||0);
       const newDay=addDays(weekStart,dayIdx);
-      const newDateStr=newDay.toISOString().slice(0,10);
+      // ★ 로컬 날짜 문자열 사용 (toISOString은 UTC 변환으로 1일 밀림 발생)
+      const pad=n=>String(n).padStart(2,'0');
+      const toLocalDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const newDateStr=toLocalDate(newDay);
       const origStart=new Date(ev.start.date+'T00:00:00');
       const origEnd=new Date(ev.end.date+'T00:00:00');
       const durDays=Math.round((origEnd-origStart)/86400000)||1;
-      const newEndDate=addDays(newDay,durDays).toISOString().slice(0,10);
+      const newEndDay=addDays(newDay,durDays);
+      const newEndDate=toLocalDate(newEndDay);
       const calId=ev._calId||'primary';
       try{
         setGoogleStatus('종일 일정 이동 중...');
         await googleFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(evId)}`,{method:'PATCH',body:JSON.stringify({start:{date:newDateStr},end:{date:newEndDate}})});
         await refreshGoogleWorkspace();
-      }catch(err){alert(err.message||'종일 일정 이동 실패');renderGoogleCalendarWeek();}
+      }catch(err){
+        const msg=err.message||'';
+        if(msg.includes('403')||msg.includes('Forbidden')){
+          alert('이 일정은 읽기 전용 캘린더(공휴일 등)라 이동할 수 없습니다.');
+        }else{
+          alert(msg||'종일 일정 이동 실패');
+        }
+        renderGoogleCalendarWeek();
+      }
     });
     allDayRow.appendChild(col);
   }
-  document.addEventListener('mouseup',()=>{
+  // 종일 드래그 취소 — {once:true} 제거, 상시 감지
+  const adCancelDrag=()=>{
     if(!adDragEvId)return;
     adDragEvId=null;
     if(adDragOrigEl){adDragOrigEl.style.opacity='';adDragOrigEl=null;}
     document.querySelectorAll('.gcal-allday-col').forEach(c=>c.style.outline='');
-  },{once:true});
+  };
+  allDayRow.addEventListener('mouseup',adCancelDrag);
   wrap.appendChild(allDayRow);
 
   // ── 3. 스크롤 시간 영역 ──
@@ -1689,15 +1704,23 @@ function renderGoogleCalendarWeek(){
     const origS=eventStartDate(ev);
     const origE=eventEndDate(ev);
     const durMin=(origE-origS)/60000;
-    const newStart=new Date(newDay);
-    newStart.setHours(newH,newM,0,0);
+    // ★ 로컬 자정 기준으로 날짜 설정
+    const newStart=new Date(newDay.getFullYear(),newDay.getMonth(),newDay.getDate(),newH,newM,0,0);
     const newEnd=new Date(newStart.getTime()+durMin*60000);
     const calId=ev._calId||'primary';
     try{
       setGoogleStatus('일정 이동 중...');
       await googleFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(evId)}`,{method:'PATCH',body:JSON.stringify({start:{dateTime:newStart.toISOString(),timeZone:'Asia/Seoul'},end:{dateTime:newEnd.toISOString(),timeZone:'Asia/Seoul'}})});
       await refreshGoogleWorkspace();
-    }catch(err){alert(err.message||'일정 이동 실패');renderGoogleCalendarWeek();}
+    }catch(err){
+      const msg=err.message||'';
+      if(msg.includes('403')||msg.includes('Forbidden')){
+        alert('이 일정은 읽기 전용 캘린더(공휴일 등)라 이동할 수 없습니다.');
+      }else{
+        alert(msg||'일정 이동 실패');
+      }
+      renderGoogleCalendarWeek();
+    }
   });
 
   document.addEventListener('mouseup',()=>{
