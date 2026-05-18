@@ -292,7 +292,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .gcal-mini{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.2);border-radius:6px;padding:2px 5px;font-size:10px;cursor:pointer;color:inherit}
 
 /* 클릭 팝업 카드 */
-.gcal-popup{position:absolute;left:3px;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);padding:10px 12px;z-index:100;min-width:160px;display:none;flex-direction:column;gap:6px}
+.gcal-popup{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:10px 14px;z-index:9999;min-width:170px;display:none;flex-direction:column;gap:6px}
 .gcal-popup.show{display:flex}
 .gcal-popup-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.4;word-break:keep-all}
 .gcal-popup-time{font-size:11px;color:var(--text2);margin-bottom:2px}
@@ -1255,6 +1255,14 @@ window.addEventListener('afterprint',()=>{
   document.querySelectorAll('.irow').forEach(row=>row.classList.remove('print-has-notes'));
 });
 
+// 팝업 외부 클릭 시 닫기
+document.addEventListener('click',e=>{
+  const popup=document.getElementById('gcal-active-popup');
+  if(popup&&!popup.contains(e.target)&&!e.target.closest('.gcal-event')&&!e.target.closest('.all-day-item')){
+    closeGcalPopup();
+  }
+});
+
 auth.onAuthStateChanged(async user=>{
   const loginBtn=document.getElementById('loginBtn');
   const logoutBtn=document.getElementById('logoutBtn');
@@ -1336,6 +1344,7 @@ function showGcalPopup(anchorEl, ev, isAllDay){
   const popup=document.createElement('div');
   popup.className='gcal-popup show';
   popup.id='gcal-active-popup';
+  popup.dataset.evId=ev.id;
   const timeStr=isAllDay?'종일':eventTimeRangeLabel(ev);
   popup.innerHTML=`
     <div class="gcal-popup-time">${timeStr}</div>
@@ -1344,12 +1353,20 @@ function showGcalPopup(anchorEl, ev, isAllDay){
       <button class="gcal-popup-btn" onclick="closeGcalPopup();editGoogleEventTitle('${ev.id}')">수정</button>
       <button class="gcal-popup-btn del" onclick="closeGcalPopup();deleteGoogleEvent('${ev.id}')">삭제</button>
     </div>`;
-  // 화면 오른쪽 끝에서 잘리지 않도록 방향 조정
-  anchorEl.style.position='relative';
-  anchorEl.appendChild(popup);
-  const popRect=popup.getBoundingClientRect();
-  if(popRect.right>window.innerWidth-10) popup.style.left='auto';
-  if(popRect.bottom>window.innerHeight-10) popup.style.top='auto';
+  popup.style.position='fixed';
+  popup.style.zIndex='9999';
+  document.body.appendChild(popup);
+  // 위치 계산: 앵커 아래에 표시
+  const rect=anchorEl.getBoundingClientRect();
+  let top=rect.bottom+6;
+  let left=rect.left;
+  requestAnimationFrame(()=>{
+    const pw=popup.offsetWidth, ph=popup.offsetHeight;
+    if(left+pw>window.innerWidth-10) left=window.innerWidth-pw-10;
+    if(top+ph>window.innerHeight-10) top=rect.top-ph-6;
+    popup.style.top=top+'px';
+    popup.style.left=Math.max(6,left)+'px';
+  });
 }
 function closeGcalPopup(){
   const p=document.getElementById('gcal-active-popup');
