@@ -237,12 +237,12 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 
 /* ─── Google Calendar / Tasks sync panel ─── */
 .google-calendar-panel{padding:16px 18px 18px}
-.google-calendar-panel .digest-head{align-items:center;margin-bottom:10px}
-.google-calendar-panel .digest-head h2{font-size:16px;font-weight:700}
-.google-calendar-panel .date{font-size:13px;color:var(--text);font-weight:600;white-space:nowrap}
+.google-calendar-panel .digest-head{align-items:center;margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:nowrap;gap:12px}
+.google-calendar-panel .digest-head h2{font-size:16px;font-weight:700;flex-shrink:0}
+.google-calendar-panel .date{font-size:12px;color:var(--text2);font-weight:500;white-space:nowrap;flex-shrink:0;text-align:right}
 .google-sync-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
 .google-sync-status{font-size:12px;color:var(--text2)}
-.gcal-week{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.035);max-height:520px;overflow-y:auto}
+.gcal-week{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.035)}
 .gcal-board{display:grid;grid-template-columns:64px repeat(7,minmax(0,1fr));background:#fff}
 .gcal-corner{border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);background:#fff}
 .gcal-day-header{border-right:1px solid var(--border);border-bottom:1px solid var(--border);height:42px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:600;background:#fff}
@@ -257,13 +257,13 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .gcal-day-col:last-child{border-right:none}
 .gcal-day-col.sat{background-color:#f8fbff}
 .gcal-day-col.today{background-color:#f7fbff}
-.gcal-all-day{position:absolute;left:6px;right:6px;top:6px;display:flex;flex-direction:column;gap:4px;z-index:2}
-.gcal-event{position:absolute;left:8px;right:8px;border-radius:7px;padding:5px 8px;font-size:11px;line-height:1.3;cursor:pointer;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.18);color:#fff}
-.gcal-event.all-day{position:relative;left:auto;right:auto;top:auto;min-height:26px;border-radius:6px}
-.gcal-event:hover{filter:brightness(.92);box-shadow:0 2px 6px rgba(0,0,0,.22)}
+.gcal-all-day{position:absolute;left:4px;right:4px;top:4px;display:flex;flex-direction:column;gap:3px;z-index:2}
+.gcal-event{position:absolute;left:3px;right:3px;border-radius:6px;padding:4px 6px;font-size:11px;line-height:1.35;cursor:pointer;overflow:visible;box-shadow:0 1px 3px rgba(0,0,0,.18);color:#fff;z-index:2}
+.gcal-event.all-day{position:relative;left:auto;right:auto;top:auto;min-height:24px;border-radius:6px;overflow:hidden}
+.gcal-event:hover{filter:brightness(.92);box-shadow:0 2px 6px rgba(0,0,0,.22);z-index:10}
 .gcal-event-time{font-size:10px;font-weight:600;margin-bottom:2px;opacity:.85;display:none}
 .gcal-event:hover .gcal-event-time{display:block}
-.gcal-event-title{font-weight:500;word-break:keep-all;font-size:11px}
+.gcal-event-title{font-weight:500;word-break:keep-all;font-size:11px;white-space:normal;overflow:visible}
 .gcal-event-actions{display:none;gap:5px;margin-top:5px}
 .gcal-event:hover .gcal-event-actions{display:flex}
 .gcal-mini{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.2);border-radius:6px;padding:2px 5px;font-size:10px;cursor:pointer;color:inherit}
@@ -902,7 +902,7 @@ function updateGoogleClock(){
   const dateEl=document.getElementById('todayDate');
   if(!dateEl)return;
   dateEl.textContent=new Date().toLocaleString('ko-KR',{
-    year:'numeric',month:'long',day:'numeric',weekday:'long',
+    year:'numeric',month:'long',day:'numeric',weekday:'short',
     hour:'2-digit',minute:'2-digit'
   });
 }
@@ -1468,9 +1468,9 @@ function renderGoogleCalendarWeek(){
   const today=new Date();
   const days=['월','화','수','목','금','토','일'];
   const hours=[];
-  for(let h=7;h<=22;h++)hours.push(h);
-  const rowH=28;
-  const topPad=32;
+  for(let h=7;h<=20;h++)hours.push(h);
+  const rowH=32;
+  const topPad=36;
   const bodyH=(hours.length-1)*rowH+topPad;
   const board=document.createElement('div');
   board.className='gcal-board';
@@ -1534,7 +1534,7 @@ function renderGoogleCalendarWeek(){
 
     if(isSameDate(day,today)){
       const h=today.getHours()+today.getMinutes()/60;
-      if(h>=7&&h<=22){
+      if(h>=7&&h<=20){
         const line=document.createElement('div');
         line.className='gcal-now-line';
         line.style.top=(topPad+(h-7)*rowH)+'px';
