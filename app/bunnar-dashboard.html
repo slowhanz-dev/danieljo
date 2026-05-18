@@ -1213,9 +1213,7 @@ auth.onAuthStateChanged(async user=>{
     if(laterChanged)save();
   },err=>{console.error(err)});
 });
-</script>
-</body>
-</html>
+
 // ── Google Calendar / Tasks integration ────────────────────────
 function setGoogleStatus(msg){
   const el=document.getElementById('googleSyncStatus');
@@ -1475,6 +1473,6 @@ async function deleteGoogleTask(id){
     await loadGoogleTasks();
   }catch(e){alert(e.message||'Tasks 삭제 실패')}
 }
-
-
-
+</script>
+</body>
+</html>
