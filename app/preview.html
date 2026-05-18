@@ -238,24 +238,28 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 
 
 /* ─── 오늘의 One Thing ─── */
-.one-thing-panel{background:#ffd000;border:1px solid rgba(0,0,0,.08);border-radius:0;padding:28px 34px 24px;position:relative;overflow:hidden;box-shadow:0 14px 34px rgba(26,26,24,.12);color:#050505}
-.one-thing-panel::before{content:'';position:absolute;left:34px;top:28px;width:2px;height:52px;background:#050505;pointer-events:none}
-.one-thing-panel::after{content:'ONE';position:absolute;right:22px;bottom:-22px;font-size:92px;font-weight:700;letter-spacing:-.06em;color:rgba(0,0,0,.06);pointer-events:none}
-.one-thing-label{font-size:38px;font-weight:700;letter-spacing:-.045em;color:#050505;margin-bottom:22px;padding-left:12px;line-height:1.06;text-transform:none}
-.one-thing-content{font-size:21px;font-weight:500;color:#050505;line-height:1.45;min-height:34px;outline:none;caret-color:#050505;word-break:keep-all;padding:8px 0 6px;max-width:860px;position:relative;z-index:1}
-.one-thing-content:empty::before{content:attr(data-placeholder);color:rgba(0,0,0,.38);font-weight:400;font-size:19px;pointer-events:none}
+#oneThingBox{margin-bottom:24px !important}
+.one-thing-panel{background:#ffd000;border:1px solid rgba(0,0,0,.08);border-radius:var(--radius);padding:20px 24px 17px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.035);color:#050505}
+.one-thing-panel::before{content:'';position:absolute;left:24px;top:20px;width:2px;height:42px;background:#050505;pointer-events:none}
+.one-thing-panel::after{content:'ONE';position:absolute;right:18px;bottom:-20px;font-size:74px;font-weight:700;letter-spacing:-.06em;color:rgba(0,0,0,.055);pointer-events:none}
+.one-thing-label{font-size:32px;font-weight:700;letter-spacing:-.045em;color:#050505;margin-bottom:14px;padding-left:13px;line-height:1.08;text-transform:none;word-break:keep-all;position:relative;z-index:1}
+.one-thing-content{font-size:18px;font-weight:500;color:#050505;line-height:1.42;min-height:28px;outline:none;caret-color:#050505;word-break:keep-all;padding:4px 0 4px;max-width:860px;position:relative;z-index:1}
+.one-thing-content:empty::before{content:attr(data-placeholder);color:rgba(0,0,0,.38);font-weight:400;font-size:17px;pointer-events:none}
 .one-thing-content:focus{border-bottom:1px solid rgba(0,0,0,.22)}
-.one-thing-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;position:relative;z-index:1}
-.one-thing-date{font-size:12px;color:rgba(0,0,0,.45);font-weight:500}
-.one-thing-reset{background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.13);border-radius:8px;padding:4px 10px;font-size:10px;color:rgba(0,0,0,.48);cursor:pointer;font-family:inherit;transition:all .15s}
+.one-thing-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px;position:relative;z-index:1}
+.one-thing-date{font-size:11px;color:rgba(0,0,0,.45);font-weight:500}
+.one-thing-reset{background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.13);border-radius:8px;padding:3px 9px;font-size:10px;color:rgba(0,0,0,.48);cursor:pointer;font-family:inherit;transition:all .15s}
 .one-thing-reset:hover{background:#050505;border-color:#050505;color:#ffd000}
 @media(max-width:700px){
-  .one-thing-panel{padding:22px 18px 18px;border-radius:0;margin-left:-12px;margin-right:-12px}
-  .one-thing-panel::before{left:18px;top:24px;height:42px}
-  .one-thing-panel::after{font-size:64px;right:10px;bottom:-16px}
-  .one-thing-label{font-size:32px;margin-bottom:18px;padding-left:10px}
-  .one-thing-content{font-size:18px}
-  .one-thing-footer{align-items:flex-start;gap:10px}
+  #oneThingBox{margin-bottom:16px !important}
+  .one-thing-panel{padding:16px 18px 14px;border-radius:var(--radius);margin-left:0;margin-right:0;box-shadow:0 8px 24px rgba(0,0,0,.035)}
+  .one-thing-panel::before{left:18px;top:17px;height:34px}
+  .one-thing-panel::after{font-size:52px;right:8px;bottom:-14px}
+  .one-thing-label{font-size:clamp(24px,7.2vw,28px);margin-bottom:11px;padding-left:11px;line-height:1.08}
+  .one-thing-content{font-size:16px;line-height:1.4;min-height:24px;padding:3px 0}
+  .one-thing-content:empty::before{font-size:15px}
+  .one-thing-footer{margin-top:8px;align-items:center;gap:10px}
+  .one-thing-reset{padding:3px 8px;font-size:9px}
 }
 /* ─── 지원사업 현황판 ─── */
 .support-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
