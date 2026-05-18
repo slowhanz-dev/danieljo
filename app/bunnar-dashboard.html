@@ -237,7 +237,17 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 }
 
 
-/* ─── Google Calendar / Tasks sync panel ─── */
+/* ─── 오늘의 1 Thing ─── */
+.one-thing-panel{background:linear-gradient(135deg,#1a1a18 0%,#2a2a25 100%);border-radius:var(--radius);padding:20px 24px 16px;position:relative;overflow:hidden}
+.one-thing-panel::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(29,158,117,.25) 0%,transparent 70%);pointer-events:none}
+.one-thing-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px}
+.one-thing-content{font-size:22px;font-weight:600;color:#f0ede6;line-height:1.35;min-height:34px;outline:none;caret-color:var(--green);word-break:keep-all;padding:2px 0}
+.one-thing-content:empty::before{content:attr(data-placeholder);color:rgba(255,255,255,.2);font-weight:400;font-size:18px;pointer-events:none}
+.one-thing-content:focus{border-bottom:1px solid rgba(255,255,255,.15)}
+.one-thing-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.one-thing-date{font-size:11px;color:rgba(255,255,255,.3)}
+.one-thing-reset{background:transparent;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:3px 10px;font-size:10px;color:rgba(255,255,255,.3);cursor:pointer;font-family:inherit;transition:all .15s}
+.one-thing-reset:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6)}
 .google-calendar-panel{padding:16px 18px 18px}
 .google-calendar-panel .digest-head{align-items:flex-start;margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:nowrap;gap:12px}
 .google-calendar-panel .digest-head h2{font-size:16px;font-weight:700;flex-shrink:0}
@@ -421,6 +431,18 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
     </div>
     <div class="inbox-list" id="gtList">
       <div class="inbox-empty">Google 계정을 연결하면 Tasks가 표시됩니다.</div>
+    </div>
+  </div>
+
+  <!-- ── 오늘의 1 Thing ── -->
+  <div id="oneThingBox" style="display:none;margin-bottom:24px">
+    <div class="one-thing-panel">
+      <div class="one-thing-label">오늘 반드시 하나만 한다면</div>
+      <div class="one-thing-content" id="oneThingText" contenteditable="true" spellcheck="false" data-placeholder="오늘 가장 중요한 한 가지를 적으세요..."></div>
+      <div class="one-thing-footer">
+        <span class="one-thing-date" id="oneThingDate"></span>
+        <button class="one-thing-reset" onclick="resetOneThing()" title="오늘 날짜로 초기화">↺ 오늘 날짜 초기화</button>
+      </div>
     </div>
   </div>
 
@@ -1263,6 +1285,59 @@ document.addEventListener('click',e=>{
   }
 });
 
+// ── 오늘의 1 Thing ────────────────────────
+const OT_DOC=()=>db.collection('dashboards').doc('bunnar-onething');
+let otSaveTimer=null;
+
+async function initOneThing(){
+  const el=document.getElementById('oneThingText');
+  const dateEl=document.getElementById('oneThingDate');
+  if(!el)return;
+  const today=todayISO();
+  try{
+    const snap=await OT_DOC().get();
+    if(snap.exists){
+      const d=snap.data();
+      el.textContent=d.text||'';
+      dateEl.textContent=d.date||today;
+    }else{
+      el.textContent='';
+      dateEl.textContent=today;
+    }
+  }catch(e){ dateEl.textContent=today; }
+
+  el.addEventListener('input',()=>{
+    clearTimeout(otSaveTimer);
+    otSaveTimer=setTimeout(saveOneThing,800);
+  });
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){ e.preventDefault(); }
+  });
+}
+
+async function saveOneThing(){
+  const el=document.getElementById('oneThingText');
+  const dateEl=document.getElementById('oneThingDate');
+  if(!el||!auth.currentUser)return;
+  const text=el.textContent.trim();
+  const date=todayISO();
+  try{
+    await OT_DOC().set({text,date,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    if(dateEl)dateEl.textContent=date;
+  }catch(e){ console.error('1Thing 저장 실패',e); }
+}
+
+async function resetOneThing(){
+  const el=document.getElementById('oneThingText');
+  const dateEl=document.getElementById('oneThingDate');
+  if(!el)return;
+  if(el.textContent.trim()&&!confirm('오늘 날짜로 초기화할까요? 기존 내용이 지워집니다.'))return;
+  el.textContent='';
+  el.focus();
+  await saveOneThing();
+  if(dateEl)dateEl.textContent=todayISO();
+}
+
 auth.onAuthStateChanged(async user=>{
   const loginBtn=document.getElementById('loginBtn');
   const logoutBtn=document.getElementById('logoutBtn');
@@ -1283,6 +1358,8 @@ auth.onAuthStateChanged(async user=>{
     digest.style.display='none';
     inboxBox.style.display='none';
     projectsSection.style.display='none';
+    const otb=document.getElementById('oneThingBox');
+    if(otb)otb.style.display='none';
     loggedOut.style.display='block';
     return;
   }
@@ -1295,7 +1372,10 @@ auth.onAuthStateChanged(async user=>{
   digest.style.display='block';
   inboxBox.style.display='block';
   projectsSection.style.display='block';
+  const otb=document.getElementById('oneThingBox');
+  if(otb)otb.style.display='block';
   loggedOut.style.display='none';
+  initOneThing();
 
   const loaded=await loadData();
   DATA=loaded.items||[];
