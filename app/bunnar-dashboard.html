@@ -294,12 +294,14 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .google-task-panel{padding:16px 18px;margin-top:14px}
 .google-task-panel .inbox-head{margin-bottom:10px}
 .google-task-panel .inbox-list{max-height:180px;overflow:auto}
-.gt-row{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.gt-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border)}
 .gt-row.done .gt-title{text-decoration:line-through;color:var(--text3)}
-.gt-check{width:18px;height:18px;border-radius:4px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.gt-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);background:var(--surface);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;padding:0;line-height:1}
 .gt-check.done{background:var(--green);border-color:var(--green);color:#fff}
-.gt-title{flex:1;font-size:14px}
-.gt-del{border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:16px}
+.gt-title{flex:1;font-size:13px;color:var(--text)}
+.gt-del{border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1;opacity:0;transition:opacity .12s}
+.gt-row:hover .gt-del{opacity:1}
+.gt-del:hover{color:var(--red)}
 @media (max-width:900px){
   .gcal-board{grid-template-columns:44px repeat(7,minmax(120px,1fr));overflow:auto}
   .gcal-week{overflow:auto}
@@ -1451,6 +1453,7 @@ async function loadGoogleCalendarWeek(){
       (data.items||[]).forEach(ev=>{
         ev._calBg=calColorMap[cal.id]?.bg||'#4285f4';
         ev._calFg=calColorMap[cal.id]?.fg||'#ffffff';
+        ev._calId=cal.id;
         allEvents.push(ev);
       });
     }catch(e){}
@@ -1482,63 +1485,97 @@ function renderGoogleCalendarWeek(){
   const wrap=document.getElementById('gcalWeek');
   if(!wrap)return;
   if(!googleAccessToken){
-    wrap.innerHTML='<div class="gcal-empty">Google 계정을 연결하면 주간 일정이 표시됩니다. 서비스 로그인 계정과 다른 Google 계정을 선택할 수 있습니다.</div>';
+    wrap.innerHTML='<div class="gcal-empty">Google 계정을 연결하면 주간 일정이 표시됩니다.</div>';
     return;
   }
-  const start=startOfWeek();
+  const weekStart=startOfWeek();
   const today=new Date();
   const days=['월','화','수','목','금','토','일'];
+  const HOUR_START=7,HOUR_END=22;
   const hours=[];
-  for(let h=0;h<=23;h++)hours.push(h);
-  const rowH=32;
-  const topPad=0;
+  for(let h=HOUR_START;h<=HOUR_END;h++)hours.push(h);
+  const rowH=34;
   const bodyH=hours.length*rowH;
 
-  // 전체 컨테이너 초기화
   wrap.innerHTML='';
   wrap.style.position='relative';
   wrap.style.overflow='hidden';
 
-  // ── 1. sticky 헤더 (요일) ──
+  // ── 1. sticky 요일 헤더 ──
   const headerRow=document.createElement('div');
   headerRow.className='gcal-header-row';
-  headerRow.innerHTML=`<div class="gcal-corner">GMT+9</div>`;
+  headerRow.innerHTML='<div class="gcal-corner">GMT+9</div>';
   for(let i=0;i<7;i++){
-    const day=addDays(start,i);
+    const day=addDays(weekStart,i);
     const cls=['gcal-day-header',isSameDate(day,today)?'today':'',i===5?'sat':'',i===6?'sun':''].filter(Boolean).join(' ');
     headerRow.innerHTML+=`<div class="${cls}"><span>${days[i]}</span><span class="num">${day.getDate()}</span></div>`;
   }
   wrap.appendChild(headerRow);
 
   // ── 2. sticky 종일 행 ──
-  const allDayEvents=googleEventsCache.filter(ev=>!!ev.start?.date);
+  const allDayEvs=googleEventsCache.filter(ev=>!!ev.start?.date);
   const allDayRow=document.createElement('div');
-  allDayRow.className='gcal-allday-row'+(allDayEvents.length>0?' has-events':'');
-  allDayRow.innerHTML=`<div class="gcal-allday-corner">종일</div>`;
+  allDayRow.className='gcal-allday-row'+(allDayEvs.length>0?' has-events':'');
+  allDayRow.innerHTML='<div class="gcal-allday-corner">종일</div>';
+  let adDragEvId=null,adDragOrigEl=null;
+
   for(let i=0;i<7;i++){
-    const day=addDays(start,i);
+    const day=addDays(weekStart,i);
     const col=document.createElement('div');
     col.className='gcal-allday-col';
-    allDayEvents.filter(ev=>isSameDate(eventStartDate(ev),day)).forEach(ev=>{
+    col.dataset.dayIndex=i;
+    allDayEvs.filter(ev=>isSameDate(eventStartDate(ev),day)).forEach(ev=>{
       const color=getGoogleEventColor(ev);
       const item=document.createElement('div');
       item.className='gcal-event all-day-item';
       item.style.background=color.bg;
       item.style.color=color.fg;
       item.dataset.evId=ev.id;
-      item.innerHTML=`<div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>`;
+      item.innerHTML=`<div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div><div class="gcal-event-actions"><button class="gcal-mini" onclick="event.stopPropagation();editGoogleEventTitle('${ev.id}')">수정</button><button class="gcal-mini" onclick="event.stopPropagation();deleteGoogleEvent('${ev.id}')">삭제</button></div>`;
+      item.addEventListener('mousedown',e=>{
+        e.stopPropagation();
+        adDragEvId=ev.id;adDragOrigEl=item;item.style.opacity='0.4';
+      });
       col.appendChild(item);
+    });
+    col.addEventListener('mouseenter',()=>{ if(adDragEvId) col.style.outline='2px dashed var(--blue)'; });
+    col.addEventListener('mouseleave',()=>{ col.style.outline=''; });
+    col.addEventListener('mouseup',async()=>{
+      col.style.outline='';
+      if(!adDragEvId)return;
+      const evId=adDragEvId; adDragEvId=null;
+      if(adDragOrigEl){adDragOrigEl.style.opacity='';adDragOrigEl=null;}
+      const ev=googleEventsCache.find(x=>x.id===evId);
+      if(!ev)return;
+      const dayIdx=parseInt(col.dataset.dayIndex||0);
+      const newDay=addDays(weekStart,dayIdx);
+      const newDateStr=newDay.toISOString().slice(0,10);
+      const origStart=new Date(ev.start.date+'T00:00:00');
+      const origEnd=new Date(ev.end.date+'T00:00:00');
+      const durDays=Math.round((origEnd-origStart)/86400000)||1;
+      const newEndDate=addDays(newDay,durDays).toISOString().slice(0,10);
+      const calId=ev._calId||'primary';
+      try{
+        setGoogleStatus('종일 일정 이동 중...');
+        await googleFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(evId)}`,{method:'PATCH',body:JSON.stringify({start:{date:newDateStr},end:{date:newEndDate}})});
+        await refreshGoogleWorkspace();
+      }catch(err){alert(err.message||'종일 일정 이동 실패');renderGoogleCalendarWeek();}
     });
     allDayRow.appendChild(col);
   }
+  document.addEventListener('mouseup',()=>{
+    if(!adDragEvId)return;
+    adDragEvId=null;
+    if(adDragOrigEl){adDragOrigEl.style.opacity='';adDragOrigEl=null;}
+    document.querySelectorAll('.gcal-allday-col').forEach(c=>c.style.outline='');
+  },{once:true});
   wrap.appendChild(allDayRow);
 
-  // ── 3. 스크롤 가능한 시간 영역 ──
+  // ── 3. 스크롤 시간 영역 ──
   const scrollBody=document.createElement('div');
   scrollBody.className='gcal-scroll-body';
-  scrollBody.style.maxHeight='420px';
+  scrollBody.style.maxHeight='440px';
   scrollBody.style.overflowY='auto';
-
   const board=document.createElement('div');
   board.className='gcal-board';
   board.style.setProperty('--gcal-row-h',rowH+'px');
@@ -1548,10 +1585,9 @@ function renderGoogleCalendarWeek(){
   axis.className='gcal-time-axis';
   axis.style.height=bodyH+'px';
   hours.forEach((h,idx)=>{
-    if(h===0)return;
     const label=document.createElement('div');
     label.className='gcal-time-label';
-    label.style.top=(idx*rowH)+'px';
+    label.style.top=(idx*rowH+rowH/2)+'px';
     const ampm=h<12?'오전':(h===12?'정오':'오후');
     const h12=h===12?12:(h>12?h-12:h);
     label.textContent=h===12?'정오':ampm+' '+h12+'시';
@@ -1559,22 +1595,18 @@ function renderGoogleCalendarWeek(){
   });
   board.appendChild(axis);
 
-  // 드래그 상태
-  let dragEvId=null, dragOffsetMin=0, dragOrigEl=null;
+  let dragEvId=null,dragOffsetMin=0,dragOrigEl=null;
   const dropIndicator=document.createElement('div');
   dropIndicator.className='gcal-drop-indicator';
   dropIndicator.style.display='none';
 
-  // 각 날짜 열
   for(let i=0;i<7;i++){
-    const day=addDays(start,i);
-    const dayEvents=googleEventsCache.filter(ev=>!ev.start?.date && isSameDate(eventStartDate(ev),day));
+    const day=addDays(weekStart,i);
+    const dayEvents=googleEventsCache.filter(ev=>!ev.start?.date&&isSameDate(eventStartDate(ev),day));
     const col=document.createElement('div');
     col.className=['gcal-day-col',isSameDate(day,today)?'today':'',i===5?'sat':''].filter(Boolean).join(' ');
     col.style.height=bodyH+'px';
     col.dataset.dayIndex=i;
-
-    // 이벤트 렌더
     dayEvents.forEach(ev=>{
       const color=getGoogleEventColor(ev);
       const item=document.createElement('div');
@@ -1586,98 +1618,73 @@ function renderGoogleCalendarWeek(){
       const e=eventEndDate(ev);
       const startMin=s.getHours()*60+s.getMinutes();
       const endMin=e.getHours()*60+e.getMinutes();
-      const top=(startMin/60)*rowH;
+      const topPx=((startMin-HOUR_START*60)/60)*rowH;
       const height=Math.max(24,((endMin-startMin)/60)*rowH-2);
-      item.style.top=top+'px';
+      item.style.top=topPx+'px';
       item.style.height=height+'px';
-      item.innerHTML=`<div class="gcal-event-time">${eventTimeRangeLabel(ev)}</div><div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div>
-        <div class="gcal-event-actions">
-          <button class="gcal-mini" onclick="event.stopPropagation();editGoogleEventTitle('${ev.id}')">수정</button>
-          <button class="gcal-mini" onclick="event.stopPropagation();deleteGoogleEvent('${ev.id}')">삭제</button>
-        </div>`;
-
-      // ── 이벤트 드래그 시작 ──
+      item.innerHTML=`<div class="gcal-event-time">${eventTimeRangeLabel(ev)}</div><div class="gcal-event-title">${escapeHtml(ev.summary||'(제목 없음)')}</div><div class="gcal-event-actions"><button class="gcal-mini" onclick="event.stopPropagation();editGoogleEventTitle('${ev.id}')">수정</button><button class="gcal-mini" onclick="event.stopPropagation();deleteGoogleEvent('${ev.id}')">삭제</button></div>`;
       item.addEventListener('mousedown',e=>{
         e.stopPropagation();
-        dragEvId=ev.id;
-        dragOrigEl=item;
+        dragEvId=ev.id;dragOrigEl=item;
         const rect=item.getBoundingClientRect();
-        const clickOffsetPx=e.clientY-rect.top;
-        dragOffsetMin=Math.round((clickOffsetPx/rowH)*60);
+        dragOffsetMin=Math.round(((e.clientY-rect.top)/rowH)*60);
         item.classList.add('dragging');
         scrollBody.classList.add('dragging-event');
       });
-
       col.appendChild(item);
     });
-
-    // 현재 시간선
     if(isSameDate(day,today)){
       const h=today.getHours()+today.getMinutes()/60;
-      const line=document.createElement('div');
-      line.className='gcal-now-line';
-      line.style.top=(h/24*bodyH)+'px';
-      col.appendChild(line);
+      if(h>=HOUR_START&&h<=HOUR_END){
+        const line=document.createElement('div');
+        line.className='gcal-now-line';
+        line.style.top=((h-HOUR_START)*rowH)+'px';
+        col.appendChild(line);
+      }
     }
-
-    // ── 드롭 대상 열 이벤트 ──
-    col.addEventListener('dragover',e=>e.preventDefault());
-    col.addEventListener('mouseover',e=>{
+    col.addEventListener('mouseenter',()=>{
       if(!dragEvId)return;
       document.querySelectorAll('.gcal-day-col').forEach(c=>c.classList.remove('drag-over'));
       col.classList.add('drag-over');
+      col.appendChild(dropIndicator);
     });
-
     board.appendChild(col);
   }
-
   board.appendChild(dropIndicator);
-  scrollBody.appendChild(board);
-  wrap.appendChild(scrollBody);
 
-  // ── 마우스 이동 (드래그 중) ──
   board.addEventListener('mousemove',e=>{
     if(!dragEvId)return;
     const colEl=e.target.closest('.gcal-day-col');
     if(!colEl)return;
     const rect=colEl.getBoundingClientRect();
     const yPx=e.clientY-rect.top+scrollBody.scrollTop;
-    const totalMin=Math.max(0,Math.min(23*60+30,Math.round((yPx/rowH)*60)-dragOffsetMin));
+    const totalMin=Math.max(HOUR_START*60,Math.min(HOUR_END*60,Math.round((yPx/rowH)*60+HOUR_START*60)-dragOffsetMin));
     const snapped=Math.round(totalMin/15)*15;
-    const topPx=(snapped/60)*rowH;
-    if(dragOrigEl){
-      dragOrigEl.style.opacity='0.45';
-    }
-    // 드롭 인디케이터
+    const topPx=((snapped-HOUR_START*60)/60)*rowH;
     dropIndicator.style.display='block';
     dropIndicator.style.top=topPx+'px';
-    const di=parseInt(colEl.dataset.dayIndex||0);
-    // 인디케이터를 해당 열에 이동
-    colEl.appendChild(dropIndicator);
+    if(!colEl.contains(dropIndicator)) colEl.appendChild(dropIndicator);
   });
 
-  // ── 마우스 업 (드롭) ──
   board.addEventListener('mouseup',async e=>{
     if(!dragEvId)return;
     const colEl=e.target.closest('.gcal-day-col');
     dropIndicator.style.display='none';
     document.querySelectorAll('.gcal-day-col').forEach(c=>c.classList.remove('drag-over'));
     scrollBody.classList.remove('dragging-event');
-    if(dragOrigEl)dragOrigEl.classList.remove('dragging');
-
+    if(dragOrigEl) dragOrigEl.classList.remove('dragging');
     if(!colEl){dragEvId=null;dragOrigEl=null;renderGoogleCalendarWeek();return;}
     const rect=colEl.getBoundingClientRect();
     const yPx=e.clientY-rect.top+scrollBody.scrollTop;
-    const totalMin=Math.max(0,Math.min(23*60,Math.round((yPx/rowH)*60)-dragOffsetMin));
+    const totalMin=Math.max(HOUR_START*60,Math.min(HOUR_END*60,Math.round((yPx/rowH)*60+HOUR_START*60)-dragOffsetMin));
     const snapped=Math.round(totalMin/15)*15;
     const newH=Math.floor(snapped/60);
     const newM=snapped%60;
     const dayIdx=parseInt(colEl.dataset.dayIndex||0);
-    const newDay=addDays(start,dayIdx);
+    const newDay=addDays(weekStart,dayIdx);
     const ev=googleEventsCache.find(x=>x.id===dragEvId);
     const evId=dragEvId;
     dragEvId=null;dragOrigEl=null;
-
     if(!ev){renderGoogleCalendarWeek();return;}
     const origS=eventStartDate(ev);
     const origE=eventEndDate(ev);
@@ -1685,21 +1692,14 @@ function renderGoogleCalendarWeek(){
     const newStart=new Date(newDay);
     newStart.setHours(newH,newM,0,0);
     const newEnd=new Date(newStart.getTime()+durMin*60000);
-    const fmt=d=>d.toISOString();
+    const calId=ev._calId||'primary';
     try{
       setGoogleStatus('일정 이동 중...');
-      await googleFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/'+encodeURIComponent(evId),{
-        method:'PATCH',
-        body:JSON.stringify({start:{dateTime:fmt(newStart),timeZone:'Asia/Seoul'},end:{dateTime:fmt(newEnd),timeZone:'Asia/Seoul'}})
-      });
+      await googleFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(evId)}`,{method:'PATCH',body:JSON.stringify({start:{dateTime:newStart.toISOString(),timeZone:'Asia/Seoul'},end:{dateTime:newEnd.toISOString(),timeZone:'Asia/Seoul'}})});
       await refreshGoogleWorkspace();
-    }catch(err){
-      alert(err.message||'일정 이동 실패');
-      renderGoogleCalendarWeek();
-    }
+    }catch(err){alert(err.message||'일정 이동 실패');renderGoogleCalendarWeek();}
   });
 
-  // 드래그 취소 (보드 바깥에서 마우스업)
   document.addEventListener('mouseup',()=>{
     if(!dragEvId)return;
     dragEvId=null;dragOrigEl=null;
@@ -1709,25 +1709,19 @@ function renderGoogleCalendarWeek(){
     renderGoogleCalendarWeek();
   },{once:true});
 
-  // ── 배경 드래그로 스크롤 ──
   let isScrollDrag=false,scrollStartY=0,scrollStartTop=0;
   scrollBody.addEventListener('mousedown',e=>{
     if(dragEvId)return;
     if(e.target.closest('.gcal-event'))return;
-    isScrollDrag=true;
-    scrollStartY=e.clientY;
-    scrollStartTop=scrollBody.scrollTop;
-    e.preventDefault();
+    isScrollDrag=true;scrollStartY=e.clientY;scrollStartTop=scrollBody.scrollTop;e.preventDefault();
   });
-  window.addEventListener('mousemove',e=>{
-    if(!isScrollDrag)return;
-    scrollBody.scrollTop=scrollStartTop-(e.clientY-scrollStartY);
-  });
-  window.addEventListener('mouseup',()=>{isScrollDrag=false;});
+  window.addEventListener('mousemove',e=>{ if(!isScrollDrag)return; scrollBody.scrollTop=scrollStartTop-(e.clientY-scrollStartY); });
+  window.addEventListener('mouseup',()=>{ isScrollDrag=false; });
 
-  // 초기 스크롤: 현재 시간 or 오전 7시
-  const initH=today.getHours()>=7?today.getHours():7;
-  setTimeout(()=>{ scrollBody.scrollTop=Math.max(0,(initH-1)*rowH); },50);
+  scrollBody.appendChild(board);
+  wrap.appendChild(scrollBody);
+  const initH=Math.max(HOUR_START,Math.min(HOUR_END,today.getHours()));
+  setTimeout(()=>{ scrollBody.scrollTop=Math.max(0,(initH-HOUR_START-1)*rowH); },50);
 }
 async function createGoogleEvent(){
   if(!googleAccessToken)return connectGoogleWorkspace();
