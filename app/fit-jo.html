@@ -1,0 +1,2145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BUNNAR FIT">
+<meta name="theme-color" content="#FAFAF7">
+<title>BUNNAR FIT</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<style>
+:root {
+  --bg: #4ADE80;
+  --surface: #FFFFFF;
+  --surface-2: #ECFDF5;
+  --text: #0A0A0A;
+  --text-2: #1A1A1A;
+  --text-3: #4A4A4A;
+  --border: #0A0A0A;
+  --border-2: #0A0A0A;
+  --accent: #FF4500;
+  --accent-soft: rgba(255, 69, 0, 0.12);
+  --done: #0A0A0A;
+  --done-soft: rgba(10, 10, 10, 0.08);
+  --shadow: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-2: 0 4px 16px rgba(0,0,0,0.06);
+  --mono: 'SF Mono', 'JetBrains Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  font-family: 'Inter', 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+body {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input { font-family: inherit; }
+
+/* ============ HEADER ============ */
+.header {
+  padding: 28px 24px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+}
+.brand {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.date-line {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.streak-box {
+  text-align: right;
+}
+.streak-num {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.streak-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* ============ SECTION ============ */
+.section {
+  padding: 28px 24px 8px;
+}
+.section-label {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.section-sub {
+  font-size: 14px;
+  color: var(--text-2);
+  margin-top: 8px;
+}
+
+/* ============ MISSION CARD ============ */
+.mission {
+  margin: 16px 24px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+.mission-label {
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.mission-text {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ============ EXERCISE CARD ============ */
+.exercises {
+  padding: 8px 16px;
+}
+.exercise {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.exercise.done {
+  background: var(--done-soft);
+  border-color: rgba(92, 115, 85, 0.2);
+}
+.exercise-head {
+  padding: 16px 18px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.exercise-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+.exercise-icon svg {
+  width: 38px;
+  height: 38px;
+}
+.exercise.done .exercise-icon {
+  background: var(--done-soft);
+  color: var(--done);
+}
+.exercise-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+  min-width: 18px;
+}
+.exercise-info {
+  flex: 1;
+}
+.exercise-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.exercise-meta {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.exercise.done .exercise-name { color: var(--done); }
+.guide-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  font-style: italic;
+  font-family: Georgia, serif;
+}
+.exercise.expanded .exercise-head {
+  border-bottom: 1px solid var(--border);
+}
+
+/* ============ SETS ============ */
+.sets {
+  padding: 12px 18px 16px;
+}
+.set-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 36px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+}
+.set-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.set-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  width: 100%;
+  text-align: center;
+  border-radius: 2px;
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+.set-input:focus {
+  outline: none;
+  border-color: var(--text);
+}
+.set-input::placeholder {
+  color: var(--text-3);
+  font-size: 11px;
+}
+.set-check {
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--border-2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.set-check.done {
+  background: var(--done);
+  border-color: var(--done);
+}
+.set-check.done::after {
+  content: '';
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+.set-rest-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+
+/* ============ INLINE FORM TIPS ============ */
+.form-tips {
+  padding: 12px 18px 16px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+}
+.form-tips-label {
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.form-tips-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.form-tips-list li {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.5;
+  padding: 3px 0 3px 14px;
+  position: relative;
+}
+.form-tips-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 6px;
+  height: 1px;
+  background: var(--text-3);
+}
+.form-tips-warn {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--accent-soft);
+  border-left: 2px solid var(--accent);
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.45;
+}
+.form-tips-warn b { color: var(--accent); font-weight: 700; }
+
+/* ============ CARDIO TYPE ============ */
+.exercise.cardio .exercise-head {
+  background: var(--surface-2);
+}
+.cardio-toggle {
+  width: 100%;
+  padding: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+.exercise.done .cardio-toggle {
+  color: var(--done);
+}
+
+/* ============ REST DAY / OFF DAY ============ */
+.rest-day {
+  text-align: center;
+  padding: 60px 24px;
+}
+.rest-day-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+.rest-day-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.rest-day-sub {
+  font-size: 14px;
+  color: var(--text-2);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+/* ============ BIKE ============ */
+.bike-card {
+  margin: 8px 24px 0;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s;
+}
+.bike-card.done {
+  background: var(--done-soft);
+  border-color: rgba(92, 115, 85, 0.2);
+}
+.bike-icon {
+  font-size: 22px;
+}
+.bike-info {
+  flex: 1;
+}
+.bike-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--text-3);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.bike-text {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.bike-card.done .bike-text { color: var(--done); }
+.bike-toggle {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--border-2);
+  border-radius: 50%;
+}
+.bike-card.done .bike-toggle {
+  background: var(--done);
+  border-color: var(--done);
+  position: relative;
+}
+.bike-card.done .bike-toggle::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 9px;
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg);
+}
+
+/* ============ WEIGHT TRACK ============ */
+.weight-section {
+  margin: 24px 24px 0;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.weight-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.weight-current {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.weight-num {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.weight-unit {
+  font-size: 14px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+.weight-goal {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.weight-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.weight-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  border-radius: 2px;
+}
+.weight-input:focus {
+  outline: none;
+  border-color: var(--text);
+}
+.weight-save {
+  padding: 10px 18px;
+  background: var(--text);
+  color: white;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.weight-chart {
+  margin-top: 16px;
+  height: 50px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+.weight-bar {
+  flex: 1;
+  background: var(--surface-2);
+  border-radius: 1px;
+  min-height: 4px;
+  position: relative;
+  transition: height 0.3s ease;
+}
+.weight-bar.has-data { background: var(--text); }
+.weight-bar-label {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============ WEEK PROGRESS ============ */
+.week-section {
+  margin: 36px 24px 0;
+}
+.week-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+.week-title {
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.week-stats {
+  font-size: 12px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.week-stats b {
+  color: var(--text);
+  font-weight: 800;
+}
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.day-cell {
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  position: relative;
+}
+.day-cell-label {
+  font-size: 9px;
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.day-cell-num {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.day-cell.today {
+  border-color: var(--accent);
+  border-width: 1.5px;
+}
+.day-cell.today .day-cell-num { color: var(--accent); }
+.day-cell.done {
+  background: var(--done);
+  border-color: var(--done);
+}
+.day-cell.done .day-cell-label,
+.day-cell.done .day-cell-num { color: white; }
+.day-cell.partial {
+  background: var(--done-soft);
+  border-color: rgba(92, 115, 85, 0.3);
+}
+
+/* ============ STAGE / 4-WEEK INFO ============ */
+.stage-info {
+  margin: 36px 24px 0;
+  padding: 14px 18px;
+  background: var(--surface-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.stage-info-key {
+  color: var(--text-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 10px;
+}
+.stage-info-val {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ============ DAY SWITCHER ============ */
+.day-switch {
+  display: flex;
+  gap: 6px;
+  padding: 14px 24px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.day-switch::-webkit-scrollbar { display: none; }
+.day-pill {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-2);
+  border-radius: 20px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.day-pill.active {
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
+}
+.day-pill .pill-day {
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+/* ============ PREVIEW BANNER ============ */
+.preview-banner {
+  margin: 14px 24px 0;
+  padding: 10px 14px;
+  background: var(--accent-soft);
+  border-left: 2px solid var(--accent);
+  font-size: 11px;
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.preview-banner-text {
+  font-weight: 600;
+}
+.preview-banner-text b {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.preview-back {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  text-decoration: underline;
+}
+
+/* In preview mode, dim interactive controls */
+.exercises.preview .set-input,
+.exercises.preview .set-check,
+.exercises.preview .set-rest-btn,
+.exercises.preview .cardio-toggle {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ============ MODAL ============ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,26,0.4);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg);
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 24px 24px 32px;
+  overflow-y: auto;
+  animation: slideUp 0.25s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-grip {
+  width: 36px;
+  height: 4px;
+  background: var(--border-2);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.modal-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.modal-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 4px;
+}
+.modal-section {
+  margin-top: 20px;
+}
+.modal-section-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.modal-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.form-list {
+  list-style: none;
+  padding: 0;
+}
+.form-list li {
+  padding: 8px 0 8px 18px;
+  position: relative;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  border-bottom: 1px solid var(--border);
+}
+.form-list li:last-child { border-bottom: none; }
+.form-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16px;
+  width: 8px;
+  height: 1px;
+  background: var(--text-2);
+}
+.warn-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border-left: 2px solid var(--accent);
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.warn-box b { color: var(--accent); }
+
+/* ============ REST TIMER ============ */
+.timer-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--text);
+  color: white;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.timer-overlay.show { display: flex; }
+.timer-label {
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 24px;
+}
+.timer-ring {
+  width: 220px;
+  height: 220px;
+  position: relative;
+}
+.timer-ring svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+.timer-ring-bg { stroke: rgba(255,255,255,0.1); fill: none; }
+.timer-ring-fg {
+  stroke: var(--accent);
+  fill: none;
+  transition: stroke-dashoffset 1s linear;
+  stroke-linecap: round;
+}
+.timer-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.timer-skip {
+  margin-top: 40px;
+  padding: 12px 28px;
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: white;
+  font-weight: 600;
+}
+
+/* ============ TOAST ============ */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 300;
+  border-radius: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.toast.show { opacity: 1; }
+
+/* ============ COMPLETION CELEBRATION ============ */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.celebrating { animation: pulse 0.4s ease; }
+
+.auth-overlay {
+  position: fixed; inset: 0; background: var(--bg);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.auth-overlay.hidden { display: none; }
+.auth-card { text-align: center; max-width: 320px; width: 100%; }
+.auth-brand {
+  font-size: 11px; letter-spacing: 0.3em; color: var(--text-3);
+  font-weight: 700; margin-bottom: 32px;
+}
+.auth-title {
+  font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px;
+}
+.auth-sub {
+  font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 32px;
+}
+.auth-btn {
+  width: 100%; padding: 14px; background: var(--text); color: white;
+  border-radius: 4px; font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  cursor: pointer;
+}
+.auth-google {
+  width: 22px; height: 22px; background: white; color: #4285F4;
+  border-radius: 50%; font-weight: 800; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: Arial, sans-serif;
+}
+.auth-error {
+  margin-top: 16px; padding: 10px; background: var(--accent-soft);
+  border-left: 2px solid var(--accent); font-size: 12px; color: var(--text);
+  text-align: left; display: none;
+}
+.auth-error.show { display: block; }
+.user-tag {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  justify-content: flex-end; margin-top: 6px;
+}
+.user-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--surface-2); color: var(--text-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; overflow: hidden;
+}
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sync-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: #5C7355;
+  margin-right: 2px;
+}
+
+
+/* TYPO BOOST */
+.section-title { font-size: 38px; font-weight: 900; letter-spacing: -0.04em; line-height: 0.95; }
+.brand { font-size: 11px; font-weight: 800; letter-spacing: 0.3em; color: var(--text); }
+.streak-num { font-size: 48px; font-weight: 900; color: var(--text); }
+.streak-label { color: var(--text-2); font-weight: 800; }
+.exercise-name { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+.exercise-meta { color: var(--text-2); font-weight: 600; }
+.exercise { border: 2px solid var(--text); border-radius: 0; box-shadow: 4px 4px 0 var(--text); margin-bottom: 14px; }
+.exercise.done { background: var(--text); color: var(--bg); }
+.exercise.done .exercise-name, .exercise.done .exercise-meta { color: var(--bg); }
+.exercise.done .exercise-icon { background: var(--bg); }
+.mission { border: 2px solid var(--text); border-left: 6px solid var(--accent); border-radius: 0; box-shadow: 4px 4px 0 var(--text); }
+.mission-label { color: var(--accent); font-weight: 900; }
+.mission-text { font-weight: 700; font-size: 15px; }
+.set-input { border: 2px solid var(--text); border-radius: 0; font-weight: 700; }
+.set-check { border: 2px solid var(--text); border-radius: 0; width: 36px; height: 36px; }
+.set-check.done { background: var(--text); }
+.weight-section { border: 2px solid var(--text); border-radius: 0; box-shadow: 4px 4px 0 var(--text); }
+.weight-num { font-size: 40px; font-weight: 900; }
+.weight-save { background: var(--accent); color: white; border-radius: 0; font-weight: 800; letter-spacing: 0.05em; }
+.day-cell { border: 2px solid var(--text); border-radius: 0; }
+.day-cell.today { border-color: var(--accent); border-width: 3px; }
+.day-cell.done { background: var(--text); }
+.day-cell.done .day-cell-label, .day-cell.done .day-cell-num { color: var(--bg); }
+.stage-info { background: var(--text); color: var(--bg); border-radius: 0; }
+.stage-info-key { color: var(--bg); opacity: 0.6; }
+.stage-info-val { color: var(--bg); font-weight: 900; }
+.exercise-icon { border-radius: 0; background: var(--surface-2); border: 2px solid var(--text); }
+.set-rest-btn { background: var(--text); color: var(--bg); border: none; border-radius: 0; font-weight: 800; }
+.form-tips { background: var(--surface-2); border-top: 2px solid var(--text); }
+.form-tips-label { color: var(--text); font-weight: 900; }
+.form-tips-list li { color: var(--text-2); font-weight: 600; }
+.day-pill { border: 2px solid var(--text); border-radius: 0; font-weight: 800; background: var(--surface); }
+.day-pill.active { background: var(--text); color: var(--bg); }
+.auth-card { background: var(--surface); border: 3px solid var(--text); padding: 32px 24px; box-shadow: 8px 8px 0 var(--text); }
+.auth-btn { border-radius: 0; background: var(--text); font-weight: 800; }
+.auth-title { font-weight: 900; letter-spacing: -0.03em; }
+.cardio-toggle { background: var(--text); color: var(--bg); font-weight: 800; }
+
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBGBDywtb_UQwewBObvTSVxiXTTLDZQd2w",
+    authDomain: "bunnar-dashboard.firebaseapp.com",
+    projectId: "bunnar-dashboard",
+    storageBucket: "bunnar-dashboard.firebasestorage.app",
+    messagingSenderId: "170038311346",
+    appId: "1:170038311346:web:59e4eb30f65961aab80cab",
+    measurementId: "G-TDR9PS981E"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  window.fbAuth = firebase.auth();
+  window.fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e=>console.warn(e));
+  window.fbDB = firebase.firestore();
+  window.fbProvider = new firebase.auth.GoogleAuthProvider();
+  window.fbFns = {
+    doc: (db, col, id) => db.collection(col).doc(id),
+    setDoc: (ref, data) => ref.set(data),
+    getDoc: (ref) => ref.get(),
+    onSnapshot: (ref, cb) => ref.onSnapshot(cb),
+    signInWithPopup: (auth, provider) => auth.signInWithPopup(provider),
+    signOut: (auth) => auth.signOut(),
+    onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb)
+  };
+  window.dispatchEvent(new CustomEvent('firebase-ready'));
+</script>
+</head>
+<body>
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-brand">BUNNAR · FIT · HIM</div>
+    <div class="auth-title">로그인하여 시작</div>
+    <div class="auth-sub">기록은 Google 계정에 자동 저장되며,<br>휴대폰·PC 어디서나 동기화됩니다.</div>
+    <button class="auth-btn" onclick="googleSignIn()">
+      <span class="auth-google">G</span> Google로 로그인
+    </button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+
+<header class="header">
+  <div>
+    <div class="brand">BUNNAR · FIT</div>
+    <div class="date-line" id="dateLine">—</div>
+  </div>
+  <div class="streak-box">
+    <div class="streak-num" id="streakNum">0</div>
+    <div class="streak-label">연속</div>
+    <div class="user-tag" id="userTag" onclick="googleSignOut()" title="로그아웃">
+      <div class="sync-dot"></div>
+      <div class="user-avatar">?</div>
+    </div>
+  </div>
+</header>
+
+<nav class="day-switch" id="daySwitch"></nav>
+
+<div id="previewBannerSlot"></div>
+
+<section class="section">
+  <div class="section-label" id="dayCode">—</div>
+  <h1 class="section-title" id="dayTitle">—</h1>
+  <p class="section-sub" id="daySub">—</p>
+</section>
+
+<div class="mission" id="missionCard">
+  <div class="mission-label">오늘의 작은 미션</div>
+  <div class="mission-text" id="missionText">—</div>
+</div>
+
+<div id="content"></div>
+
+<section class="week-section">
+  <div class="week-head">
+    <div class="week-title">이번 주</div>
+    <div class="week-stats"><b id="weekDone">0</b> / 3 근력 · <b id="weekBike">0</b> 자전거</div>
+  </div>
+  <div class="week-days" id="weekDays"></div>
+</section>
+
+<section class="stage-info">
+  <div>
+    <div class="stage-info-key">Week</div>
+    <div class="stage-info-val" id="weekNum">1 / 4</div>
+  </div>
+  <div>
+    <div class="stage-info-key">총 운동일</div>
+    <div class="stage-info-val" id="totalDays">0일</div>
+  </div>
+  <div>
+    <div class="stage-info-key">시작</div>
+    <div class="stage-info-val" id="startDate">—</div>
+  </div>
+</section>
+
+<!-- Guide Modal -->
+<div class="modal-overlay" id="guideModal" onclick="if(event.target===this) closeGuide()">
+  <div class="modal">
+    <div class="modal-grip"></div>
+    <div id="guideContent"></div>
+  </div>
+</div>
+
+<!-- Rest Timer -->
+<div class="timer-overlay" id="timerOverlay">
+  <div class="timer-label">REST</div>
+  <div class="timer-ring">
+    <svg viewBox="0 0 220 220">
+      <circle class="timer-ring-bg" cx="110" cy="110" r="100" stroke-width="6"></circle>
+      <circle id="timerRingFg" class="timer-ring-fg" cx="110" cy="110" r="100" stroke-width="6"
+              stroke-dasharray="628.3" stroke-dashoffset="0"></circle>
+    </svg>
+    <div class="timer-num" id="timerNum">90</div>
+  </div>
+  <button class="timer-skip" onclick="skipTimer()">건너뛰기</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =============================================================
+// EXERCISE SVG ICONS — Minimal pictograms, readable at small sizes
+// =============================================================
+const SVG_ICONS = {
+  warmup_tread: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏃</text></svg>`,
+  goblet_squat: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋</text></svg>`,
+  goblet_squat_2: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋</text></svg>`,
+  leg_press: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🦵</text></svg>`,
+  rdl: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋</text></svg>`,
+  back_ext: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">⤴</text></svg>`,
+  plank: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🟰</text></svg>`,
+  zup: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🙃</text></svg>`,
+  warmup_ellip: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🚶</text></svg>`,
+  chest_press: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">👐</text></svg>`,
+  lat_pull: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">⬇</text></svg>`,
+  shoulder_press: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">⬆</text></svg>`,
+  seated_row: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🚣</text></svg>`,
+  curl_pushdown: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">💪</text></svg>`,
+  deadbug: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🐛</text></svg>`,
+  warmup_bike: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🚴</text></svg>`,
+  incline_db: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🛏</text></svg>`,
+  one_arm_row: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🚣</text></svg>`,
+  stepup: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🪜</text></svg>`,
+  side_plank: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">◢</text></svg>`,
+  finisher: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🪜</text></svg>`,
+};
+
+// =============================================================
+// ROUTINES DATA — 4-WEEK BEGINNER PROGRAM
+// =============================================================
+const ROUTINES = {
+  monday: {
+    code: 'A · 하체+코어',
+    title: '하체 + 코어',
+    sub: '월요일 · 약 50분',
+    exercises: [
+      {
+        id: 'warmup_tread', name: '워밍업: 트레드밀',
+        type: 'cardio', meta: '5분 · 경사 3%',
+        guide: { summary: '빠른 걸음 5분. 약간 숨이 차는 정도.',
+                 form: ['경사 3%, 속도 5.5-6.0km/h', '팔 자연스럽게 흔들기', '입으로 호흡 가능한 강도'] }
+      },
+      {
+        id: 'goblet_squat', name: '고블릿 스쿼트',
+        type: 'strength', sets: 3, reps: 10, rest: 90,
+        meta: '3세트 × 10회 · 휴식 90초 · 6-8kg',
+        guide: {
+          summary: '덤벨 하나를 두 손으로 가슴 앞에 들고 앉았다 일어나기',
+          equipment: '덤벨 1개 (사진 3, 4의 덤벨 랙)',
+          form: [
+            '발은 어깨너비, 발끝 살짝 바깥 15°',
+            '엉덩이를 뒤로 빼면서 내려가기',
+            '무릎이 발끝 방향 따라가도록',
+            '가슴 펴고 시선 정면 유지',
+            '내릴 때 들이쉬고, 올라올 때 내쉬기'
+          ],
+          warn: '허리가 둥글어지면 즉시 중단. 무게보다 자세가 우선.'
+        }
+      },
+      {
+        id: 'leg_press', name: '레그 프레스',
+        type: 'strength', sets: 3, reps: 12, rest: 90,
+        meta: '3세트 × 12회 · 휴식 90초 · 가볍게',
+        guide: {
+          summary: '머신에 앉아서 발판을 두 다리로 밀어내는 운동',
+          equipment: '레그프레스 머신 (NEOMAX 라인업 사진 7)',
+          form: [
+            '발은 어깨너비, 발판 중앙',
+            '엉덩이가 시트에서 뜨지 않게',
+            '무릎이 가슴 쪽으로 충분히 내려오게',
+            '완전히 펴지 말고 무릎 살짝 굽힘 유지',
+            '밀어낼 때 숨 내쉬기'
+          ],
+          warn: '허리가 시트에서 들리면 무게 줄이기. 무릎이 안쪽으로 모이지 않게.'
+        }
+      },
+      {
+        id: 'rdl', name: '루마니안 데드리프트 (덤벨)',
+        type: 'strength', sets: 3, reps: 10, rest: 90,
+        meta: '3세트 × 10회 · 휴식 90초 · 8-10kg',
+        guide: {
+          summary: '덤벨 양손에 들고 엉덩이 뒤로 빼면서 상체 숙이기',
+          equipment: '덤벨 2개 (사진 3, 4)',
+          form: [
+            '발은 골반너비, 무릎 살짝 굽힘 고정',
+            '엉덩이를 뒤로 빼면서 상체 숙이기',
+            '덤벨은 다리를 따라 무릎까지 내려오기',
+            '햄스트링(허벅지 뒤) 당김 느껴질 때까지만',
+            '엉덩이 힘으로 상체 일으키기'
+          ],
+          warn: '⚠️ 다니엘 허리 주의 운동. 등이 둥글어지면 절대 더 내려가지 말 것. 거울 옆에서 자세 체크 필수.'
+        }
+      },
+      {
+        id: 'back_ext', name: '백 익스텐션',
+        type: 'strength', sets: 3, reps: 12, rest: 60,
+        meta: '3세트 × 12회 · 휴식 60초 · 맨몸',
+        guide: {
+          summary: '로만체어에 엎드려 상체 들어올리기',
+          equipment: '로만체어 (사진 6 왼쪽 빨간 기구)',
+          form: [
+            '발목 패드에 발 고정, 허벅지 앞 패드에 골반 위치',
+            '상체를 천천히 내렸다가 척추 일직선까지 올리기',
+            '과도하게 뒤로 젖히지 않기 (척추 일직선까지만)',
+            '손은 가슴에 X자로 모으거나 머리 뒤'
+          ],
+          warn: '입문기엔 맨몸으로 충분. 반동 사용 금지.'
+        }
+      },
+      {
+        id: 'plank', name: '플랭크',
+        type: 'strength', sets: 3, reps: '30초', rest: 45,
+        meta: '3세트 × 30초 · 휴식 45초',
+        guide: {
+          summary: '엎드린 자세에서 팔꿈치와 발끝으로 몸 지탱',
+          equipment: '매트',
+          form: [
+            '팔꿈치는 어깨 바로 아래',
+            '머리부터 발끝까지 일직선',
+            '엉덩이가 너무 올라가거나 떨어지지 않게',
+            '복부에 힘 주고 정상 호흡',
+            '30초 못 버티면 20초부터 시작'
+          ]
+        }
+      },
+      {
+        id: 'zup', name: 'Z-UP 거꾸리 (마무리)',
+        type: 'cardio', meta: '1-2분 · 허리 이완',
+        guide: {
+          summary: '거꾸리 기구에 거꾸로 매달려 척추 이완',
+          equipment: 'Z-UP 거꾸리 (사진 2의 검정/흰색 기구)',
+          form: [
+            '발목 고정 후 천천히 기울이기',
+            '완전히 거꾸로 안 가도 됨 (30-45도면 충분)',
+            '1-2분 머문 후 천천히 일어나기',
+            '일어날 때 어지러우면 잠시 앉아 있기'
+          ],
+          warn: '혈압약 복용 중이므로 천천히. 어지러우면 즉시 중단.'
+        }
+      }
+    ]
+  },
+  wednesday: {
+    code: 'B · 상체+코어',
+    title: '상체 + 코어',
+    sub: '수요일 · 약 50분',
+    exercises: [
+      {
+        id: 'warmup_ellip', name: '워밍업: 일립티컬',
+        type: 'cardio', meta: '5분 · 가볍게',
+        guide: { summary: '발판 페달 밟으며 팔도 움직이는 유산소 머신',
+                 form: ['저항 낮게', '팔다리 함께 움직이기', '약간 숨이 차는 정도'] }
+      },
+      {
+        id: 'chest_press', name: '체스트 프레스 머신',
+        type: 'strength', sets: 3, reps: 10, rest: 90,
+        meta: '3세트 × 10회 · 휴식 90초 · 가볍게',
+        guide: {
+          summary: '앉아서 손잡이를 가슴 앞으로 밀어내는 머신',
+          equipment: '체스트 프레스 머신 (NEOMAX 사진 7)',
+          form: [
+            '시트 높이: 손잡이가 가슴 중앙에 오도록',
+            '등은 시트에 완전히 밀착',
+            '발은 바닥에 단단히',
+            '밀 때 숨 내쉬기, 당길 때 들이쉬기',
+            '완전히 팔 펴지 말고 살짝 굽힘 유지'
+          ]
+        }
+      },
+      {
+        id: 'lat_pull', name: '랫풀다운',
+        type: 'strength', sets: 3, reps: 10, rest: 90,
+        meta: '3세트 × 10회 · 휴식 90초 · 가볍게',
+        guide: {
+          summary: '바를 위에서 가슴 쪽으로 당겨 내리는 운동',
+          equipment: '랫풀다운 머신 (사진 2 또는 7의 케이블 머신)',
+          form: [
+            '바를 어깨너비보다 살짝 넓게 잡기',
+            '허벅지 패드로 다리 고정',
+            '쇄골 바로 위까지 당기기',
+            '어깨를 아래로 내리면서 당기기',
+            '등 근육으로 당기는 느낌, 팔로 당기지 말기'
+          ],
+          warn: '목 뒤로 당기지 않기. 가슴 앞으로만.'
+        }
+      },
+      {
+        id: 'shoulder_press', name: '숄더 프레스 머신',
+        type: 'strength', sets: 3, reps: 10, rest: 90,
+        meta: '3세트 × 10회 · 휴식 90초 · 가볍게',
+        guide: {
+          summary: '앉아서 손잡이를 머리 위로 밀어올리는 머신',
+          equipment: '숄더 프레스 머신 (NEOMAX 사진 7)',
+          form: [
+            '시트 높이: 손잡이가 어깨 높이',
+            '등 시트에 밀착, 허리 너무 젖히지 않기',
+            '밀어올릴 때 숨 내쉬기',
+            '팔꿈치 완전히 펴지 말기'
+          ],
+          warn: '혈압 고려: 무게 가볍게, 절대 숨 참지 말기.'
+        }
+      },
+      {
+        id: 'seated_row', name: '시티드 로우',
+        type: 'strength', sets: 3, reps: 12, rest: 60,
+        meta: '3세트 × 12회 · 휴식 60초',
+        guide: {
+          summary: '앉아서 손잡이를 배 쪽으로 당기는 운동',
+          equipment: '케이블 머신 또는 시티드 로우 머신 (사진 2, 7)',
+          form: [
+            '가슴 펴고 어깨 뒤로',
+            '배꼽 쪽으로 손잡이 당기기',
+            '팔꿈치를 몸 옆으로 붙이며 뒤로',
+            '등 근육 조이는 느낌',
+            '천천히 컨트롤하며 돌아가기'
+          ]
+        }
+      },
+      {
+        id: 'curl_pushdown', name: '덤벨 컬 + 트라이셉스 푸시다운',
+        type: 'strength', sets: 3, reps: 12, rest: 45,
+        meta: '슈퍼셋 · 각 3 × 12회 · 휴식 45초',
+        guide: {
+          summary: '팔 운동 슈퍼셋 (이두 + 삼두 연속)',
+          equipment: '덤벨 + 케이블 머신',
+          form: [
+            '덤벨 컬: 팔꿈치 고정, 덤벨만 들어올리기 (5-7kg)',
+            '푸시다운: 케이블 손잡이를 아래로 밀어내리기',
+            '팔꿈치 옆구리에 고정',
+            '두 운동 연속, 휴식은 슈퍼셋 한 세트 끝나고만'
+          ]
+        }
+      },
+      {
+        id: 'deadbug', name: '데드버그',
+        type: 'strength', sets: 3, reps: '10/each', rest: 45,
+        meta: '3세트 × 좌우 10회 · 휴식 45초',
+        guide: {
+          summary: '누워서 팔다리 반대로 뻗는 코어 운동',
+          equipment: '매트',
+          form: [
+            '천장 보고 누워서 팔 천장 향해',
+            '무릎 90도로 들어올리기',
+            '오른팔 머리 뒤로 + 왼다리 천천히 펴기',
+            '허리가 바닥에서 뜨지 않게',
+            '반대로 반복'
+          ],
+          warn: '허리에 가장 안전한 코어 운동. 추천!'
+        }
+      }
+    ]
+  },
+  friday: {
+    code: 'C · 전신',
+    title: '전신 컴파운드',
+    sub: '금요일 · 약 50분',
+    exercises: [
+      {
+        id: 'warmup_bike', name: '워밍업: 사이클',
+        type: 'cardio', meta: '5분 · 가볍게',
+        guide: { summary: '실내 자전거로 가볍게 페달',
+                 form: ['저항 낮게', '약간 숨이 차는 정도'] }
+      },
+      {
+        id: 'goblet_squat_2', name: '고블릿 스쿼트',
+        type: 'strength', sets: 3, reps: 12, rest: 90,
+        meta: '3세트 × 12회 · 휴식 90초 · 월요일과 동일',
+        guide: {
+          summary: '덤벨 하나를 두 손으로 가슴 앞에 들고 앉았다 일어나기',
+          equipment: '덤벨 1개',
+          form: ['월요일 가이드와 동일', '익숙해졌으면 1-2kg 증량 시도'],
+        }
+      },
+      {
+        id: 'incline_db', name: '인클라인 덤벨 프레스',
+        type: 'strength', sets: 3, reps: 10, rest: 90,
+        meta: '3세트 × 10회 · 휴식 90초 · 5-8kg',
+        guide: {
+          summary: '경사 벤치에 누워 덤벨을 가슴 위로 밀어올리기',
+          equipment: '조절식 인클라인 벤치 + 덤벨 (사진 3, 4)',
+          form: [
+            '벤치 각도 30-45도',
+            '덤벨을 가슴 옆에 두고 시작',
+            '천천히 위로 밀어올리기 (서로 부딪히지 않게)',
+            '팔꿈치 완전히 펴지 말기',
+            '내릴 때 가슴 옆까지'
+          ]
+        }
+      },
+      {
+        id: 'one_arm_row', name: '원암 덤벨 로우',
+        type: 'strength', sets: 3, reps: 10, rest: 60,
+        meta: '3세트 × 좌우 10회 · 휴식 60초 · 8-10kg',
+        guide: {
+          summary: '벤치 한 손/한 무릎 짚고 반대 손으로 덤벨 당기기',
+          equipment: '벤치 + 덤벨',
+          form: [
+            '왼 무릎과 왼손을 벤치 위에',
+            '오른발은 바닥, 등은 평평하게 (테이블처럼)',
+            '오른손으로 덤벨 잡고 옆구리 쪽으로 당기기',
+            '팔꿈치를 천장 쪽으로',
+            '등 근육 조이는 느낌'
+          ],
+          warn: '등이 둥글어지지 않게 주의.'
+        }
+      },
+      {
+        id: 'stepup', name: '스텝업',
+        type: 'strength', sets: 3, reps: '10/each', rest: 60,
+        meta: '3세트 × 좌우 10회 · 휴식 60초',
+        guide: {
+          summary: '스텝 박스 위에 올라갔다 내려오기',
+          equipment: 'Reebok 스텝 (사진 4)',
+          form: [
+            '한 발을 스텝 위에 완전히 올리기',
+            '뒷발로 박차지 말고 앞 다리 힘으로 올라가기',
+            '천천히 내려오기',
+            '맨몸으로 시작, 익숙해지면 덤벨 추가'
+          ]
+        }
+      },
+      {
+        id: 'side_plank', name: '사이드 플랭크',
+        type: 'strength', sets: 3, reps: '20초/each', rest: 45,
+        meta: '3세트 × 좌우 20초 · 휴식 45초',
+        guide: {
+          summary: '옆으로 누워 한 팔꿈치로 몸 지탱',
+          equipment: '매트',
+          form: [
+            '옆으로 누워 팔꿈치를 어깨 아래에',
+            '몸 일직선으로 들어올리기',
+            '엉덩이 처지지 않게',
+            '반대쪽도 동일',
+            '못 버티면 무릎 굽힌 자세부터'
+          ]
+        }
+      },
+      {
+        id: 'finisher', name: '마무리: 천국의 계단 또는 트레드밀',
+        type: 'cardio', meta: '10분 · 중강도',
+        guide: {
+          summary: '심박수 올리고 마무리하는 유산소',
+          equipment: '천국의 계단 또는 트레드밀',
+          form: [
+            '천국의 계단: 레벨 5-7, 10분',
+            '또는 트레드밀: 빠른 걸음 또는 가벼운 조깅 10분',
+            '약간 숨이 차지만 대화 가능한 수준'
+          ]
+        }
+      }
+    ]
+  }
+};
+
+// =============================================================
+// MISSIONS — DAILY ROTATION
+// =============================================================
+const MISSIONS = [
+  '운동 끝나고 물 500ml 마시기',
+  '운동 중 거울 보며 자세 점검 1회',
+  '운동 후 단백질 30g 챙기기 (계란 3개 또는 닭가슴살 100g)',
+  '오늘 8,000보 채우기',
+  '취침 30분 전 휴대폰 내려놓기',
+  '운동 시작 전 1분 호흡 정리',
+  '운동 후 5분 스트레칭 추가',
+  '체중 기록 잊지 않기',
+  '한 운동 자세 영상으로 셀프 체크',
+  '잠 7시간 이상 자기',
+  '오늘 단백질 95g 목표',
+  '운동 중 음악 새 플레이리스트로 시도',
+  'Z-UP 거꾸리에서 1분 더 머무르기',
+  '계단으로 한 층 더 걷기',
+  '의식적으로 천천히 씹어 먹기',
+  '잠들기 전 내일 운동복 미리 꺼내두기'
+];
+
+const REST_DAY_MESSAGES = {
+  tuesday: { icon: '🚴', title: '자전거 통근', sub: '왕복 7km. 자전거 못 타면 저녁 20분 걷기.\n걷기도 어렵다면 패스 OK.' },
+  thursday: { icon: '🚴', title: '자전거 통근', sub: '왕복 7km. 자전거 못 타면 저녁 20분 걷기.\n걷기도 어렵다면 패스 OK.' },
+  saturday: { icon: '🌿', title: '자유', sub: '컨디션 좋으면 산책이나 가벼운 활동.\n무리 NO. 회복도 운동의 일부.' },
+  sunday: { icon: '⚪', title: '완전 휴식', sub: '오늘은 완전히 쉬세요.\n근육이 회복되는 시간.' }
+};
+
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+// =============================================================
+// STATE
+// =============================================================
+let state = {
+  startDate: null,
+  workouts: {}, // date -> {type, exercises: {id: {sets: [{weight, reps, done}]}}, completed}
+  weights: {},  // date -> kg
+  bike: {},     // date -> bool
+  missions: {}, // date -> index
+  goalWeight: 73,
+  initialWeight: 79
+};
+let expandedExercise = null; // preserve expanded state across re-renders
+let viewMode = null; // null = today, or 'monday'/'wednesday'/'friday' for preview
+
+// ============ FIREBASE AUTH + SYNC ============
+const ALLOWED_EMAILS = ['info@danieljo.com', 'slwohanz@gmail.com'];
+const FIRESTORE_COLLECTION = 'bunnar-fitness';
+const FIRESTORE_DOC = 'him';
+const LOCAL_KEY = 'bunnar-fit-him-cache';
+
+let currentUser = null;
+let unsubscribeSnapshot = null;
+let saveTimeout = null;
+let lastRemoteHash = null;
+
+function loadState() {
+  const saved = localStorage.getItem(LOCAL_KEY);
+  if (saved) {
+    try { state = { ...state, ...JSON.parse(saved) }; } catch(e) {}
+  }
+  if (!state.startDate) state.startDate = todayKey();
+}
+
+function saveState() {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+  if (!currentUser) return;
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(saveToFirestore, 800);
+}
+
+async function saveToFirestore() {
+  if (!currentUser || !window.fbDB) return;
+  try {
+    const docRef = window.fbFns.doc(window.fbDB, FIRESTORE_COLLECTION, FIRESTORE_DOC);
+    const dataToSave = JSON.parse(JSON.stringify(state));
+    lastRemoteHash = JSON.stringify(dataToSave);
+    await window.fbFns.setDoc(docRef, dataToSave);
+  } catch (e) {
+    console.error('Firestore save:', e);
+  }
+}
+
+async function loadFromFirestore() {
+  if (!currentUser) return;
+  try {
+    const docRef = window.fbFns.doc(window.fbDB, FIRESTORE_COLLECTION, FIRESTORE_DOC);
+    const snap = await window.fbFns.getDoc(docRef);
+    if (snap.exists()) {
+      const remote = snap.data();
+      state = { ...state, ...remote };
+      lastRemoteHash = JSON.stringify(remote);
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+    }
+    if (!state.startDate) state.startDate = todayKey();
+  } catch (e) {
+    console.error('Firestore load:', e);
+  }
+}
+
+function setupRealtimeSync() {
+  if (unsubscribeSnapshot) unsubscribeSnapshot();
+  if (!currentUser) return;
+  const docRef = window.fbFns.doc(window.fbDB, FIRESTORE_COLLECTION, FIRESTORE_DOC);
+  unsubscribeSnapshot = window.fbFns.onSnapshot(docRef, (snap) => {
+    const _exists = typeof snap.exists === "function" ? snap.exists() : snap.exists;
+    if (!_exists) return;
+    const remote = snap.data();
+    const remoteHash = JSON.stringify(remote);
+    if (remoteHash === lastRemoteHash) return;
+    state = { ...state, ...remote };
+    lastRemoteHash = remoteHash;
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+    render();
+  });
+}
+
+async function googleSignIn() {
+  try {
+    document.getElementById('authError').classList.remove('show');
+    await window.fbFns.signInWithPopup(window.fbAuth, window.fbProvider);
+  } catch (e) {
+    showAuthError(e.message || '로그인 실패');
+  }
+}
+
+async function googleSignOut() {
+  if (!confirm('로그아웃 하시겠어요?')) return;
+  if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  await window.fbFns.signOut(window.fbAuth);
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function updateUserTag() {
+  const av = document.querySelector('#userTag .user-avatar');
+  if (!av || !currentUser) return;
+  if (currentUser.photoURL) {
+    av.innerHTML = '<img src="' + currentUser.photoURL + '" alt="" referrerpolicy="no-referrer">';
+  } else {
+    av.textContent = (currentUser.displayName || currentUser.email || '?').charAt(0).toUpperCase();
+  }
+}
+
+async function handleAuthChange(user) {
+  if (user) {
+    if (!ALLOWED_EMAILS.includes(user.email)) {
+      showAuthError(user.email + ' 는 허용되지 않은 계정입니다.');
+      await window.fbFns.signOut(window.fbAuth);
+      return;
+    }
+    currentUser = user;
+    document.getElementById('authOverlay').classList.add('hidden');
+    await loadFromFirestore();
+    setupRealtimeSync();
+    updateUserTag();
+    render();
+  } else {
+    currentUser = null;
+    if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+    document.getElementById('authOverlay').classList.remove('hidden');
+  }
+}
+
+
+// Compat SDK shim for getDoc/onSnapshot results
+const _origGetDoc = window.fbFns.getDoc;
+window.fbFns.getDoc = async function(ref) {
+  const snap = await _origGetDoc(ref);
+  return { exists: () => snap.exists, data: () => snap.data() };
+};
+
+function initFirebase() {
+  if (!window.fbAuth) return;
+  window.fbFns.onAuthStateChanged(window.fbAuth, handleAuthChange);
+}
+if (window.fbAuth) initFirebase();
+else window.addEventListener('firebase-ready', initFirebase);
+
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getDay() { return new Date().getDay(); }
+function getDayKey() { return DAY_KEYS[getDay()]; }
+
+// =============================================================
+// RENDER
+// =============================================================
+function render() {
+  renderHeader();
+  renderDaySwitch();
+  renderPreviewBanner();
+  renderMission();
+  renderContent();
+  renderWeekProgress();
+  renderStageInfo();
+}
+
+function renderDaySwitch() {
+  const todayDk = getDayKey();
+  const isWorkoutDay = ROUTINES[todayDk] !== undefined;
+  const activeMode = viewMode || (isWorkoutDay ? todayDk : 'today');
+  const pills = [];
+  pills.push({ key: 'today', label: '오늘', sub: '' });
+  pills.push({ key: 'monday', label: '월', sub: 'A' });
+  pills.push({ key: 'wednesday', label: '수', sub: 'B' });
+  pills.push({ key: 'friday', label: '금', sub: 'C' });
+  document.getElementById('daySwitch').innerHTML = pills.map(p => {
+    const isActive = (p.key === 'today' && viewMode === null) ||
+                     (p.key !== 'today' && viewMode === p.key);
+    return `<button class="day-pill ${isActive?'active':''}" onclick="setViewMode('${p.key === 'today' ? 'null' : p.key}')">
+      <span class="pill-day">${p.label}</span>${p.sub}
+    </button>`;
+  }).join('');
+}
+
+function renderPreviewBanner() {
+  const slot = document.getElementById('previewBannerSlot');
+  if (viewMode && viewMode !== getDayKey()) {
+    const label = { monday: '월요일 · A', wednesday: '수요일 · B', friday: '금요일 · C' }[viewMode];
+    slot.innerHTML = `<div class="preview-banner">
+      <span class="preview-banner-text"><b>미리보기</b> · ${label} (기록 안 됨)</span>
+      <button class="preview-back" onclick="setViewMode('null')">오늘로 →</button>
+    </div>`;
+  } else {
+    slot.innerHTML = '';
+  }
+}
+
+function setViewMode(mode) {
+  viewMode = mode === 'null' ? null : mode;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  render();
+}
+
+function renderHeader() {
+  const d = new Date();
+  const wd = DAY_NAMES[d.getDay()];
+  document.getElementById('dateLine').textContent =
+    `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} · ${wd}요일`;
+  document.getElementById('streakNum').textContent = calculateStreak();
+}
+
+function calculateStreak() {
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 60; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const dk = DAY_KEYS[d.getDay()];
+    const isStrengthDay = ['monday','wednesday','friday'].includes(dk);
+    const isBikeDay = ['tuesday','thursday'].includes(dk);
+
+    if (i === 0) {
+      // Today: count if done, but don't break streak if not done yet
+      if (isStrengthDay && state.workouts[key]?.completed) streak++;
+      else if (isBikeDay && state.bike[key]) streak++;
+      continue;
+    }
+    if (isStrengthDay) {
+      if (state.workouts[key]?.completed) streak++;
+      else break; // missed required strength day = streak broken
+    } else if (isBikeDay) {
+      if (state.bike[key]) streak++;
+      // bike is optional, don't break streak if missed
+    }
+    // rest days (sat/sun): neutral, no effect
+  }
+  return streak;
+}
+
+function renderMission() {
+  const tk = todayKey();
+  if (state.missions[tk] === undefined) {
+    state.missions[tk] = Math.floor(Math.random() * MISSIONS.length);
+    saveState();
+  }
+  document.getElementById('missionText').textContent = MISSIONS[state.missions[tk]];
+}
+
+function renderContent() {
+  const dk = viewMode || getDayKey();
+  const routine = ROUTINES[dk];
+  const content = document.getElementById('content');
+  const isPreview = viewMode !== null && viewMode !== getDayKey();
+
+  if (routine) {
+    document.getElementById('dayCode').textContent = routine.code;
+    document.getElementById('dayTitle').textContent = routine.title;
+    document.getElementById('daySub').textContent = routine.sub;
+    content.innerHTML = renderRoutine(routine, isPreview);
+  } else {
+    const restMsg = REST_DAY_MESSAGES[dk];
+    document.getElementById('dayCode').textContent = '';
+    document.getElementById('dayTitle').textContent = restMsg.title;
+    document.getElementById('daySub').textContent = '';
+
+    let html = `<div class="rest-day">
+      <div class="rest-day-icon">${restMsg.icon}</div>
+      <div class="rest-day-title">${restMsg.title}</div>
+      <div class="rest-day-sub">${restMsg.sub.replace('\n','<br>')}</div>
+    </div>`;
+
+    if (dk === 'tuesday' || dk === 'thursday') {
+      const tk = todayKey();
+      const done = state.bike[tk];
+      html += `
+        <div class="bike-card ${done?'done':''}" onclick="toggleBike()">
+          <div class="bike-icon">🚴</div>
+          <div class="bike-info">
+            <div class="bike-label">자전거 통근</div>
+            <div class="bike-text">${done?'오늘 자전거 출퇴근 완료':'자전거 통근 했나요?'}</div>
+          </div>
+          <div class="bike-toggle"></div>
+        </div>`;
+    }
+
+    html += renderWeightSection();
+    content.innerHTML = html;
+  }
+}
+
+function renderRoutine(routine, isPreview = false) {
+  const tk = todayKey();
+  // In preview mode, use empty exercise state (no save)
+  let workoutState;
+  if (isPreview) {
+    workoutState = { exercises: {} };
+    routine.exercises.forEach(ex => {
+      if (ex.type === 'strength' && typeof ex.sets === 'number') {
+        workoutState.exercises[ex.id] = {
+          sets: Array(ex.sets).fill(null).map(()=>({weight:'', reps:'', done:false}))
+        };
+      } else {
+        workoutState.exercises[ex.id] = { done: false };
+      }
+    });
+  } else {
+    if (!state.workouts[tk]) {
+      state.workouts[tk] = { type: routine.code, exercises: {}, completed: false };
+      routine.exercises.forEach(ex => {
+        if (ex.type === 'strength' && typeof ex.sets === 'number') {
+          state.workouts[tk].exercises[ex.id] = {
+            sets: Array(ex.sets).fill(null).map(()=>({weight:'', reps:'', done:false}))
+          };
+        } else {
+          state.workouts[tk].exercises[ex.id] = { done: false };
+        }
+      });
+      saveState();
+    }
+    workoutState = state.workouts[tk];
+  }
+
+  let html = `<div class="exercises ${isPreview?'preview':''}">`;
+  routine.exercises.forEach((ex, idx) => {
+    const exState = workoutState.exercises[ex.id] || {};
+    const isStrength = ex.type === 'strength' && typeof ex.sets === 'number';
+    let isDone = false;
+    if (isStrength) isDone = exState.sets?.every(s => s.done);
+    else isDone = exState.done;
+
+    html += `<div class="exercise ${ex.type==='cardio'?'cardio':''} ${isDone?'done':''}" id="ex-${ex.id}">
+      <div class="exercise-head">
+        <div class="exercise-icon">${SVG_ICONS[ex.id] || ''}</div>
+        <div class="exercise-info">
+          <div class="exercise-name">${ex.name}</div>
+          <div class="exercise-meta">${ex.meta}</div>
+        </div>
+        <button class="guide-btn" onclick="showGuide('${ex.id}')">i</button>
+      </div>`;
+
+    if (isStrength) {
+      html += '<div class="sets">';
+      exState.sets.forEach((s, si) => {
+        html += `<div class="set-row">
+          <div class="set-label">SET ${si+1}</div>
+          <input class="set-input" type="number" placeholder="kg" value="${s.weight||''}"
+                 onchange="updateSet('${ex.id}', ${si}, 'weight', this.value)" inputmode="decimal">
+          <input class="set-input" type="number" placeholder="회" value="${s.reps||''}"
+                 onchange="updateSet('${ex.id}', ${si}, 'reps', this.value)" inputmode="numeric">
+          <div class="set-check ${s.done?'done':''}" onclick="toggleSet('${ex.id}', ${si}, ${ex.rest||60})"></div>
+        </div>`;
+      });
+      html += `<button class="set-rest-btn" onclick="startTimer(${ex.rest||60})">휴식 타이머 · ${ex.rest||60}초</button></div>`;
+    } else {
+      html += `<button class="cardio-toggle" onclick="toggleCardio('${ex.id}')">
+        ${isDone?'✓ 완료':'완료 체크'}
+      </button>`;
+    }
+
+    // Inline form tips (top 3 points + warning if any)
+    if (ex.guide && ex.guide.form) {
+      const topTips = ex.guide.form.slice(0, 3);
+      html += `<div class="form-tips">
+        <div class="form-tips-label">자세 포인트</div>
+        <ul class="form-tips-list">${topTips.map(t=>`<li>${t}</li>`).join('')}</ul>`;
+      if (ex.guide.warn) {
+        html += `<div class="form-tips-warn"><b>주의 ·</b> ${ex.guide.warn}</div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += '</div>';
+  });
+  html += '</div>';
+
+  html += renderWeightSection();
+  return html;
+}
+
+function renderWeightSection() {
+  const tk = todayKey();
+  const current = state.weights[tk] || getLatestWeight() || state.initialWeight;
+  let html = `<div class="weight-section">
+    <div class="weight-head">
+      <div class="weight-current">
+        <span class="weight-num" id="weightDisplay">${current}</span>
+        <span class="weight-unit">kg</span>
+      </div>
+      <div class="weight-goal">목표 ${state.goalWeight}kg</div>
+    </div>
+    <div class="weight-input-row">
+      <input class="weight-input" type="number" id="weightInput" step="0.1"
+             placeholder="오늘 체중 (예: 78.5)" inputmode="decimal">
+      <button class="weight-save" onclick="saveWeight()">기록</button>
+    </div>
+    <div class="weight-chart" id="weightChart"></div>
+  </div>`;
+  setTimeout(renderWeightChart, 0);
+  return html;
+}
+
+function getLatestWeight() {
+  const dates = Object.keys(state.weights).sort();
+  return dates.length ? state.weights[dates[dates.length-1]] : null;
+}
+
+function renderWeightChart() {
+  const chart = document.getElementById('weightChart');
+  if (!chart) return;
+  const today = new Date();
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    days.push({ key, val: state.weights[key], day: d.getDate() });
+  }
+  const vals = days.filter(d => d.val).map(d => d.val);
+  if (vals.length === 0) {
+    chart.innerHTML = days.map(d=>`<div class="weight-bar" style="height:4px"></div>`).join('');
+    return;
+  }
+  const min = Math.min(...vals) - 0.5;
+  const max = Math.max(...vals) + 0.5;
+  const range = max - min || 1;
+  chart.innerHTML = days.map(d => {
+    if (!d.val) return `<div class="weight-bar" style="height:4px"></div>`;
+    const h = ((d.val - min) / range) * 40 + 8;
+    return `<div class="weight-bar has-data" style="height:${h}px"></div>`;
+  }).join('');
+}
+
+function renderWeekProgress() {
+  const today = new Date();
+  const dow = today.getDay();
+  // Monday-start week
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  let weekStr = '';
+  let done = 0, bikeDone = 0;
+  const cells = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + mondayOffset + i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const dk = DAY_KEYS[d.getDay()];
+    const isStrength = ['monday','wednesday','friday'].includes(dk);
+    const isBike = ['tuesday','thursday'].includes(dk);
+    const isToday = key === todayKey();
+    let cls = 'day-cell';
+    if (isToday) cls += ' today';
+    if (isStrength && state.workouts[key]?.completed) { cls += ' done'; done++; }
+    else if (isBike && state.bike[key]) { cls += ' done'; bikeDone++; }
+    cells.push(`<div class="${cls}">
+      <div class="day-cell-label">${['월','화','수','목','금','토','일'][i]}</div>
+      <div class="day-cell-num">${d.getDate()}</div>
+    </div>`);
+  }
+  document.getElementById('weekDays').innerHTML = cells.join('');
+  document.getElementById('weekDone').textContent = done;
+  document.getElementById('weekBike').textContent = bikeDone;
+}
+
+function renderStageInfo() {
+  const start = new Date(state.startDate);
+  const today = new Date();
+  const daysSince = Math.floor((today - start) / (1000*60*60*24));
+  const week = Math.min(Math.floor(daysSince / 7) + 1, 4);
+  document.getElementById('weekNum').textContent = `${week} / 4`;
+  document.getElementById('totalDays').textContent =
+    `${Object.values(state.workouts).filter(w=>w.completed).length}일`;
+  const s = new Date(state.startDate);
+  document.getElementById('startDate').textContent =
+    `${String(s.getMonth()+1).padStart(2,'0')}.${String(s.getDate()).padStart(2,'0')}`;
+}
+
+// =============================================================
+// ACTIONS
+// =============================================================
+function toggleExpand(id) {
+  expandedExercise = (expandedExercise === id) ? null : id;
+  render();
+}
+
+function updateSet(exId, setIdx, field, val) {
+  const tk = todayKey();
+  state.workouts[tk].exercises[exId].sets[setIdx][field] = val;
+  saveState();
+}
+
+function toggleSet(exId, setIdx, restSec) {
+  const tk = todayKey();
+  const set = state.workouts[tk].exercises[exId].sets[setIdx];
+  set.done = !set.done;
+  saveState();
+  if (set.done) {
+    startTimer(restSec);
+    if (navigator.vibrate) navigator.vibrate(20);
+  }
+  // check if exercise complete
+  const allDone = state.workouts[tk].exercises[exId].sets.every(s => s.done);
+  if (allDone) checkWorkoutComplete();
+  render();
+}
+
+function toggleCardio(exId) {
+  const tk = todayKey();
+  state.workouts[tk].exercises[exId].done = !state.workouts[tk].exercises[exId].done;
+  saveState();
+  checkWorkoutComplete();
+  render();
+}
+
+function checkWorkoutComplete() {
+  const tk = todayKey();
+  const dk = getDayKey();
+  const routine = ROUTINES[dk];
+  if (!routine) return;
+  const w = state.workouts[tk];
+  const allDone = routine.exercises.every(ex => {
+    const s = w.exercises[ex.id];
+    if (ex.type === 'strength' && typeof ex.sets === 'number') return s.sets.every(set => set.done);
+    return s.done;
+  });
+  if (allDone && !w.completed) {
+    w.completed = true;
+    saveState();
+    showToast('🎉 오늘 운동 완료!');
+    if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 100]);
+  } else if (!allDone && w.completed) {
+    w.completed = false;
+    saveState();
+  }
+}
+
+function toggleBike() {
+  const tk = todayKey();
+  state.bike[tk] = !state.bike[tk];
+  saveState();
+  if (state.bike[tk]) {
+    showToast('🚴 자전거 통근 기록 완료');
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+  render();
+}
+
+function saveWeight() {
+  const input = document.getElementById('weightInput');
+  const val = parseFloat(input.value);
+  if (!val || val < 30 || val > 200) {
+    showToast('체중을 정확히 입력해주세요');
+    return;
+  }
+  state.weights[todayKey()] = val;
+  saveState();
+  input.value = '';
+  showToast('체중 기록 완료');
+  render();
+}
+
+// =============================================================
+// GUIDE MODAL
+// =============================================================
+function showGuide(exId) {
+  let ex = null;
+  Object.values(ROUTINES).forEach(r => {
+    r.exercises.forEach(e => { if (e.id === exId) ex = e; });
+  });
+  if (!ex || !ex.guide) return;
+  const g = ex.guide;
+  let html = `<div class="modal-title">${ex.name}</div>`;
+  if (ex.meta) html += `<div class="modal-sub">${ex.meta}</div>`;
+  html += `<div class="modal-section">
+    <div class="modal-section-label">개요</div>
+    <div class="modal-text">${g.summary || ''}</div>
+  </div>`;
+  if (g.equipment) {
+    html += `<div class="modal-section">
+      <div class="modal-section-label">장비</div>
+      <div class="modal-text">${g.equipment}</div>
+    </div>`;
+  }
+  if (g.form) {
+    html += `<div class="modal-section">
+      <div class="modal-section-label">자세 포인트</div>
+      <ul class="form-list">${g.form.map(f=>`<li>${f}</li>`).join('')}</ul>
+    </div>`;
+  }
+  if (g.warn) {
+    html += `<div class="warn-box"><b>주의 ·</b> ${g.warn}</div>`;
+  }
+  html += `<div style="margin-top:24px"><button class="weight-save" style="width:100%;padding:14px"
+    onclick="closeGuide()">닫기</button></div>`;
+  document.getElementById('guideContent').innerHTML = html;
+  document.getElementById('guideModal').classList.add('show');
+}
+function closeGuide() { document.getElementById('guideModal').classList.remove('show'); }
+
+// =============================================================
+// REST TIMER
+// =============================================================
+let timerInterval = null;
+let timerRemaining = 0;
+let timerTotal = 0;
+function startTimer(sec) {
+  timerTotal = sec;
+  timerRemaining = sec;
+  document.getElementById('timerOverlay').classList.add('show');
+  updateTimerDisplay();
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    if (timerRemaining <= 0) {
+      finishTimer();
+    } else {
+      updateTimerDisplay();
+    }
+  }, 1000);
+}
+function updateTimerDisplay() {
+  document.getElementById('timerNum').textContent = timerRemaining;
+  const circumference = 2 * Math.PI * 100;
+  const offset = circumference * (1 - timerRemaining / timerTotal);
+  document.getElementById('timerRingFg').style.strokeDashoffset = offset;
+}
+function finishTimer() {
+  clearInterval(timerInterval);
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  playBeep();
+  setTimeout(() => {
+    document.getElementById('timerOverlay').classList.remove('show');
+  }, 500);
+}
+function skipTimer() {
+  clearInterval(timerInterval);
+  document.getElementById('timerOverlay').classList.remove('show');
+}
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 600;
+    g.gain.value = 0.1;
+    o.start();
+    setTimeout(()=>{o.stop();ctx.close();}, 200);
+  } catch(e) {}
+}
+
+// =============================================================
+// TOAST
+// =============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// =============================================================
+// INIT
+// =============================================================
+loadState();
+render();
+
+// Re-render on visibility (day might have changed)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) render();
+});
+</script>
+</body>
+</html>
