@@ -629,12 +629,12 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-// Firebase 로그인 유지: 로그인 팝업을 띄우기 전에 LOCAL persistence 설정이 끝나도록 보장합니다.
-const firebasePersistenceReady = auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>{
+const authPersistenceReady = auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>{
   console.warn('Firebase auth persistence 설정 실패:', err);
 });
-// 리다이렉트 방식으로 로그인된 경우에도 결과를 회수해 로그인 상태가 끊긴 것처럼 보이지 않게 합니다.
-auth.getRedirectResult().catch(err=>console.warn('Firebase redirect 로그인 결과 처리 실패:', err));
+let authNullGraceTimer = null;
+let lastKnownFirebaseUser = null;
+let userRequestedLogout = false;
 const db = firebase.firestore();
 const DASHBOARD_DOC = db.collection('dashboards').doc('bunnar-main');
 
@@ -657,47 +657,23 @@ let googleTasksCache = [];
 
 // ── Google 토큰 localStorage 영속화 ──
 const GTOKEN_KEY = 'bunnar_gtoken_v1';
-const GCONNECT_KEY = 'bunnar_google_workspace_connected_v1';
-
-function markGoogleConnected(connected){
-  try{
-    if(connected) localStorage.setItem(GCONNECT_KEY, '1');
-    else localStorage.removeItem(GCONNECT_KEY);
-  }catch(e){}
-}
-
-function wasGoogleConnected(){
-  try{return localStorage.getItem(GCONNECT_KEY)==='1'}catch(e){return false}
-}
-
 function saveGoogleToken(token, expiresIn){
   try{
     const expiry = Date.now() + ((expiresIn||3600) - 120) * 1000; // 2분 여유
     localStorage.setItem(GTOKEN_KEY, JSON.stringify({token, expiry}));
-    markGoogleConnected(true);
   }catch(e){}
 }
-
 function loadGoogleToken(){
   try{
     const raw = localStorage.getItem(GTOKEN_KEY);
     if(!raw) return null;
     const {token, expiry} = JSON.parse(raw);
-    if(Date.now() > expiry){
-      // Google OAuth access token은 만료되지만, 사용자가 연결했던 사실은 남겨서
-      // 새로고침 후 "로그아웃"처럼 보이지 않고 "다시 연결"로 안내되게 합니다.
-      localStorage.removeItem(GTOKEN_KEY);
-      return null;
-    }
+    if(Date.now() > expiry){ localStorage.removeItem(GTOKEN_KEY); return null; }
     return token;
   }catch(e){ return null; }
 }
-
-function clearGoogleToken(forgetConnection=false){
-  try{
-    localStorage.removeItem(GTOKEN_KEY);
-    if(forgetConnection) markGoogleConnected(false);
-  }catch(e){}
+function clearGoogleToken(){
+  try{ localStorage.removeItem(GTOKEN_KEY); }catch(e){}
 }
 
 const LATER_CAT_ID = 'later-tasks';
@@ -873,7 +849,8 @@ async function save(){
 }
 
 async function login(){
-  try{ await firebasePersistenceReady; }catch(e){}
+  try{ await authPersistenceReady; }catch(e){}
+  userRequestedLogout = false;
   const provider=new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt:'select_account'});
   auth.signInWithPopup(provider).catch(err=>{
@@ -884,7 +861,12 @@ async function login(){
     alert('로그인에 실패했습니다.');
   });
 }
-function logout(){auth.signOut()}
+function logout(){
+  userRequestedLogout = true;
+  lastKnownFirebaseUser = null;
+  if(authNullGraceTimer){clearTimeout(authNullGraceTimer);authNullGraceTimer=null;}
+  auth.signOut();
+}
 function showToast(){
   const t=document.getElementById('toast');
   t.classList.add('show');
@@ -1423,7 +1405,8 @@ document.addEventListener('click',e=>{
 });
 
 // ── 2026 지원사업 현황판 ────────────────────────
-const SP_DOC=()=>db.collection('dashboards').doc('bunnar-support');
+// 지원사업 데이터는 별도 문서가 아니라 bunnar-main 문서 안의 supportItems 필드에 저장합니다.
+const SP_DOC=()=>DASHBOARD_DOC;
 const SP_STATUSES=['선정완료','심사중','신청완료','미선정','대기중','예정','지원완료'];
 const SP_ICONS={
   '선정완료':'✅','심사중':'⏳','신청완료':'📬','미선정':'❌','대기중':'🔔','예정':'📅','지원완료':'🏁'
@@ -1447,8 +1430,9 @@ let SP_DATA=[];
 async function initSupport(){
   try{
     const snap=await SP_DOC().get();
-    if(snap.exists && Array.isArray(snap.data().items) && snap.data().items.length>0){
-      SP_DATA=snap.data().items;
+    const d=snap.exists ? snap.data() : {};
+    if(Array.isArray(d.supportItems) && d.supportItems.length>0){
+      SP_DATA=d.supportItems;
     }else{
       SP_DATA=JSON.parse(JSON.stringify(SP_DEFAULT));
       await saveSupport();
@@ -1459,7 +1443,7 @@ async function initSupport(){
 
 async function saveSupport(){
   if(!auth.currentUser)return;
-  try{ await SP_DOC().set({items:SP_DATA,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); }
+  try{ await SP_DOC().set({supportItems:SP_DATA,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); }
   catch(e){ console.error('지원사업 저장 실패',e); }
 }
 
@@ -1552,7 +1536,8 @@ function addSupportItem(){
 }
 
 
-const OT_DOC=()=>db.collection('dashboards').doc('bunnar-onething');
+// One Thing도 bunnar-main 문서 안의 oneThing 필드에 저장합니다.
+const OT_DOC=()=>DASHBOARD_DOC;
 let otSaveTimer=null;
 let otBound=false;
 
@@ -1573,7 +1558,7 @@ async function initOneThing(){
   try{
     const snap=await OT_DOC().get();
     if(snap.exists){
-      const d=snap.data();
+      const d=(snap.data().oneThing)||{};
       text=d.text||'';
       date=d.date||today;
       tomorrowText=d.tomorrowText||'';
@@ -1633,10 +1618,12 @@ async function saveOneThing(){
   const tomorrowDate=tomorrowISO();
   try{
     await OT_DOC().set({
-      text,
-      date,
-      tomorrowText,
-      tomorrowDate,
+      oneThing:{
+        text,
+        date,
+        tomorrowText,
+        tomorrowDate
+      },
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     if(dateEl)dateEl.textContent='오늘 · '+date;
@@ -1655,6 +1642,10 @@ async function resetOneThing(){
   if(dateEl)dateEl.textContent='오늘 · '+todayISO();
 }
 
+authPersistenceReady.then(()=>auth.getRedirectResult()).catch(err=>{
+  if(err)console.warn('Firebase redirect 로그인 결과 확인 실패:',err);
+});
+
 auth.onAuthStateChanged(async user=>{
   const loginBtn=document.getElementById('loginBtn');
   const logoutBtn=document.getElementById('logoutBtn');
@@ -1668,6 +1659,28 @@ auth.onAuthStateChanged(async user=>{
   if(unsubscribeDashboard){unsubscribeDashboard();unsubscribeDashboard=null}
 
   if(!user){
+    // Firebase Auth가 토큰을 갱신하는 순간 아주 짧게 null을 뱉는 경우가 있어,
+    // 사용자가 직접 로그아웃하지 않았다면 바로 화면을 로그아웃 상태로 바꾸지 않습니다.
+    if(lastKnownFirebaseUser && !userRequestedLogout){
+      if(authNullGraceTimer)clearTimeout(authNullGraceTimer);
+      authNullGraceTimer=setTimeout(()=>{
+        if(auth.currentUser)return;
+        lastKnownFirebaseUser=null;
+        loginBtn.style.display='inline-block';
+        logoutBtn.style.display='none';
+        authStatus.style.display='none';
+        addCatHeaderBtn.style.display='none';
+        digest.style.display='none';
+        inboxBox.style.display='none';
+        projectsSection.style.display='none';
+        const otb=document.getElementById('oneThingBox');
+        if(otb)otb.style.display='none';
+        const spb=document.getElementById('supportBox');
+        if(spb)spb.style.display='none';
+        loggedOut.style.display='block';
+      },10000);
+      return;
+    }
     loginBtn.style.display='inline-block';
     logoutBtn.style.display='none';
     authStatus.style.display='none';
@@ -1683,6 +1696,9 @@ auth.onAuthStateChanged(async user=>{
     return;
   }
 
+  if(authNullGraceTimer){clearTimeout(authNullGraceTimer);authNullGraceTimer=null;}
+  lastKnownFirebaseUser=user;
+  userRequestedLogout=false;
   loginBtn.style.display='none';
   logoutBtn.style.display='inline-block';
   authStatus.textContent=user.email||'로그인됨';
@@ -1713,17 +1729,12 @@ auth.onAuthStateChanged(async user=>{
     updateGoogleButtons(true);
     setGoogleStatus('Google Calendar/Tasks 연결 복원 중...');
     refreshGoogleWorkspace().catch(()=>{
-      // 토큰 만료 시 초기화. 연결 이력은 유지해서 다시 연결 버튼으로 안내합니다.
-      clearGoogleToken(false);
+      // 토큰 만료 시 초기화
+      clearGoogleToken();
       googleAccessToken = null;
-      updateGoogleButtons(false, true);
-      setGoogleStatus('Google Calendar/Tasks 연결 토큰이 만료되었습니다. 다시 연결 버튼을 눌러주세요.');
+      updateGoogleButtons(false);
+      setGoogleStatus('Google 연결이 만료되었습니다. 다시 연결해주세요.');
     });
-  }else if(wasGoogleConnected()){
-    updateGoogleButtons(false, true);
-    setGoogleStatus('Google Calendar/Tasks 연결 토큰이 만료되었습니다. 다시 연결 버튼을 눌러주세요.');
-    renderGoogleCalendarWeek();
-    renderGoogleTasks();
   }
 
   unsubscribeDashboard=DASHBOARD_DOC.onSnapshot(snap=>{
@@ -1779,15 +1790,12 @@ function closeGcalPopup(){
   const p=document.getElementById('gcal-active-popup');
   if(p)p.remove();
 }
-function updateGoogleButtons(connected, reconnect=false){
+function updateGoogleButtons(connected){
   ['googleRefreshBtn','googleAddEventBtn','googleDisconnectBtn'].forEach(id=>{
     const el=document.getElementById(id); if(el)el.style.display=connected?'inline-block':'none';
   });
   const connect=document.getElementById('googleConnectBtn');
-  if(connect){
-    connect.style.display=connected?'none':'inline-block';
-    connect.textContent=reconnect?'Google Calendar/Tasks 다시 연결':'Google Calendar/Tasks 연결';
-  }
+  if(connect)connect.style.display=connected?'none':'inline-block';
 }
 function initGoogleTokenClient(forceConsent){
   if(googleTokenClient) return true;
@@ -1815,7 +1823,6 @@ function initGoogleTokenClient(forceConsent){
 }
 function connectGoogleWorkspace(){
   if(!initGoogleTokenClient(false))return;
-  setGoogleStatus('Google Calendar/Tasks 연결을 확인하는 중...');
   // prompt:'' → 이미 동의한 경우 동의 화면 생략, 처음이면 자동으로 권한 요청
   googleTokenClient.requestAccessToken({prompt:''});
 }
@@ -1823,7 +1830,7 @@ function disconnectGoogleWorkspace(){
   if(googleAccessToken && window.google?.accounts?.oauth2){
     google.accounts.oauth2.revoke(googleAccessToken,()=>{});
   }
-  clearGoogleToken(true);
+  clearGoogleToken();
   googleAccessToken=null;
   googleTokenClient=null; // 다음 연결 시 새로 초기화
   googleTaskListId=null;
@@ -1845,11 +1852,14 @@ async function googleFetch(url, options={}){
     }
   });
   if(res.status===401){
+    // Google Calendar/Tasks 토큰 만료는 Firebase 로그인과 별개입니다.
+    // 앱 전체를 로그아웃처럼 보이게 하지 않고, Google 연결 버튼만 다시 표시합니다.
     googleAccessToken=null;
-    clearGoogleToken(false);
+    clearGoogleToken();
     googleTokenClient=null;
-    updateGoogleButtons(false, true);
-    throw new Error('Google Calendar/Tasks 연결 토큰이 만료되었습니다. 다시 연결 버튼을 눌러주세요.');
+    updateGoogleButtons(false);
+    setGoogleStatus('Google Calendar/Tasks 연결이 만료되었습니다. 버튼을 눌러 다시 연결해주세요.');
+    throw new Error('Google Calendar/Tasks 연결이 만료되었습니다. 다시 연결해주세요.');
   }
   if(!res.ok){
     const text=await res.text();
@@ -2001,9 +2011,7 @@ function renderGoogleCalendarWeek(){
   const wrap=document.getElementById('gcalWeek');
   if(!wrap)return;
   if(!googleAccessToken){
-    wrap.innerHTML=wasGoogleConnected()
-      ? '<div class="gcal-empty">Google Calendar/Tasks 연결 토큰이 만료되었습니다. 위의 “다시 연결” 버튼을 눌러주세요.</div>'
-      : '<div class="gcal-empty">Google 계정을 연결하면 주간 일정이 표시됩니다.</div>';
+    wrap.innerHTML='<div class="gcal-empty">Google 계정을 연결하면 주간 일정이 표시됩니다.</div>';
     return;
   }
   const weekStart=startOfWeek();
@@ -2438,10 +2446,8 @@ function renderGoogleTasks(){
   const count=document.getElementById('gtCount');
   if(!list)return;
   if(!googleAccessToken){
-    list.innerHTML=wasGoogleConnected()
-      ? '<div class="inbox-empty">Google Tasks 연결 토큰이 만료되었습니다. 위의 “다시 연결” 버튼을 눌러주세요.</div>'
-      : '<div class="inbox-empty">Google 계정을 연결하면 Tasks가 표시됩니다.</div>';
-    if(count)count.textContent=wasGoogleConnected()?'재연결 필요':'연결 대기';
+    list.innerHTML='<div class="inbox-empty">Google 계정을 연결하면 Tasks가 표시됩니다.</div>';
+    if(count)count.textContent='연결 대기';
     return;
   }
   const open=googleTasksCache.filter(t=>t.status!=='completed');
