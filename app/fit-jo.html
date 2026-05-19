@@ -9,20 +9,21 @@
 <meta name="theme-color" content="#FAFAF7">
 <title>BUNNAR FIT</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 <style>
 :root {
-  --bg: #FAFAF7;
+  --bg: #4ADE80;
   --surface: #FFFFFF;
-  --surface-2: #F4F2ED;
-  --text: #1A1A1A;
-  --text-2: #6B6B6B;
-  --text-3: #9A9A9A;
-  --border: #E8E6E1;
-  --border-2: #D5D3CE;
-  --accent: #BA0C2F;
-  --accent-soft: rgba(186, 12, 47, 0.07);
-  --done: #5C7355;
-  --done-soft: rgba(92, 115, 85, 0.08);
+  --surface-2: #ECFDF5;
+  --text: #0A0A0A;
+  --text-2: #1A1A1A;
+  --text-3: #4A4A4A;
+  --border: #0A0A0A;
+  --border-2: #0A0A0A;
+  --accent: #FF4500;
+  --accent-soft: rgba(255, 69, 0, 0.12);
+  --done: #0A0A0A;
+  --done-soft: rgba(10, 10, 10, 0.08);
   --shadow: 0 1px 2px rgba(0,0,0,0.04);
   --shadow-2: 0 4px 16px rgba(0,0,0,0.06);
   --mono: 'SF Mono', 'JetBrains Mono', 'Courier New', monospace;
@@ -31,7 +32,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 html, body {
-  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 15px;
@@ -909,6 +910,46 @@ input { font-family: inherit; }
   margin-right: 2px;
 }
 
+
+/* TYPO BOOST */
+.section-title { font-size: 38px; font-weight: 900; letter-spacing: -0.04em; line-height: 0.95; }
+.brand { font-size: 11px; font-weight: 800; letter-spacing: 0.3em; color: var(--text); }
+.streak-num { font-size: 48px; font-weight: 900; color: var(--text); }
+.streak-label { color: var(--text-2); font-weight: 800; }
+.exercise-name { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+.exercise-meta { color: var(--text-2); font-weight: 600; }
+.exercise { border: 2px solid var(--text); border-radius: 0; box-shadow: 4px 4px 0 var(--text); margin-bottom: 14px; }
+.exercise.done { background: var(--text); color: var(--bg); }
+.exercise.done .exercise-name, .exercise.done .exercise-meta { color: var(--bg); }
+.exercise.done .exercise-icon { background: var(--bg); }
+.mission { border: 2px solid var(--text); border-left: 6px solid var(--accent); border-radius: 0; box-shadow: 4px 4px 0 var(--text); }
+.mission-label { color: var(--accent); font-weight: 900; }
+.mission-text { font-weight: 700; font-size: 15px; }
+.set-input { border: 2px solid var(--text); border-radius: 0; font-weight: 700; }
+.set-check { border: 2px solid var(--text); border-radius: 0; width: 36px; height: 36px; }
+.set-check.done { background: var(--text); }
+.weight-section { border: 2px solid var(--text); border-radius: 0; box-shadow: 4px 4px 0 var(--text); }
+.weight-num { font-size: 40px; font-weight: 900; }
+.weight-save { background: var(--accent); color: white; border-radius: 0; font-weight: 800; letter-spacing: 0.05em; }
+.day-cell { border: 2px solid var(--text); border-radius: 0; }
+.day-cell.today { border-color: var(--accent); border-width: 3px; }
+.day-cell.done { background: var(--text); }
+.day-cell.done .day-cell-label, .day-cell.done .day-cell-num { color: var(--bg); }
+.stage-info { background: var(--text); color: var(--bg); border-radius: 0; }
+.stage-info-key { color: var(--bg); opacity: 0.6; }
+.stage-info-val { color: var(--bg); font-weight: 900; }
+.exercise-icon { border-radius: 0; background: var(--surface-2); border: 2px solid var(--text); }
+.set-rest-btn { background: var(--text); color: var(--bg); border: none; border-radius: 0; font-weight: 800; }
+.form-tips { background: var(--surface-2); border-top: 2px solid var(--text); }
+.form-tips-label { color: var(--text); font-weight: 900; }
+.form-tips-list li { color: var(--text-2); font-weight: 600; }
+.day-pill { border: 2px solid var(--text); border-radius: 0; font-weight: 800; background: var(--surface); }
+.day-pill.active { background: var(--text); color: var(--bg); }
+.auth-card { background: var(--surface); border: 3px solid var(--text); padding: 32px 24px; box-shadow: 8px 8px 0 var(--text); }
+.auth-btn { border-radius: 0; background: var(--text); font-weight: 800; }
+.auth-title { font-weight: 900; letter-spacing: -0.03em; }
+.cardio-toggle { background: var(--text); color: var(--bg); font-weight: 800; }
+
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
@@ -1030,25 +1071,25 @@ input { font-family: inherit; }
 // =============================================================
 const SVG_ICONS = {
   warmup_tread: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏃</text></svg>`,
-  goblet_squat: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋️</text></svg>`,
-  goblet_squat_2: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋️</text></svg>`,
+  goblet_squat: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋</text></svg>`,
+  goblet_squat_2: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋</text></svg>`,
   leg_press: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🦵</text></svg>`,
-  rdl: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🙇</text></svg>`,
-  back_ext: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🤸</text></svg>`,
-  plank: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🧘</text></svg>`,
+  rdl: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋</text></svg>`,
+  back_ext: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">⤴</text></svg>`,
+  plank: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🟰</text></svg>`,
   zup: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🙃</text></svg>`,
-  warmup_ellip: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏃</text></svg>`,
-  chest_press: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">💪</text></svg>`,
-  lat_pull: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">⬇️</text></svg>`,
-  shoulder_press: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🙆</text></svg>`,
+  warmup_ellip: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🚶</text></svg>`,
+  chest_press: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">👐</text></svg>`,
+  lat_pull: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">⬇</text></svg>`,
+  shoulder_press: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">⬆</text></svg>`,
   seated_row: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🚣</text></svg>`,
   curl_pushdown: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">💪</text></svg>`,
   deadbug: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🐛</text></svg>`,
   warmup_bike: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🚴</text></svg>`,
-  incline_db: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🏋️</text></svg>`,
+  incline_db: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🛏</text></svg>`,
   one_arm_row: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🚣</text></svg>`,
   stepup: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🪜</text></svg>`,
-  side_plank: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🤸</text></svg>`,
+  side_plank: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">◢</text></svg>`,
   finisher: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><text x="24" y="36" font-size="32" text-anchor="middle">🪜</text></svg>`,
 };
 
