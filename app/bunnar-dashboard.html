@@ -58,6 +58,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 .header.hide{transform:translateY(-110%)}
 .logo{font-size:17px;font-weight:600;letter-spacing:.04em}
 .logo span{font-weight:300;opacity:.5;margin-left:6px;font-size:13px}
+.version-stamp{display:inline-block;margin-left:10px;font-size:9px;font-weight:500;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;font-variant-numeric:tabular-nums;vertical-align:middle;opacity:.55}
 .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .main{max-width:1600px;margin:0 auto;padding:24px 32px 80px}
 
@@ -226,6 +227,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   .stats-row .stat:nth-child(4),.stats-row .stat:nth-child(5){display:none}
   .logo{font-size:14px}
   .logo span{display:none}
+  .version-stamp{display:none}
   .filter-row{gap:4px}
   .fbtn{padding:4px 10px;font-size:10px}
   .grid{grid-template-columns:1fr;gap:10px}
@@ -483,7 +485,10 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 <body>
 
 <div class="header">
-  <div><span class="logo">BUNNAR <span>· 업무 현황판</span></span></div>
+  <div>
+    <span class="logo">BUNNAR <span>· 업무 현황판</span></span>
+    <span class="version-stamp" id="versionStamp" title="이 파일이 마지막으로 업데이트된 시점"></span>
+  </div>
   <div class="header-actions">
     <button class="btn" id="printBtn" onclick="window.print()">🖨️ 프린트</button>
     <button class="btn" id="exportBtn" onclick="exportData()">📤 내보내기</button>
@@ -1838,6 +1843,28 @@ document.addEventListener('visibilitychange', ()=>{
     }
   }catch(e){}
 });
+
+// ── LAST UPDATE 스탬프 — HTML 파일의 Last-Modified 헤더 사용 ──
+(async function showLastUpdate(){
+  const stamp = document.getElementById('versionStamp');
+  if(!stamp) return;
+  try{
+    // HEAD 요청으로 헤더만 가져옴 (가벼움)
+    const res = await fetch(window.location.href, {method:'HEAD', cache:'no-store'});
+    const lastMod = res.headers.get('Last-Modified');
+    if(!lastMod){ stamp.textContent = ''; return; }
+    const d = new Date(lastMod);
+    if(isNaN(d.getTime())){ stamp.textContent = ''; return; }
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mi = String(d.getMinutes()).padStart(2,'0');
+    stamp.textContent = `LAST UPDATE ${yy}.${mm}.${dd} ${hh}:${mi}`;
+  }catch(e){
+    stamp.textContent = '';
+  }
+})();
 async function googleFetch(url, options={}, _isRetry){
   if(!googleAccessToken)throw new Error('Google 계정 연결이 필요합니다.');
   const res=await fetch(url,{
