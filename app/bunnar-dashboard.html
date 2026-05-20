@@ -654,10 +654,12 @@ let googleTasksCache = [];
 
 // ── Google 토큰 localStorage 영속화 ──
 const GTOKEN_KEY = 'bunnar_gtoken_v1';
+let googleRefreshTimer = null;
 function saveGoogleToken(token, expiresIn){
   try{
     const expiry = Date.now() + ((expiresIn||3600) - 120) * 1000; // 2분 여유
     localStorage.setItem(GTOKEN_KEY, JSON.stringify({token, expiry}));
+    scheduleTokenRefresh(expiry);
   }catch(e){}
 }
 function loadGoogleToken(){
@@ -666,11 +668,36 @@ function loadGoogleToken(){
     if(!raw) return null;
     const {token, expiry} = JSON.parse(raw);
     if(Date.now() > expiry){ localStorage.removeItem(GTOKEN_KEY); return null; }
+    scheduleTokenRefresh(expiry);
     return token;
   }catch(e){ return null; }
 }
 function clearGoogleToken(){
   try{ localStorage.removeItem(GTOKEN_KEY); }catch(e){}
+  if(googleRefreshTimer){ clearTimeout(googleRefreshTimer); googleRefreshTimer=null; }
+}
+// 만료 5분 전 백그라운드 자동 갱신 — 사용자는 모르게
+function scheduleTokenRefresh(expiry){
+  if(googleRefreshTimer){ clearTimeout(googleRefreshTimer); googleRefreshTimer=null; }
+  const refreshAt = expiry - Date.now() - (5 * 60 * 1000); // 5분 전
+  if(refreshAt <= 0){
+    // 이미 만료 임박 → 즉시 갱신 시도
+    silentRefreshGoogleToken();
+    return;
+  }
+  googleRefreshTimer = setTimeout(silentRefreshGoogleToken, refreshAt);
+}
+// 팝업 없이 조용히 토큰 갱신 (이미 동의한 사용자에게만 작동)
+function silentRefreshGoogleToken(){
+  if(!googleTokenClient){
+    if(!initGoogleTokenClient(false)) return;
+  }
+  try{
+    // prompt:'none' = 팝업 절대 띄우지 않음, 동의 이력 있으면 조용히 새 토큰 발급
+    googleTokenClient.requestAccessToken({prompt:'none'});
+  }catch(e){
+    console.warn('자동 갱신 실패 — 다음 작업 시 재시도', e);
+  }
 }
 
 const LATER_CAT_ID = 'later-tasks';
@@ -1797,7 +1824,21 @@ function disconnectGoogleWorkspace(){
   renderGoogleCalendarWeek();
   renderGoogleTasks();
 }
-async function googleFetch(url, options={}){
+
+// 탭으로 돌아왔을 때 토큰 만료 임박이면 조용히 갱신
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState !== 'visible') return;
+  try{
+    const raw = localStorage.getItem(GTOKEN_KEY);
+    if(!raw) return;
+    const {expiry} = JSON.parse(raw);
+    // 만료까지 10분 미만이면 미리 갱신
+    if(expiry - Date.now() < 10 * 60 * 1000){
+      silentRefreshGoogleToken();
+    }
+  }catch(e){}
+});
+async function googleFetch(url, options={}, _isRetry){
   if(!googleAccessToken)throw new Error('Google 계정 연결이 필요합니다.');
   const res=await fetch(url,{
     ...options,
@@ -1808,6 +1849,14 @@ async function googleFetch(url, options={}){
     }
   });
   if(res.status===401){
+    // 첫 401 → 조용히 토큰 갱신 후 한 번 재시도
+    if(!_isRetry){
+      const refreshed = await tryRefreshAndWait();
+      if(refreshed){
+        return googleFetch(url, options, true);
+      }
+    }
+    // 갱신 실패 → 사용자에게 알림
     googleAccessToken=null;
     clearGoogleToken();
     googleTokenClient=null;
@@ -1820,6 +1869,35 @@ async function googleFetch(url, options={}){
   }
   if(res.status===204)return null;
   return res.json();
+}
+// 조용한 갱신을 시도하고 토큰이 발급될 때까지 최대 3초 대기
+function tryRefreshAndWait(){
+  return new Promise(resolve=>{
+    if(!googleTokenClient){
+      if(!initGoogleTokenClient(false)){ resolve(false); return; }
+    }
+    const startToken = googleAccessToken;
+    let timeout;
+    // 콜백이 새 토큰을 세팅하는지 폴링
+    const checkInterval = setInterval(()=>{
+      if(googleAccessToken && googleAccessToken !== startToken){
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+        resolve(true);
+      }
+    }, 100);
+    timeout = setTimeout(()=>{
+      clearInterval(checkInterval);
+      resolve(false);
+    }, 3000);
+    try{
+      googleTokenClient.requestAccessToken({prompt:'none'});
+    }catch(e){
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+      resolve(false);
+    }
+  });
 }
 function startOfWeek(date=new Date()){
   const d=new Date(date);
