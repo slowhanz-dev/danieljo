@@ -2592,14 +2592,15 @@ const STICKY_DOC=()=>db.collection('dashboards').doc('simbanle-stickynotes');
 const STICKY_COLORS=['','color-pink','color-blue','color-green','color-orange'];
 let STICKY_NOTES=[];
 let stickyUnsub=null;
-let stickySaveTimer=null;
 let suppressStickySnapshot=false;
+let stickyDirty=false; // 저장되지 않은 변경사항 있음
 
 function initStickyListener(){
   if(stickyUnsub){stickyUnsub();stickyUnsub=null}
   stickyUnsub=STICKY_DOC().onSnapshot(snap=>{
-    // 내가 방금 저장해서 돌아온 echo면 무시 (커서 풀림 방지)
     if(suppressStickySnapshot){suppressStickySnapshot=false;return}
+    // 미저장 내용이 있는데 다른 기기 변경이 들어오면 충돌 — 일단 우리 변경 먼저 저장
+    if(stickyDirty){return}
     if(snap.exists){
       const d=snap.data();
       STICKY_NOTES=Array.isArray(d.notes)?d.notes:[];
@@ -2610,21 +2611,27 @@ function initStickyListener(){
   },err=>{console.error('스티키 노트 불러오기 실패',err)});
 }
 
-function saveStickyNotes(){
-  if(stickySaveTimer)clearTimeout(stickySaveTimer);
-  stickySaveTimer=setTimeout(async()=>{
-    try{
-      suppressStickySnapshot=true;
-      await STICKY_DOC().set({notes:STICKY_NOTES,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    }catch(e){suppressStickySnapshot=false;console.error('스티키 노트 저장 실패',e)}
-  },600);
+// 저장 — 즉시 실행, 디바운스 없음
+async function saveStickyNotes(){
+  if(!stickyDirty)return;
+  try{
+    suppressStickySnapshot=true;
+    await STICKY_DOC().set({notes:STICKY_NOTES,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    stickyDirty=false;
+  }catch(e){
+    suppressStickySnapshot=false;
+    console.error('스티키 노트 저장 실패',e);
+  }
 }
+
+// 마킹만 — 실제 저장은 blur/closing에서
+function markStickyDirty(){stickyDirty=true}
 
 function addStickyNote(){
   STICKY_NOTES.unshift({id:'sn_'+Date.now(),text:'',color:''});
+  markStickyDirty();
   saveStickyNotes();
   renderStickyNotes();
-  // 새로 추가한 메모에 포커스
   setTimeout(()=>{
     const first=document.querySelector('.sticky-note textarea');
     if(first)first.focus();
@@ -2636,7 +2643,7 @@ function updateStickyText(id,text){
   if(!n)return;
   if(n.text===text)return;
   n.text=text;
-  saveStickyNotes();
+  markStickyDirty();
   updateStickyCount();
 }
 
@@ -2646,6 +2653,7 @@ function deleteStickyNote(id){
     if(!confirm('이 메모를 삭제할까요?'))return;
   }
   STICKY_NOTES=STICKY_NOTES.filter(x=>x.id!==id);
+  markStickyDirty();
   saveStickyNotes();
   renderStickyNotes();
 }
@@ -2658,7 +2666,6 @@ function copyStickyNote(id,btn){
     btn.textContent='✓ 복사됨';
     setTimeout(()=>{btn.textContent=original},1200);
   }).catch(()=>{
-    // fallback for older browsers
     const ta=document.createElement('textarea');
     ta.value=n.text||'';
     document.body.appendChild(ta);
@@ -2672,6 +2679,7 @@ function setStickyColor(id,colorClass){
   const n=STICKY_NOTES.find(x=>x.id===id);
   if(!n)return;
   n.color=colorClass;
+  markStickyDirty();
   saveStickyNotes();
   renderStickyNotes();
 }
@@ -2715,7 +2723,7 @@ function renderStickyNotes(){
         <button class="sticky-action-btn" onclick="copyStickyNote('${n.id}',this)" title="내용 복사">📋</button>
         <button class="sticky-action-btn danger" style="margin-left:auto" onclick="deleteStickyNote('${n.id}')" title="삭제">×</button>
       </div>
-      <textarea placeholder="여기에 메모를 적으세요..." style="font-size:${fs}px;font-weight:${fw}" oninput="updateStickyText('${n.id}',this.value)">${safeText}</textarea>
+      <textarea placeholder="여기에 메모를 적으세요..." style="font-size:${fs}px;font-weight:${fw}" oninput="updateStickyText('${n.id}',this.value)" onblur="saveStickyNotes()">${safeText}</textarea>
     </div>`;
   }).join('');
 }
@@ -2727,6 +2735,7 @@ function changeStickyFontSize(id,delta){
   const next=Math.max(14,Math.min(42,current+delta*2));
   if(next===current)return;
   n.fontSize=next;
+  markStickyDirty();
   saveStickyNotes();
   const note=document.querySelector(`.sticky-note[data-id="${id}"] textarea`);
   if(note)note.style.fontSize=next+'px';
@@ -2735,10 +2744,10 @@ function changeStickyFontSize(id,delta){
 function cycleStickyWeight(id){
   const n=STICKY_NOTES.find(x=>x.id===id);
   if(!n)return;
-  // 300(Light) → 500(Medium) → 700(Bold) → 300...
   const cur=n.fontWeight||500;
   const next=cur===300?500:cur===500?700:300;
   n.fontWeight=next;
+  markStickyDirty();
   saveStickyNotes();
   renderStickyNotes();
 }
@@ -2769,6 +2778,7 @@ function stickyDrop(e,targetId){
   if(srcIdx<0||tgtIdx<0)return;
   const [moved]=STICKY_NOTES.splice(srcIdx,1);
   STICKY_NOTES.splice(tgtIdx,0,moved);
+  markStickyDirty();
   saveStickyNotes();
   renderStickyNotes();
 }
@@ -2821,6 +2831,18 @@ auth.onAuthStateChanged(user=>{
     STICKY_NOTES=[];
     renderStickyNotes();
   }
+});
+
+// 데이터 유실 방지: 창 닫기 / 탭 전환 / 새로고침 시 즉시 저장
+window.addEventListener('beforeunload',()=>{
+  if(stickyDirty)saveStickyNotes();
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&stickyDirty)saveStickyNotes();
+});
+// 모바일에서 앱 백그라운드로 갈 때
+window.addEventListener('pagehide',()=>{
+  if(stickyDirty)saveStickyNotes();
 });
 </script>
 </body>
