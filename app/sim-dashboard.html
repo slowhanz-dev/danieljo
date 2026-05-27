@@ -2593,10 +2593,13 @@ const STICKY_COLORS=['','color-pink','color-blue','color-green','color-orange'];
 let STICKY_NOTES=[];
 let stickyUnsub=null;
 let stickySaveTimer=null;
+let suppressStickySnapshot=false;
 
 function initStickyListener(){
   if(stickyUnsub){stickyUnsub();stickyUnsub=null}
   stickyUnsub=STICKY_DOC().onSnapshot(snap=>{
+    // 내가 방금 저장해서 돌아온 echo면 무시 (커서 풀림 방지)
+    if(suppressStickySnapshot){suppressStickySnapshot=false;return}
     if(snap.exists){
       const d=snap.data();
       STICKY_NOTES=Array.isArray(d.notes)?d.notes:[];
@@ -2611,8 +2614,9 @@ function saveStickyNotes(){
   if(stickySaveTimer)clearTimeout(stickySaveTimer);
   stickySaveTimer=setTimeout(async()=>{
     try{
+      suppressStickySnapshot=true;
       await STICKY_DOC().set({notes:STICKY_NOTES,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    }catch(e){console.error('스티키 노트 저장 실패',e)}
+    }catch(e){suppressStickySnapshot=false;console.error('스티키 노트 저장 실패',e)}
   },600);
 }
 
