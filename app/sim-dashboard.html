@@ -477,6 +477,27 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   .iexp textarea{border:none;background:transparent !important;color:#333 !important;font-size:8pt;min-height:0;padding:1mm 0;resize:none;width:100%;white-space:pre-wrap}
   #loggedOut{display:none}
 }
+/* ─── 스티키 노트 ─── */
+.sticky-section{margin-bottom:24px}
+.sticky-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.sticky-note{background:#fff8b8;border:1px solid #e6d570;border-radius:8px;padding:12px 14px 10px;box-shadow:0 2px 4px rgba(0,0,0,.05);display:flex;flex-direction:column;min-height:140px;position:relative;transition:transform .12s,box-shadow .12s}
+.sticky-note:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.08)}
+.sticky-note.color-pink{background:#ffd6e0;border-color:#f0a0b8}
+.sticky-note.color-blue{background:#cfe6ff;border-color:#90c0e8}
+.sticky-note.color-green{background:#d1f0c8;border-color:#a0d090}
+.sticky-note.color-orange{background:#ffe0b8;border-color:#f0b070}
+.sticky-note-toolbar{display:flex;gap:6px;margin-bottom:6px;font-size:11px;align-items:center;flex-wrap:wrap}
+.sticky-color-dot{width:14px;height:14px;border-radius:50%;cursor:pointer;border:1px solid rgba(0,0,0,.2)}
+.sticky-color-dot:hover{transform:scale(1.15)}
+.sticky-action-btn{background:rgba(0,0,0,.06);border:none;border-radius:4px;padding:2px 7px;font-size:10px;color:#444;cursor:pointer;font-family:inherit}
+.sticky-action-btn:hover{background:rgba(0,0,0,.15)}
+.sticky-action-btn.danger:hover{background:#e58080;color:#fff}
+.sticky-note textarea{flex:1;width:100%;background:transparent;border:none;resize:none;outline:none;font-family:inherit;font-size:13px;line-height:1.45;color:#2a2a18;padding:0}
+.sticky-note textarea::placeholder{color:rgba(0,0,0,.35)}
+.sticky-empty{grid-column:1/-1;text-align:center;color:var(--text3);padding:24px;font-style:italic;font-size:13px;border:1px dashed var(--border2);border-radius:8px}
+@media(max-width:700px){
+  .sticky-grid{grid-template-columns:1fr}
+}
 </style>
   <link rel="stylesheet" href="/app/bunnar-dashboard-font-up.css?v=20260515">
 </head>
@@ -511,6 +532,16 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
         <button class="one-thing-reset" onclick="resetOneThing()" title="오늘의 One Thing 비우기">↺ 오늘 비우기</button>
       </div>
     </div>
+  </div>
+
+  <!-- ── 스티키 노트 (아내용 빠른 메모 / 복사 붙여넣기 영역) ── -->
+  <div class="sticky-section" id="stickySection">
+    <div class="section-title" style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
+      📝 스티키 노트
+      <span class="count" id="stickyCount" style="font-size:11px;color:var(--text3)"></span>
+      <button onclick="addStickyNote()" style="margin-left:auto;background:transparent;border:1px solid var(--border2);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit">+ 새 메모</button>
+    </div>
+    <div id="stickyGrid"></div>
   </div>
 
   <div class="digest google-calendar-panel" id="digest" style="display:none">
@@ -2450,6 +2481,168 @@ async function deleteGoogleTask(id){
     await loadGoogleTasks();
   }catch(e){alert(e.message||'Tasks 삭제 실패')}
 }
+
+// ── 스티키 노트 ──────────────────────────────
+const STICKY_DOC=()=>db.collection('dashboards').doc('simbanle-stickynotes');
+const STICKY_COLORS=['','color-pink','color-blue','color-green','color-orange'];
+let STICKY_NOTES=[];
+let stickyUnsub=null;
+let stickySaveTimer=null;
+
+function initStickyListener(){
+  if(stickyUnsub){stickyUnsub();stickyUnsub=null}
+  stickyUnsub=STICKY_DOC().onSnapshot(snap=>{
+    if(snap.exists){
+      const d=snap.data();
+      STICKY_NOTES=Array.isArray(d.notes)?d.notes:[];
+    }else{
+      STICKY_NOTES=[];
+    }
+    renderStickyNotes();
+  },err=>{console.error('스티키 노트 불러오기 실패',err)});
+}
+
+function saveStickyNotes(){
+  if(stickySaveTimer)clearTimeout(stickySaveTimer);
+  stickySaveTimer=setTimeout(async()=>{
+    try{
+      await STICKY_DOC().set({notes:STICKY_NOTES,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }catch(e){console.error('스티키 노트 저장 실패',e)}
+  },600);
+}
+
+function addStickyNote(){
+  STICKY_NOTES.unshift({id:'sn_'+Date.now(),text:'',color:''});
+  saveStickyNotes();
+  renderStickyNotes();
+  // 새로 추가한 메모에 포커스
+  setTimeout(()=>{
+    const first=document.querySelector('.sticky-note textarea');
+    if(first)first.focus();
+  },50);
+}
+
+function updateStickyText(id,text){
+  const n=STICKY_NOTES.find(x=>x.id===id);
+  if(!n)return;
+  if(n.text===text)return;
+  n.text=text;
+  saveStickyNotes();
+  updateStickyCount();
+}
+
+function deleteStickyNote(id){
+  const n=STICKY_NOTES.find(x=>x.id===id);
+  if(n&&n.text.trim().length>0){
+    if(!confirm('이 메모를 삭제할까요?'))return;
+  }
+  STICKY_NOTES=STICKY_NOTES.filter(x=>x.id!==id);
+  saveStickyNotes();
+  renderStickyNotes();
+}
+
+function copyStickyNote(id,btn){
+  const n=STICKY_NOTES.find(x=>x.id===id);
+  if(!n)return;
+  navigator.clipboard.writeText(n.text||'').then(()=>{
+    const original=btn.textContent;
+    btn.textContent='✓ 복사됨';
+    setTimeout(()=>{btn.textContent=original},1200);
+  }).catch(()=>{
+    // fallback for older browsers
+    const ta=document.createElement('textarea');
+    ta.value=n.text||'';
+    document.body.appendChild(ta);
+    ta.select();
+    try{document.execCommand('copy');btn.textContent='✓ 복사됨';setTimeout(()=>{btn.textContent='📋 복사'},1200)}catch(e){}
+    document.body.removeChild(ta);
+  });
+}
+
+function setStickyColor(id,colorClass){
+  const n=STICKY_NOTES.find(x=>x.id===id);
+  if(!n)return;
+  n.color=colorClass;
+  saveStickyNotes();
+  renderStickyNotes();
+}
+
+function updateStickyCount(){
+  const el=document.getElementById('stickyCount');
+  if(!el)return;
+  const n=STICKY_NOTES.length;
+  el.textContent=n?`${n}개`:'';
+}
+
+function renderStickyNotes(){
+  const grid=document.getElementById('stickyGrid');
+  if(!grid)return;
+  updateStickyCount();
+  if(STICKY_NOTES.length===0){
+    grid.className='sticky-grid';
+    grid.innerHTML='<div class="sticky-empty">생각나는 것을 자유롭게 적어두세요 — 메모는 복사·붙여넣기 가능합니다</div>';
+    return;
+  }
+  grid.className='sticky-grid';
+  grid.innerHTML=STICKY_NOTES.map(n=>{
+    const safeText=(n.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const colorDots=['','#ffd6e0','#cfe6ff','#d1f0c8','#ffe0b8'].map((c,i)=>{
+      if(i===0)return `<span class="sticky-color-dot" style="background:#fff8b8" onclick="setStickyColor('${n.id}','')" title="기본"></span>`;
+      return `<span class="sticky-color-dot" style="background:${c}" onclick="setStickyColor('${n.id}','${STICKY_COLORS[i]}')" title="색상"></span>`;
+    }).join('');
+    return `<div class="sticky-note ${n.color||''}">
+      <div class="sticky-note-toolbar">
+        ${colorDots}
+        <button class="sticky-action-btn" onclick="copyStickyNote('${n.id}',this)" title="내용 복사">📋 복사</button>
+        <button class="sticky-action-btn danger" style="margin-left:auto" onclick="deleteStickyNote('${n.id}')" title="삭제">×</button>
+      </div>
+      <textarea placeholder="여기에 메모를 적으세요..." oninput="updateStickyText('${n.id}',this.value)">${safeText}</textarea>
+    </div>`;
+  }).join('');
+}
+
+// ── 레이아웃 재배치: 캘린더+잔업을 맨 아래로, 지원사업 박스 완전 숨김 ──
+function rearrangeLayoutForSim(){
+  const main=document.querySelector('.main')||document.body;
+  // 지원사업 박스 완전히 제거 (DOM에서 숨김)
+  const sb=document.getElementById('supportBox');
+  if(sb){sb.style.display='none';sb.setAttribute('data-disabled','1')}
+  // 캘린더와 잔업 박스를 메인 맨 끝으로 이동
+  const digest=document.getElementById('digest');
+  const inbox=document.getElementById('inboxBox');
+  if(main&&digest&&digest.parentNode===main)main.appendChild(digest);
+  if(main&&inbox&&inbox.parentNode===main)main.appendChild(inbox);
+}
+
+// 지원사업 박스가 다른 코드에 의해 다시 표시되지 않도록 차단
+(function blockSupportBoxDisplay(){
+  const sb=document.getElementById('supportBox');
+  if(!sb)return;
+  const observer=new MutationObserver(()=>{
+    if(sb.getAttribute('data-disabled')==='1'&&sb.style.display!=='none'){
+      sb.style.display='none';
+    }
+  });
+  observer.observe(sb,{attributes:true,attributeFilter:['style']});
+})();
+
+// 초기화: DOM 준비 후 실행
+document.addEventListener('DOMContentLoaded',()=>{
+  rearrangeLayoutForSim();
+});
+if(document.readyState!=='loading')rearrangeLayoutForSim();
+
+// 로그인 후 스티키 노트 리스너 시작
+const _origOnAuthStickyHook=auth.onAuthStateChanged.bind(auth);
+auth.onAuthStateChanged(user=>{
+  if(user){
+    initStickyListener();
+  }else{
+    if(stickyUnsub){stickyUnsub();stickyUnsub=null}
+    STICKY_NOTES=[];
+    renderStickyNotes();
+  }
+});
 </script>
 </body>
 </html>
