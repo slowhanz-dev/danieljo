@@ -269,9 +269,9 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
 }
 .one-thing-panel::before{content:'';position:absolute;left:24px;top:18px;width:2px;height:38px;background:#050505;pointer-events:none}
 .one-thing-panel::after{content:'ONE';position:absolute;right:18px;bottom:-20px;font-size:74px;font-weight:700;letter-spacing:-.06em;color:rgba(0,0,0,.045);pointer-events:none;z-index:0}
-.one-thing-label{grid-column:1;grid-row:1;font-size:30px;font-weight:700;letter-spacing:-.045em;color:#050505;margin-bottom:12px;padding-left:13px;line-height:1.08;text-transform:none;word-break:keep-all;position:relative;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.one-thing-content{grid-column:1;grid-row:2;font-size:17px;font-weight:500;color:#050505;line-height:1.42;min-height:28px;outline:none;caret-color:#050505;word-break:keep-all;padding:4px 0 4px;position:relative;z-index:2;align-self:start}
-.one-thing-content:empty::before{content:attr(data-placeholder);color:rgba(0,0,0,.38);font-weight:400;font-size:16px;pointer-events:none}
+.one-thing-label{grid-column:1;grid-row:1;font-size:15px;font-weight:700;letter-spacing:-.02em;color:rgba(0,0,0,.55);margin-bottom:10px;padding-left:13px;line-height:1.2;text-transform:none;word-break:keep-all;position:relative;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.one-thing-content{grid-column:1;grid-row:2;font-size:30px;font-weight:700;color:#050505;line-height:1.25;min-height:42px;outline:none;caret-color:#050505;word-break:keep-all;padding:4px 0 4px;position:relative;z-index:2;align-self:start;letter-spacing:-.02em}
+.one-thing-content:empty::before{content:attr(data-placeholder);color:rgba(0,0,0,.32);font-weight:500;font-size:18px;pointer-events:none}
 .one-thing-content:focus{border-bottom:1px solid rgba(0,0,0,.22)}
 .one-thing-footer{grid-column:1;grid-row:3;display:flex;align-items:center;justify-content:space-between;margin-top:8px;position:relative;z-index:2}
 .one-thing-date{font-size:11px;color:rgba(0,0,0,.45);font-weight:500}
@@ -295,9 +295,9 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   .one-thing-panel{padding:14px 16px 13px;min-height:136px;grid-template-columns:minmax(0,1fr) minmax(118px,35%);column-gap:12px;border-radius:var(--radius);margin-left:0;margin-right:0;box-shadow:0 8px 24px rgba(0,0,0,.035)}
   .one-thing-panel::before{left:16px;top:15px;height:30px}
   .one-thing-panel::after{display:none}
-  .one-thing-label{font-size:clamp(21px,6.3vw,25px);margin-bottom:9px;padding-left:10px;line-height:1.08}
-  .one-thing-content{font-size:14px;line-height:1.38;min-height:24px;padding:2px 0}
-  .one-thing-content:empty::before{font-size:13px}
+  .one-thing-label{font-size:12px;margin-bottom:7px;padding-left:10px;line-height:1.2;color:rgba(0,0,0,.55)}
+  .one-thing-content{font-size:22px;font-weight:700;line-height:1.25;min-height:32px;padding:2px 0}
+  .one-thing-content:empty::before{font-size:14px}
   .one-thing-footer{margin-top:7px;gap:10px}
   .one-thing-reset{padding:3px 7px;font-size:9px}
   .tomorrow-thing{padding:10px 10px;border-left:1px solid rgba(0,0,0,.14);border-radius:10px;gap:5px}
