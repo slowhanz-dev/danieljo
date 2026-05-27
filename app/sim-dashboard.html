@@ -15,6 +15,7 @@
 <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/app/bunnar-icon-180.png?v=20260514">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -477,30 +478,107 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   .iexp textarea{border:none;background:transparent !important;color:#333 !important;font-size:8pt;min-height:0;padding:1mm 0;resize:none;width:100%;white-space:pre-wrap}
   #loggedOut{display:none}
 }
-/* ─── 스티키 노트 ─── */
+/* ─── 스티키 노트 (종이 느낌) ─── */
 .sticky-section{margin-bottom:24px}
-.sticky-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.sticky-note{background:#fff8b8;border:1px solid #e6d570;border-radius:8px;padding:12px 14px 10px;box-shadow:0 2px 4px rgba(0,0,0,.05);display:flex;flex-direction:column;min-height:140px;position:relative;transition:transform .12s,box-shadow .12s,border-color .12s}
-.sticky-note:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.08)}
-.sticky-note.drag-over-target{border-color:#185FA5;border-width:2px;transform:translateY(-2px)}
-.sticky-drag-handle{position:absolute;top:8px;right:8px;color:rgba(0,0,0,.25);font-size:12px;letter-spacing:-2px;cursor:grab;user-select:none;line-height:1;padding:2px 4px}
+.sticky-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px;padding:8px 4px}
+
+/* 종이 질감 + 자연스러운 그림자 */
+.sticky-note{
+  background:#ffe98a;
+  border:none;
+  border-radius:2px;
+  padding:34px 18px 16px 18px;
+  box-shadow:
+    0 1px 1px rgba(0,0,0,.08),
+    0 4px 8px rgba(0,0,0,.12),
+    0 10px 18px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;
+  min-height:180px;
+  position:relative;
+  transition:transform .15s,box-shadow .15s;
+  transform:rotate(-1.2deg);
+}
+.sticky-note:nth-child(2n){transform:rotate(1.5deg)}
+.sticky-note:nth-child(3n){transform:rotate(-0.6deg)}
+.sticky-note:nth-child(4n){transform:rotate(2deg)}
+.sticky-note:nth-child(5n){transform:rotate(-1.8deg)}
+.sticky-note:hover{
+  transform:rotate(0deg) translateY(-3px) scale(1.02);
+  box-shadow:
+    0 2px 2px rgba(0,0,0,.10),
+    0 8px 14px rgba(0,0,0,.15),
+    0 16px 28px rgba(0,0,0,.12);
+  z-index:5;
+}
+.sticky-note.drag-over-target{
+  outline:3px dashed #185FA5;
+  outline-offset:3px;
+}
+
+/* 색상 변형 — 스크린샷 컬러 팔레트 */
+.sticky-note.color-pink{background:#ffb8d6}
+.sticky-note.color-blue{background:#a5d4f5}
+.sticky-note.color-green{background:#a8e6a3}
+.sticky-note.color-orange{background:#ffc685}
+
+/* 드래그 핸들 — 종이 모서리 느낌 */
+.sticky-drag-handle{
+  position:absolute;top:10px;right:12px;
+  color:rgba(0,0,0,.25);font-size:13px;letter-spacing:-2px;
+  cursor:grab;user-select:none;line-height:1;padding:2px 4px;
+  font-family:sans-serif;
+}
 .sticky-drag-handle:hover{color:rgba(0,0,0,.55)}
 .sticky-drag-handle:active{cursor:grabbing}
-.sticky-note.color-pink{background:#ffd6e0;border-color:#f0a0b8}
-.sticky-note.color-blue{background:#cfe6ff;border-color:#90c0e8}
-.sticky-note.color-green{background:#d1f0c8;border-color:#a0d090}
-.sticky-note.color-orange{background:#ffe0b8;border-color:#f0b070}
-.sticky-note-toolbar{display:flex;gap:6px;margin-bottom:6px;font-size:11px;align-items:center;flex-wrap:wrap}
-.sticky-color-dot{width:14px;height:14px;border-radius:50%;cursor:pointer;border:1px solid rgba(0,0,0,.2)}
-.sticky-color-dot:hover{transform:scale(1.15)}
-.sticky-action-btn{background:rgba(0,0,0,.06);border:none;border-radius:4px;padding:2px 7px;font-size:10px;color:#444;cursor:pointer;font-family:inherit}
-.sticky-action-btn:hover{background:rgba(0,0,0,.15)}
-.sticky-action-btn.danger:hover{background:#e58080;color:#fff}
-.sticky-note textarea{flex:1;width:100%;background:transparent;border:none;resize:none;outline:none;font-family:inherit;font-size:13px;line-height:1.45;color:#2a2a18;padding:0}
-.sticky-note textarea::placeholder{color:rgba(0,0,0,.35)}
-.sticky-empty{grid-column:1/-1;text-align:center;color:var(--text3);padding:24px;font-style:italic;font-size:13px;border:1px dashed var(--border2);border-radius:8px}
+
+/* 툴바 — 종이 위에 떠다니는 느낌 */
+.sticky-note-toolbar{
+  position:absolute;top:9px;left:12px;right:38px;
+  display:flex;gap:5px;font-size:11px;
+  align-items:center;flex-wrap:wrap;
+  opacity:0;transition:opacity .15s;
+}
+.sticky-note:hover .sticky-note-toolbar,
+.sticky-note:focus-within .sticky-note-toolbar{opacity:1}
+.sticky-color-dot{
+  width:12px;height:12px;border-radius:50%;
+  cursor:pointer;border:1px solid rgba(0,0,0,.25);
+  transition:transform .12s;
+}
+.sticky-color-dot:hover{transform:scale(1.25)}
+.sticky-action-btn{
+  background:rgba(0,0,0,.08);border:none;border-radius:3px;
+  padding:2px 6px;font-size:10px;color:rgba(0,0,0,.65);
+  cursor:pointer;font-family:inherit;font-weight:500;
+}
+.sticky-action-btn:hover{background:rgba(0,0,0,.18);color:#000}
+.sticky-action-btn.danger:hover{background:#d94040;color:#fff}
+
+/* 텍스트 영역 — 손글씨 폰트 */
+.sticky-note textarea{
+  flex:1;width:100%;
+  background:transparent;border:none;resize:none;outline:none;
+  font-family:'Caveat','Gaegu',cursive,'Pretendard',sans-serif;
+  font-size:22px;
+  line-height:1.35;
+  color:#2a2a18;
+  padding:0;
+  font-weight:500;
+  letter-spacing:.01em;
+}
+.sticky-note textarea::placeholder{
+  color:rgba(0,0,0,.3);
+  font-style:normal;
+}
+
+.sticky-empty{
+  grid-column:1/-1;text-align:center;color:var(--text3);
+  padding:32px;font-style:italic;font-size:13px;
+  border:1px dashed var(--border2);border-radius:8px;
+}
+
 @media(max-width:700px){
-  .sticky-grid{grid-template-columns:1fr}
+  .sticky-grid{grid-template-columns:1fr;gap:18px}
 }
 </style>
   <link rel="stylesheet" href="/app/bunnar-dashboard-font-up.css?v=20260515">
@@ -2590,9 +2668,9 @@ function renderStickyNotes(){
   grid.className='sticky-grid';
   grid.innerHTML=STICKY_NOTES.map((n,idx)=>{
     const safeText=(n.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    const fs=n.fontSize||13;
-    const colorDots=['','#ffd6e0','#cfe6ff','#d1f0c8','#ffe0b8'].map((c,i)=>{
-      if(i===0)return `<span class="sticky-color-dot" style="background:#fff8b8" onclick="setStickyColor('${n.id}','')" title="기본"></span>`;
+    const fs=n.fontSize||22;
+    const colorDots=['','#ffb8d6','#a5d4f5','#a8e6a3','#ffc685'].map((c,i)=>{
+      if(i===0)return `<span class="sticky-color-dot" style="background:#ffe98a" onclick="setStickyColor('${n.id}','')" title="기본"></span>`;
       return `<span class="sticky-color-dot" style="background:${c}" onclick="setStickyColor('${n.id}','${STICKY_COLORS[i]}')" title="색상"></span>`;
     }).join('');
     return `<div class="sticky-note ${n.color||''}" draggable="true" data-id="${n.id}" data-idx="${idx}"
@@ -2616,12 +2694,11 @@ function renderStickyNotes(){
 function changeStickyFontSize(id,delta){
   const n=STICKY_NOTES.find(x=>x.id===id);
   if(!n)return;
-  const current=n.fontSize||13;
-  const next=Math.max(10,Math.min(28,current+delta));
+  const current=n.fontSize||22;
+  const next=Math.max(14,Math.min(42,current+delta*2));
   if(next===current)return;
   n.fontSize=next;
   saveStickyNotes();
-  // 텍스트 영역 글자 크기만 즉시 변경 (텍스트 입력 도중에도 안 끊김)
   const note=document.querySelector(`.sticky-note[data-id="${id}"] textarea`);
   if(note)note.style.fontSize=next+'px';
 }
