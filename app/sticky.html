@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>📌 스티키 보드</title>
+<style>
+@font-face{
+  font-family:'Gmarket Sans';
+  src:url('gmarket-light.woff2') format('woff2');
+  font-weight:300;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'Gmarket Sans';
+  src:url('gmarket-medium.woff2') format('woff2');
+  font-weight:500;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'Gmarket Sans';
+  src:url('gmarket-bold.woff2') format('woff2');
+  font-weight:700;font-style:normal;font-display:swap;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Gmarket Sans','Pretendard',system-ui,sans-serif;
+  background:
+    radial-gradient(circle at 20% 30%,rgba(255,210,90,.08) 0,transparent 50%),
+    radial-gradient(circle at 80% 70%,rgba(255,180,200,.08) 0,transparent 50%),
+    #f4f1e8;
+  color:#1a1a18;
+  -webkit-font-smoothing:antialiased;
+  user-select:none;
+  position:relative;
+}
+
+/* 코르크 보드 같은 텍스처 */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    repeating-radial-gradient(circle at 0 0,transparent 0,rgba(120,90,50,.015) 1px,transparent 2px),
+    repeating-radial-gradient(circle at 50% 50%,transparent 0,rgba(120,90,50,.02) 1px,transparent 3px);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* 헤더 툴바 */
+.toolbar{
+  position:fixed;top:0;left:0;right:0;
+  display:flex;align-items:center;gap:10px;
+  padding:12px 18px;
+  background:rgba(255,255,255,.7);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(0,0,0,.06);
+  z-index:100;
+  font-size:13px;
+}
+.toolbar-title{font-weight:700;color:#1a1a18;letter-spacing:-.01em;font-size:14px;display:flex;align-items:center;gap:6px}
+.toolbar-spacer{flex:1}
+.toolbar-btn{
+  background:#fff;border:1px solid rgba(0,0,0,.1);
+  border-radius:8px;padding:6px 13px;font-size:12px;
+  color:#1a1a18;cursor:pointer;font-family:inherit;font-weight:500;
+  transition:all .15s;
+}
+.toolbar-btn:hover{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.toolbar-btn.primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.toolbar-btn.primary:hover{background:#000}
+.toolbar-status{font-size:11px;color:rgba(0,0,0,.45);margin-left:4px}
+
+/* 캔버스 */
+.canvas{
+  position:absolute;inset:0;
+  padding-top:54px;
+  overflow:hidden;
+  z-index:1;
+}
+
+/* 스티키 노트 */
+.note{
+  position:absolute;
+  width:200px;height:200px;
+  padding:32px 16px 16px;
+  border:none;
+  border-radius:2px;
+  box-shadow:
+    1px 1px 2px rgba(0,0,0,.08),
+    3px 5px 8px rgba(0,0,0,.10),
+    6px 10px 18px rgba(0,0,0,.08);
+  display:flex;flex-direction:column;
+  cursor:grab;
+  transition:box-shadow .15s,transform .08s;
+  user-select:none;
+}
+.note.dragging{
+  cursor:grabbing;
+  box-shadow:
+    3px 3px 4px rgba(0,0,0,.12),
+    8px 12px 18px rgba(0,0,0,.18),
+    14px 22px 36px rgba(0,0,0,.14);
+  z-index:9999 !important;
+}
+.note.focused{outline:2px solid rgba(50,120,220,.3);outline-offset:2px}
+
+/* 색상 팔레트 — 다니엘 지정 16색 */
+.note.color-white   {background:#F5F6F8;border:1px solid rgba(0,0,0,.05)}
+.note.color-cream   {background:#FFF9B1}
+.note.color-lime    {background:#daf7a1}
+.note.color-amber   {background:#ffc000}
+.note.color-green   {background:#C9DF56}
+.note.color-orange  {background:#FF9D48}
+.note.color-sage    {background:#b6d7a8}
+.note.color-coral   {background:#ff6b80}
+.note.color-teal    {background:#77ccc7}
+.note.color-pink    {background:#eca2c4}
+.note.color-sky     {background:#6ED8FA}
+.note.color-rose    {background:#FFCEE0}
+.note.color-blue    {background:#b1d3f6}
+.note.color-purple  {background:#b485bc}
+.note.color-indigo  {background:#8ca0ff}
+.note.color-black   {background:#000000;color:#fff}
+.note.color-black textarea{color:#fff}
+.note.color-black textarea::placeholder{color:rgba(255,255,255,.4)}
+.note.color-black .note-btn{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8)}
+.note.color-black .note-btn:hover{background:rgba(255,255,255,.3);color:#fff}
+.note.color-black .note-grip{color:rgba(255,255,255,.3)}
+
+/* 노트 안의 텍스트 */
+.note textarea{
+  flex:1;width:100%;
+  background:transparent;border:none;resize:none;outline:none;
+  font-family:inherit;font-size:18px;font-weight:500;
+  color:#1a1a18;line-height:1.4;
+  letter-spacing:-.01em;
+  cursor:text;
+  user-select:text;
+  padding:0;
+}
+.note textarea::placeholder{color:rgba(0,0,0,.3)}
+
+/* 노트 툴바 (상단) */
+.note-controls{
+  position:absolute;top:6px;left:8px;right:8px;
+  display:flex;align-items:center;gap:4px;
+  opacity:0;transition:opacity .15s;
+}
+.note:hover .note-controls,
+.note.focused .note-controls{opacity:1}
+.note-grip{
+  font-size:11px;color:rgba(0,0,0,.3);letter-spacing:-2px;
+  padding:2px;line-height:1;
+}
+.note-controls-right{margin-left:auto;display:flex;gap:3px}
+.note-btn{
+  background:rgba(0,0,0,.08);border:none;border-radius:3px;
+  padding:1px 6px;font-size:10px;color:rgba(0,0,0,.65);
+  cursor:pointer;font-family:inherit;font-weight:500;
+  line-height:1.4;
+}
+.note-btn:hover{background:rgba(0,0,0,.2);color:#000}
+.note-btn.bold{font-weight:bold}
+.note-btn.delete:hover{background:#d94040;color:#fff}
+
+/* 색상 점들 */
+.note-palette{
+  display:flex;gap:2px;align-items:center;flex-wrap:wrap;
+}
+.color-dot{
+  width:10px;height:10px;border-radius:50%;
+  border:1px solid rgba(0,0,0,.18);
+  cursor:pointer;transition:transform .12s;
+}
+.color-dot:hover{transform:scale(1.4)}
+
+/* 리사이즈 핸들 */
+.note-resize{
+  position:absolute;right:0;bottom:0;
+  width:14px;height:14px;
+  cursor:nwse-resize;
+  opacity:.25;
+  background:
+    linear-gradient(135deg,transparent 0%,transparent 60%,rgba(0,0,0,.5) 60%,rgba(0,0,0,.5) 70%,transparent 70%,transparent 75%,rgba(0,0,0,.5) 75%,rgba(0,0,0,.5) 85%,transparent 85%);
+}
+.note:hover .note-resize{opacity:.5}
+.note-resize:hover{opacity:.8 !important}
+
+/* 빈 상태 */
+.empty-hint{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  color:rgba(0,0,0,.3);
+  font-size:15px;
+  text-align:center;
+  pointer-events:none;
+}
+.empty-hint h2{font-size:24px;font-weight:300;margin-bottom:8px;letter-spacing:-.02em}
+.empty-hint p{font-size:13px}
+
+/* 색상 선택 팝업 */
+.color-popup{
+  position:fixed;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.1);
+  border-radius:10px;
+  padding:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15);
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+  z-index:1000;
+}
+.color-popup .color-dot{width:24px;height:24px}
+
+/* 모바일 */
+@media(max-width:700px){
+  .toolbar{padding:10px 12px;gap:6px}
+  .toolbar-btn{padding:5px 10px;font-size:11px}
+  .toolbar-title{font-size:13px}
+  .note{width:160px;height:160px;padding:28px 12px 12px;font-size:15px}
+  .note textarea{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-title">📌 스티키 보드</div>
+  <span class="toolbar-status" id="status"></span>
+  <div class="toolbar-spacer"></div>
+  <button class="toolbar-btn" id="loginBtn" onclick="login()">로그인</button>
+  <button class="toolbar-btn" id="logoutBtn" onclick="logout()" style="display:none">로그아웃</button>
+  <button class="toolbar-btn primary" id="addBtn" onclick="addNote()" style="display:none">+ 새 메모</button>
+</div>
+
+<div class="canvas" id="canvas"></div>
+
+<div class="empty-hint" id="emptyHint" style="display:none">
+  <h2>비어 있어요</h2>
+  <p>+ 새 메모를 눌러 시작하세요</p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+// ── Firebase ──
+const firebaseConfig = {
+  apiKey: "AIzaSyBGBDywtb_UQwewBObvTSVxiXTTLDZQd2w",
+  authDomain: "bunnar-dashboard.firebaseapp.com",
+  projectId: "bunnar-dashboard",
+  storageBucket: "bunnar-dashboard.firebasestorage.app",
+  messagingSenderId: "170038311346",
+  appId: "1:170038311346:web:59e4eb30f65961aab80cab",
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// 사용자별로 문서 분리 (이메일로 구분)
+function getDoc(){
+  const u = auth.currentUser;
+  if(!u) return null;
+  // simbanle-stickyboard 또는 bunnar-stickyboard (이메일 기준)
+  const docId = u.email === 'simbanle81@gmail.com'
+    ? 'simbanle-stickyboard'
+    : 'bunnar-stickyboard';
+  return db.collection('dashboards').doc(docId);
+}
+
+// ── 상태 ──
+const COLORS = ['white','cream','lime','amber','green','orange','sage','coral','teal','pink','sky','rose','blue','purple','indigo','black'];
+const COLOR_HEX = {
+  white:'#F5F6F8', cream:'#FFF9B1', lime:'#daf7a1', amber:'#ffc000',
+  green:'#C9DF56', orange:'#FF9D48', sage:'#b6d7a8', coral:'#ff6b80',
+  teal:'#77ccc7', pink:'#eca2c4', sky:'#6ED8FA', rose:'#FFCEE0',
+  blue:'#b1d3f6', purple:'#b485bc', indigo:'#8ca0ff', black:'#000000',
+};
+let NOTES = [];
+let unsub = null;
+let suppressSnapshot = false;
+let dirty = false;
+let saveTimer = null;
+let zMax = 1;
+
+// ── 인증 ──
+function login(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({prompt:'select_account'});
+  auth.signInWithPopup(provider).catch(e=>console.error(e));
+}
+function logout(){
+  flushSave();
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(user=>{
+  if(unsub){unsub();unsub=null}
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const addBtn = document.getElementById('addBtn');
+  const status = document.getElementById('status');
+  if(!user){
+    loginBtn.style.display='inline-block';
+    logoutBtn.style.display='none';
+    addBtn.style.display='none';
+    status.textContent='';
+    NOTES=[];
+    render();
+    return;
+  }
+  loginBtn.style.display='none';
+  logoutBtn.style.display='inline-block';
+  addBtn.style.display='inline-block';
+  status.textContent = user.email;
+  startListener();
+});
+
+function startListener(){
+  const doc = getDoc();
+  if(!doc) return;
+  unsub = doc.onSnapshot(snap=>{
+    if(suppressSnapshot){suppressSnapshot=false;return}
+    if(dirty){return} // 미저장 변경 있으면 무시
+    if(snap.exists){
+      const d = snap.data();
+      NOTES = Array.isArray(d.notes) ? d.notes : [];
+      // zIndex 최대값 갱신
+      zMax = NOTES.reduce((m,n)=>Math.max(m,n.z||1),1);
+    }else{
+      NOTES = [];
+    }
+    render();
+  },err=>{
+    console.error('불러오기 실패',err);
+  });
+}
+
+async function flushSave(){
+  if(!dirty) return;
+  const doc = getDoc();
+  if(!doc) return;
+  if(saveTimer){clearTimeout(saveTimer);saveTimer=null}
+  try{
+    suppressSnapshot = true;
+    await doc.set({
+      notes: NOTES,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+    dirty = false;
+  }catch(e){
+    suppressSnapshot = false;
+    console.error('저장 실패',e);
+  }
+}
+
+function markDirty(){dirty = true}
+
+// ── CRUD ──
+function addNote(){
+  const cw = window.innerWidth, ch = window.innerHeight;
+  // 중앙 근처에 약간 랜덤 위치
+  const x = Math.round(cw/2 - 100 + (Math.random()-0.5)*200);
+  const y = Math.round(ch/2 - 100 + (Math.random()-0.5)*200);
+  // 처음 12개 색에서 랜덤 (white/black/intense 제외)
+  const pastels = ['cream','lime','amber','green','orange','sage','teal','pink','sky','rose','blue','purple'];
+  const color = pastels[Math.floor(Math.random()*pastels.length)];
+  const rot = (Math.random()-0.5) * 4; // -2도 ~ +2도
+  zMax++;
+  NOTES.push({
+    id: 'n_'+Date.now(),
+    text: '',
+    color, x, y,
+    w: 200, h: 200,
+    rot, z: zMax,
+    weight: 500,
+    fontSize: 18,
+  });
+  markDirty();
+  flushSave();
+  render();
+  // 새 노트에 포커스
+  setTimeout(()=>{
+    const ta = document.querySelector(`.note[data-id="${NOTES[NOTES.length-1].id}"] textarea`);
+    if(ta) ta.focus();
+  },50);
+}
+
+function deleteNote(id){
+  const n = NOTES.find(x=>x.id===id);
+  if(n && n.text.trim()){
+    if(!confirm('이 메모를 삭제할까요?')) return;
+  }
+  NOTES = NOTES.filter(x=>x.id!==id);
+  markDirty();
+  flushSave();
+  render();
+}
+
+function setColor(id,color){
+  const n = NOTES.find(x=>x.id===id);
+  if(!n) return;
+  n.color = color;
+  markDirty();
+  flushSave();
+  render();
+}
+
+function cycleWeight(id){
+  const n = NOTES.find(x=>x.id===id);
+  if(!n) return;
+  const cur = n.weight||500;
+  n.weight = cur===300?500:cur===500?700:300;
+  markDirty();
+  flushSave();
+  render();
+}
+
+function changeFontSize(id,delta){
+  const n = NOTES.find(x=>x.id===id);
+  if(!n) return;
+  const cur = n.fontSize||18;
+  const next = Math.max(12,Math.min(36,cur+delta*2));
+  if(next===cur) return;
+  n.fontSize = next;
+  markDirty();
+  flushSave();
+  const el = document.querySelector(`.note[data-id="${id}"] textarea`);
+  if(el) el.style.fontSize = next+'px';
+}
+
+function bringToFront(id){
+  const n = NOTES.find(x=>x.id===id);
+  if(!n) return;
+  zMax++;
+  n.z = zMax;
+  const el = document.querySelector(`.note[data-id="${id}"]`);
+  if(el) el.style.zIndex = zMax;
+  markDirty();
+  // 즉시 저장 안 함 — 드래그 끝났을 때 같이 저장
+}
+
+// ── 텍스트 ──
+function updateText(id,text){
+  const n = NOTES.find(x=>x.id===id);
+  if(!n) return;
+  if(n.text === text) return;
+  n.text = text;
+  markDirty();
+}
+
+// ── 색상 팝업 ──
+let openPopup = null;
+function showColorPopup(id, anchorEl){
+  closeColorPopup();
+  const popup = document.createElement('div');
+  popup.className = 'color-popup';
+  popup.innerHTML = COLORS.map(c=>
+    `<span class="color-dot" style="background:${COLOR_HEX[c]}" onclick="setColor('${id}','${c}');closeColorPopup()" title="${c}"></span>`
+  ).join('');
+  document.body.appendChild(popup);
+  const rect = anchorEl.getBoundingClientRect();
+  let top = rect.bottom + 6;
+  let left = rect.left;
+  if(left + 160 > window.innerWidth) left = window.innerWidth - 165;
+  popup.style.top = top+'px';
+  popup.style.left = left+'px';
+  openPopup = popup;
+  setTimeout(()=>{
+    document.addEventListener('click', closeColorPopupOnOutside);
+  },50);
+}
+function closeColorPopup(){
+  if(openPopup){openPopup.remove();openPopup=null}
+  document.removeEventListener('click', closeColorPopupOnOutside);
+}
+function closeColorPopupOnOutside(e){
+  if(!e.target.closest('.color-popup') && !e.target.closest('[data-color-trigger]')){
+    closeColorPopup();
+  }
+}
+
+// ── 렌더 ──
+function escape(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function render(){
+  const canvas = document.getElementById('canvas');
+  const hint = document.getElementById('emptyHint');
+  if(!NOTES.length){
+    canvas.innerHTML = '';
+    hint.style.display = auth.currentUser ? 'block' : 'none';
+    return;
+  }
+  hint.style.display = 'none';
+  // 정렬해서 zIndex 순서대로 그림 (어차피 CSS z-index가 처리하지만)
+  canvas.innerHTML = NOTES.map(n=>{
+    const rot = n.rot || 0;
+    const fs = n.fontSize || 18;
+    const fw = n.weight || 500;
+    return `<div class="note color-${n.color||'cream'}"
+      data-id="${n.id}"
+      style="left:${n.x}px;top:${n.y}px;width:${n.w||200}px;height:${n.h||200}px;z-index:${n.z||1};transform:rotate(${rot}deg)">
+      <div class="note-controls">
+        <span class="note-grip">⋮⋮</span>
+        <button class="note-btn" data-color-trigger onclick="event.stopPropagation();showColorPopup('${n.id}',this)" title="색상">🎨</button>
+        <button class="note-btn" onclick="event.stopPropagation();changeFontSize('${n.id}',-1)" title="작게">A−</button>
+        <button class="note-btn" onclick="event.stopPropagation();changeFontSize('${n.id}',1)" title="크게">A+</button>
+        <button class="note-btn bold ${fw===700?'':''}" onclick="event.stopPropagation();cycleWeight('${n.id}')" title="굵기" style="font-weight:${fw===700?'bold':'normal'}">B</button>
+        <div class="note-controls-right">
+          <button class="note-btn delete" onclick="event.stopPropagation();deleteNote('${n.id}')" title="삭제">×</button>
+        </div>
+      </div>
+      <textarea
+        placeholder="메모..."
+        style="font-size:${fs}px;font-weight:${fw}"
+        oninput="updateText('${n.id}',this.value)"
+        onblur="flushSave()"
+        onfocus="bringToFront('${n.id}')"
+        onmousedown="event.stopPropagation()"
+        ontouchstart="event.stopPropagation()"
+      >${escape(n.text)}</textarea>
+      <div class="note-resize" data-resize="${n.id}"></div>
+    </div>`;
+  }).join('');
+  attachDragHandlers();
+}
+
+// ── 드래그 ──
+function attachDragHandlers(){
+  document.querySelectorAll('.note').forEach(el=>{
+    el.addEventListener('mousedown', startDrag);
+    el.addEventListener('touchstart', startDrag, {passive:false});
+  });
+}
+
+let dragState = null;
+function startDrag(e){
+  const target = e.target;
+  // textarea나 버튼은 드래그 시작 안 함
+  if(target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON') return;
+
+  const noteEl = e.currentTarget;
+  const id = noteEl.dataset.id;
+  const n = NOTES.find(x=>x.id===id);
+  if(!n) return;
+
+  // 리사이즈 핸들?
+  if(target.dataset.resize){
+    startResize(e, n, noteEl);
+    return;
+  }
+
+  e.preventDefault();
+  const pt = getPoint(e);
+  bringToFront(id);
+  noteEl.classList.add('dragging');
+
+  dragState = {
+    id, noteEl, note: n,
+    startX: pt.x, startY: pt.y,
+    origX: n.x, origY: n.y,
+    type: 'drag'
+  };
+
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchmove', onDrag, {passive:false});
+  document.addEventListener('touchend', endDrag);
+}
+
+function startResize(e, n, noteEl){
+  e.preventDefault();
+  e.stopPropagation();
+  const pt = getPoint(e);
+  dragState = {
+    id: n.id, noteEl, note: n,
+    startX: pt.x, startY: pt.y,
+    origW: n.w||200, origH: n.h||200,
+    type: 'resize'
+  };
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchmove', onDrag, {passive:false});
+  document.addEventListener('touchend', endDrag);
+}
+
+function onDrag(e){
+  if(!dragState) return;
+  e.preventDefault();
+  const pt = getPoint(e);
+  const dx = pt.x - dragState.startX;
+  const dy = pt.y - dragState.startY;
+  if(dragState.type === 'drag'){
+    const nx = dragState.origX + dx;
+    const ny = Math.max(54, dragState.origY + dy); // 헤더 아래로
+    dragState.noteEl.style.left = nx + 'px';
+    dragState.noteEl.style.top = ny + 'px';
+    dragState.note.x = nx;
+    dragState.note.y = ny;
+  }else if(dragState.type === 'resize'){
+    const nw = Math.max(120, dragState.origW + dx);
+    const nh = Math.max(120, dragState.origH + dy);
+    dragState.noteEl.style.width = nw + 'px';
+    dragState.noteEl.style.height = nh + 'px';
+    dragState.note.w = nw;
+    dragState.note.h = nh;
+  }
+}
+
+function endDrag(){
+  if(!dragState) return;
+  dragState.noteEl.classList.remove('dragging');
+  markDirty();
+  flushSave();
+  dragState = null;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', endDrag);
+  document.removeEventListener('touchmove', onDrag);
+  document.removeEventListener('touchend', endDrag);
+}
+
+function getPoint(e){
+  if(e.touches && e.touches[0]) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+  if(e.changedTouches && e.changedTouches[0]) return {x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY};
+  return {x:e.clientX, y:e.clientY};
+}
+
+// ── 페이지 닫기 시 강제 저장 ──
+window.addEventListener('beforeunload',()=>{ if(dirty) flushSave() });
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden' && dirty) flushSave();
+});
+window.addEventListener('pagehide',()=>{ if(dirty) flushSave() });
+
+// 초기 빈 캔버스 표시
+render();
+</script>
+</body>
+</html>
