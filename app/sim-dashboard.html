@@ -574,6 +574,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   cursor:pointer;font-family:inherit;font-weight:500;
 }
 .sticky-action-btn:hover{background:rgba(0,0,0,.18);color:#000}
+.sticky-action-btn.active{background:rgba(0,0,0,.35);color:#fff}
 .sticky-action-btn.danger:hover{background:#d94040;color:#fff}
 
 /* 텍스트 영역 — 손글씨 폰트 */
@@ -2691,6 +2692,7 @@ function renderStickyNotes(){
   grid.innerHTML=STICKY_NOTES.map((n,idx)=>{
     const safeText=(n.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const fs=n.fontSize||22;
+    const fw=n.fontWeight||500;
     const colorDots=['','#ffb8d6','#a5d4f5','#a8e6a3','#ffc685'].map((c,i)=>{
       if(i===0)return `<span class="sticky-color-dot" style="background:#ffe98a" onclick="setStickyColor('${n.id}','')" title="기본"></span>`;
       return `<span class="sticky-color-dot" style="background:${c}" onclick="setStickyColor('${n.id}','${STICKY_COLORS[i]}')" title="색상"></span>`;
@@ -2705,10 +2707,11 @@ function renderStickyNotes(){
         ${colorDots}
         <button class="sticky-action-btn" onclick="changeStickyFontSize('${n.id}',-1)" title="글자 작게">A−</button>
         <button class="sticky-action-btn" onclick="changeStickyFontSize('${n.id}',1)" title="글자 크게">A+</button>
+        <button class="sticky-action-btn ${fw===700?'active':''}" onclick="cycleStickyWeight('${n.id}')" title="글자 굵기" style="font-weight:bold">B</button>
         <button class="sticky-action-btn" onclick="copyStickyNote('${n.id}',this)" title="내용 복사">📋</button>
         <button class="sticky-action-btn danger" style="margin-left:auto" onclick="deleteStickyNote('${n.id}')" title="삭제">×</button>
       </div>
-      <textarea placeholder="여기에 메모를 적으세요..." style="font-size:${fs}px" oninput="updateStickyText('${n.id}',this.value)">${safeText}</textarea>
+      <textarea placeholder="여기에 메모를 적으세요..." style="font-size:${fs}px;font-weight:${fw}" oninput="updateStickyText('${n.id}',this.value)">${safeText}</textarea>
     </div>`;
   }).join('');
 }
@@ -2723,6 +2726,17 @@ function changeStickyFontSize(id,delta){
   saveStickyNotes();
   const note=document.querySelector(`.sticky-note[data-id="${id}"] textarea`);
   if(note)note.style.fontSize=next+'px';
+}
+
+function cycleStickyWeight(id){
+  const n=STICKY_NOTES.find(x=>x.id===id);
+  if(!n)return;
+  // 300(Light) → 500(Medium) → 700(Bold) → 300...
+  const cur=n.fontWeight||500;
+  const next=cur===300?500:cur===500?700:300;
+  n.fontWeight=next;
+  saveStickyNotes();
+  renderStickyNotes();
 }
 
 // ── 스티키 노트 드래그 순서 변경 ──
