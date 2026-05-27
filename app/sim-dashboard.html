@@ -1779,8 +1779,8 @@ function initGoogleTokenClient(forceConsent){
 }
 function connectGoogleWorkspace(){
   if(!initGoogleTokenClient(false))return;
-  // prompt:'' → 이미 동의한 경우 동의 화면 생략, 처음이면 자동으로 권한 요청
-  googleTokenClient.requestAccessToken({prompt:''});
+  // 계정 선택 화면 강제 표시 → 아내가 본인 계정으로 명시적 로그인
+  googleTokenClient.requestAccessToken({prompt:'select_account'});
 }
 function disconnectGoogleWorkspace(){
   if(googleAccessToken && window.google?.accounts?.oauth2){
