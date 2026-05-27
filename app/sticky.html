@@ -22,7 +22,7 @@
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
+html,body{min-height:100%;overflow:auto}
 body{
   font-family:'Gmarket Sans','Pretendard',system-ui,sans-serif;
   background:
@@ -73,7 +73,7 @@ body::before{
 .canvas{
   position:absolute;inset:0;
   padding-top:54px;
-  overflow:hidden;
+  overflow:visible;
   z-index:1;
 }
 
@@ -129,7 +129,7 @@ body::before{
 /* 노트 안의 텍스트 */
 .note textarea{
   flex:1;width:100%;
-  background:transparent;border:none;resize:none;outline:none;overflow-y:auto;
+  background:transparent;border:none;resize:none;outline:none;
   font-family:inherit;font-size:18px;font-weight:500;
   color:#1a1a18;line-height:1.4;
   letter-spacing:-.01em;
@@ -481,6 +481,15 @@ function closeColorPopupOnOutside(e){
   }
 }
 
+// ── 스크롤 영역 동적 확장 ──
+function updateScrollSize(){
+  if(!NOTES.length) return;
+  const maxY = Math.max(...NOTES.map(n=>(n.y||0)+(n.h||200))) + 120;
+  const maxX = Math.max(...NOTES.map(n=>(n.x||0)+(n.w||200))) + 120;
+  document.body.style.minHeight = maxY + 'px';
+  document.body.style.minWidth  = maxX + 'px';
+}
+
 // ── 렌더 ──
 function escape(s){
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -526,6 +535,7 @@ function render(){
     </div>`;
   }).join('');
   attachDragHandlers();
+  updateScrollSize();
 }
 
 // ── 드래그 ──
@@ -615,6 +625,7 @@ function endDrag(){
   dragState.noteEl.classList.remove('dragging');
   markDirty();
   flushSave();
+  updateScrollSize();
   dragState = null;
   document.removeEventListener('mousemove', onDrag);
   document.removeEventListener('mouseup', endDrag);
