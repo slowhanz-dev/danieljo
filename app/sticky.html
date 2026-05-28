@@ -69,8 +69,8 @@ body::before{
 .toolbar-btn.primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
 .toolbar-btn.primary:hover{background:#000}
 .toolbar-status{font-size:11px;color:rgba(0,0,0,.45);margin-left:4px}
-.toolbar-time{font-size:11px;color:rgba(0,0,0,.7);font-variant-numeric:tabular-nums;font-weight:500;margin-left:6px}
-.toolbar-update{font-size:9px;color:rgba(0,0,0,.4);font-variant-numeric:tabular-nums;letter-spacing:.04em;text-transform:uppercase;margin-left:4px}
+.toolbar-time{font-size:13px;color:#1a1a18;font-variant-numeric:tabular-nums;font-weight:500;margin-right:4px}
+.toolbar-update{font-size:8px;color:rgba(0,0,0,.4);font-variant-numeric:tabular-nums;letter-spacing:.04em;margin-left:4px}
 
 /* 캔버스 */
 .canvas{
@@ -252,10 +252,10 @@ body::before{
 
 <div class="toolbar">
   <div class="toolbar-title">📌 스티키 보드</div>
-  <span class="toolbar-time" id="currentTime"></span>
   <span class="toolbar-update" id="lastUpdate"></span>
   <span class="toolbar-status" id="status"></span>
   <div class="toolbar-spacer"></div>
+  <span class="toolbar-time" id="currentTime"></span>
   <button class="toolbar-btn" id="loginBtn" onclick="login()">로그인</button>
   <button class="toolbar-btn" id="logoutBtn" onclick="logout()" style="display:none">로그아웃</button>
   <button class="toolbar-btn primary" id="addBtn" onclick="addNote()" style="display:none">+ 새 메모</button>
@@ -361,7 +361,7 @@ function startListener(){
         const lu = document.getElementById('lastUpdate');
         if(lu){
           const dt = d.updatedAt.toDate();
-          lu.textContent = `LAST UPDATE ${String(dt.getFullYear()).slice(2)}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+          lu.textContent = `Last update ${String(dt.getFullYear()).slice(2)}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
         }
       }
     }else{
@@ -696,24 +696,23 @@ render();
 
 // ── 헤더 시계 + LAST UPDATE ──
 function pad(n){return String(n).padStart(2,'0')}
-function fmtTime(d){return `${pad(d.getHours())}:${pad(d.getMinutes())}`}
-function fmtDate(d){return `${pad(d.getMonth()+1)}/${pad(d.getDate())}`}
+function fmtTime(d){return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`}
 function fmtFull(d){return `${String(d.getFullYear()).slice(2)}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`}
 function updateClock(){
   const el = document.getElementById('currentTime');
   if(!el) return;
   const d = new Date();
-  el.textContent = `${fmtDate(d)} ${fmtTime(d)}`;
+  el.textContent = `${d.getMonth()+1}월 ${d.getDate()}일 ${fmtTime(d)}`;
 }
 updateClock();
-setInterval(updateClock, 30000); // 30초마다 갱신
+setInterval(updateClock, 1000);
 
 // 저장 시점마다 LAST UPDATE 갱신
 const _origFlush = flushSave;
 flushSave = async function(){
   await _origFlush();
   const el = document.getElementById('lastUpdate');
-  if(el) el.textContent = `LAST UPDATE ${fmtFull(new Date())}`;
+  if(el) el.textContent = `Last update ${fmtFull(new Date())}`;
 };
 </script>
 </body>
