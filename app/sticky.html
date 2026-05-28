@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📌 스티키 보드</title>
 <style>
 @font-face{
@@ -69,12 +69,16 @@ body::before{
 .toolbar-btn.primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
 .toolbar-btn.primary:hover{background:#000}
 .toolbar-status{font-size:11px;color:rgba(0,0,0,.45);margin-left:4px}
+.toolbar-time{font-size:11px;color:rgba(0,0,0,.7);font-variant-numeric:tabular-nums;font-weight:500;margin-left:6px}
+.toolbar-update{font-size:9px;color:rgba(0,0,0,.4);font-variant-numeric:tabular-nums;letter-spacing:.04em;text-transform:uppercase;margin-left:4px}
 
 /* 캔버스 */
 .canvas{
-  position:absolute;inset:0;
-  padding-top:54px;
-  overflow:hidden;
+  position:relative;
+  width:100%;
+  min-height:calc(100vh - 54px);
+  margin-top:54px;
+  overflow:visible;
   z-index:1;
 }
 
@@ -234,6 +238,9 @@ body::before{
   .toolbar{padding:10px 12px;gap:6px}
   .toolbar-btn{padding:7px 12px;font-size:12px}
   .toolbar-title{font-size:13px}
+  .toolbar-status{display:none}
+  .toolbar-update{display:none}
+  .toolbar-time{font-size:10px}
   .note{width:170px;height:170px;padding:34px 12px 14px;font-size:15px}
   .note textarea{font-size:15px}
   .note-controls{top:5px;left:7px;right:7px;gap:3px}
@@ -245,6 +252,8 @@ body::before{
 
 <div class="toolbar">
   <div class="toolbar-title">📌 스티키 보드</div>
+  <span class="toolbar-time" id="currentTime"></span>
+  <span class="toolbar-update" id="lastUpdate"></span>
   <span class="toolbar-status" id="status"></span>
   <div class="toolbar-spacer"></div>
   <button class="toolbar-btn" id="loginBtn" onclick="login()">로그인</button>
@@ -347,6 +356,14 @@ function startListener(){
       NOTES = Array.isArray(d.notes) ? d.notes : [];
       // zIndex 최대값 갱신
       zMax = NOTES.reduce((m,n)=>Math.max(m,n.z||1),1);
+      // 서버 updatedAt → LAST UPDATE 표시
+      if(d.updatedAt && d.updatedAt.toDate){
+        const lu = document.getElementById('lastUpdate');
+        if(lu){
+          const dt = d.updatedAt.toDate();
+          lu.textContent = `LAST UPDATE ${String(dt.getFullYear()).slice(2)}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+        }
+      }
     }else{
       NOTES = [];
     }
@@ -554,6 +571,16 @@ function render(){
       <div class="note-resize" data-resize="${n.id}"></div>
     </div>`;
   }).join('');
+  // 캔버스 크기 자동 확장 — 가장 멀리 있는 노트 + 여유공간
+  let maxX=0, maxY=0;
+  NOTES.forEach(n=>{
+    const rx = (n.x||0) + (n.w||200);
+    const ry = (n.y||0) + (n.h||200);
+    if(rx>maxX) maxX=rx;
+    if(ry>maxY) maxY=ry;
+  });
+  canvas.style.width = Math.max(window.innerWidth, maxX+300) + 'px';
+  canvas.style.height = Math.max(window.innerHeight-54, maxY+300) + 'px';
   attachDragHandlers();
 }
 
@@ -666,6 +693,28 @@ window.addEventListener('pagehide',()=>{ if(dirty) flushSave() });
 
 // 초기 빈 캔버스 표시
 render();
+
+// ── 헤더 시계 + LAST UPDATE ──
+function pad(n){return String(n).padStart(2,'0')}
+function fmtTime(d){return `${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function fmtDate(d){return `${pad(d.getMonth()+1)}/${pad(d.getDate())}`}
+function fmtFull(d){return `${String(d.getFullYear()).slice(2)}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function updateClock(){
+  const el = document.getElementById('currentTime');
+  if(!el) return;
+  const d = new Date();
+  el.textContent = `${fmtDate(d)} ${fmtTime(d)}`;
+}
+updateClock();
+setInterval(updateClock, 30000); // 30초마다 갱신
+
+// 저장 시점마다 LAST UPDATE 갱신
+const _origFlush = flushSave;
+flushSave = async function(){
+  await _origFlush();
+  const el = document.getElementById('lastUpdate');
+  if(el) el.textContent = `LAST UPDATE ${fmtFull(new Date())}`;
+};
 </script>
 </body>
 </html>
