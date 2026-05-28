@@ -22,7 +22,8 @@
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;overflow:auto}
+html,body{height:100%}
+body{overflow:auto}
 body{
   font-family:'Gmarket Sans','Pretendard',system-ui,sans-serif;
   background:
@@ -73,7 +74,7 @@ body::before{
 .canvas{
   position:absolute;inset:0;
   padding-top:54px;
-  overflow:visible;
+  overflow:hidden;
   z-index:1;
 }
 
@@ -161,6 +162,9 @@ body::before{
 .note-btn:hover{background:rgba(0,0,0,.2);color:#000}
 .note-btn.bold{font-weight:bold}
 .note-btn.delete:hover{background:#d94040;color:#fff}
+.note-btn.done-toggle.active{background:#1a1a18;color:#fff}
+.note.done{opacity:.3;transition:opacity .2s}
+.note.done:hover{opacity:.55}
 
 /* 색상 점들 */
 .note-palette{
@@ -212,13 +216,28 @@ body::before{
 }
 .color-popup .color-dot{width:24px;height:24px}
 
-/* 모바일 */
+/* 모바일/태블릿 친화 */
+@media(hover:none),(max-width:900px){
+  /* 컨트롤 항상 보이게 (호버 안 됨) */
+  .note-controls{opacity:1}
+  .note-resize{opacity:.45}
+  /* 터치 버튼 크기 ↑ */
+  .note-btn{padding:4px 9px;font-size:11px}
+  .color-dot{width:14px;height:14px}
+  /* 리사이즈 핸들 더 크게 */
+  .note-resize{width:22px;height:22px}
+  /* 색상 팝업 그리드 크게 */
+  .color-popup{padding:12px;gap:8px}
+  .color-popup .color-dot{width:30px;height:30px}
+}
 @media(max-width:700px){
   .toolbar{padding:10px 12px;gap:6px}
-  .toolbar-btn{padding:5px 10px;font-size:11px}
+  .toolbar-btn{padding:7px 12px;font-size:12px}
   .toolbar-title{font-size:13px}
-  .note{width:160px;height:160px;padding:28px 12px 12px;font-size:15px}
+  .note{width:170px;height:170px;padding:34px 12px 14px;font-size:15px}
   .note textarea{font-size:15px}
+  .note-controls{top:5px;left:7px;right:7px;gap:3px}
+  .note-grip{display:none} /* 모바일에서는 노트 전체가 드래그 가능하니 그립 숨김 */
 }
 </style>
 </head>
@@ -417,6 +436,15 @@ function cycleWeight(id){
   render();
 }
 
+function toggleDone(id){
+  const n = NOTES.find(x=>x.id===id);
+  if(!n) return;
+  n.done = !n.done;
+  markDirty();
+  flushSave();
+  render();
+}
+
 function changeFontSize(id,delta){
   const n = NOTES.find(x=>x.id===id);
   if(!n) return;
@@ -481,15 +509,6 @@ function closeColorPopupOnOutside(e){
   }
 }
 
-// ── 스크롤 영역 동적 확장 ──
-function updateScrollSize(){
-  if(!NOTES.length) return;
-  const maxY = Math.max(...NOTES.map(n=>(n.y||0)+(n.h||200))) + 120;
-  const maxX = Math.max(...NOTES.map(n=>(n.x||0)+(n.w||200))) + 120;
-  document.body.style.minHeight = maxY + 'px';
-  document.body.style.minWidth  = maxX + 'px';
-}
-
 // ── 렌더 ──
 function escape(s){
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -509,15 +528,16 @@ function render(){
     const rot = n.rot || 0;
     const fs = n.fontSize || 18;
     const fw = n.weight || 500;
-    return `<div class="note color-${n.color||'cream'}"
+    return `<div class="note color-${n.color||'cream'} ${n.done?'done':''}"
       data-id="${n.id}"
       style="left:${n.x}px;top:${n.y}px;width:${n.w||200}px;height:${n.h||200}px;z-index:${n.z||1};transform:rotate(${rot}deg)">
       <div class="note-controls">
         <span class="note-grip">⋮⋮</span>
+        <button class="note-btn done-toggle ${n.done?'active':''}" onclick="event.stopPropagation();toggleDone('${n.id}')" title="${n.done?'완료 해제':'완료 표시'}">✓</button>
         <button class="note-btn" data-color-trigger onclick="event.stopPropagation();showColorPopup('${n.id}',this)" title="색상">🎨</button>
         <button class="note-btn" onclick="event.stopPropagation();changeFontSize('${n.id}',-1)" title="작게">A−</button>
         <button class="note-btn" onclick="event.stopPropagation();changeFontSize('${n.id}',1)" title="크게">A+</button>
-        <button class="note-btn bold ${fw===700?'':''}" onclick="event.stopPropagation();cycleWeight('${n.id}')" title="굵기" style="font-weight:${fw===700?'bold':'normal'}">B</button>
+        <button class="note-btn bold" onclick="event.stopPropagation();cycleWeight('${n.id}')" title="굵기" style="font-weight:${fw===700?'bold':'normal'}">B</button>
         <div class="note-controls-right">
           <button class="note-btn delete" onclick="event.stopPropagation();deleteNote('${n.id}')" title="삭제">×</button>
         </div>
@@ -535,7 +555,6 @@ function render(){
     </div>`;
   }).join('');
   attachDragHandlers();
-  updateScrollSize();
 }
 
 // ── 드래그 ──
@@ -625,7 +644,6 @@ function endDrag(){
   dragState.noteEl.classList.remove('dragging');
   markDirty();
   flushSave();
-  updateScrollSize();
   dragState = null;
   document.removeEventListener('mousemove', onDrag);
   document.removeEventListener('mouseup', endDrag);
