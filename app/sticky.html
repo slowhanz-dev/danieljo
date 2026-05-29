@@ -106,7 +106,7 @@ body::before{
     14px 22px 36px rgba(0,0,0,.14);
   z-index:9999 !important;
 }
-.note.focused{outline:2px solid rgba(50,120,220,.3);outline-offset:2px}
+.note.focused{outline:2px solid rgba(50,120,220,.25);outline-offset:1px}
 
 /* 색상 팔레트 — 다니엘 지정 16색 */
 .note.color-white   {background:#F5F6F8;border:1px solid rgba(0,0,0,.05)}
@@ -222,9 +222,10 @@ body::before{
 
 /* 모바일/태블릿 친화 */
 @media(hover:none),(max-width:900px){
-  /* 컨트롤 항상 보이게 (호버 안 됨) */
-  .note-controls{opacity:1}
-  .note-resize{opacity:.45}
+  /* 컨트롤은 선택된(focused) 노트에서만 보임 */
+  .note.focused .note-controls{opacity:1}
+  .note-resize{opacity:0}
+  .note.focused .note-resize{opacity:.45}
   /* 터치 버튼 크기 ↑ */
   .note-btn{padding:4px 9px;font-size:11px}
   .color-dot{width:14px;height:14px}
@@ -480,11 +481,27 @@ function bringToFront(id){
   if(!n) return;
   zMax++;
   n.z = zMax;
+  // 모든 노트 focused 제거 → 이 노트만 추가
+  document.querySelectorAll('.note.focused').forEach(el=>el.classList.remove('focused'));
   const el = document.querySelector(`.note[data-id="${id}"]`);
-  if(el) el.style.zIndex = zMax;
+  if(el){
+    el.style.zIndex = zMax;
+    el.classList.add('focused');
+  }
   markDirty();
-  // 즉시 저장 안 함 — 드래그 끝났을 때 같이 저장
 }
+
+// 노트 바깥 (빈 캔버스, 헤더) 클릭 시 focused 해제
+document.addEventListener('mousedown',e=>{
+  if(!e.target.closest('.note') && !e.target.closest('.color-popup')){
+    document.querySelectorAll('.note.focused').forEach(el=>el.classList.remove('focused'));
+  }
+});
+document.addEventListener('touchstart',e=>{
+  if(!e.target.closest('.note') && !e.target.closest('.color-popup')){
+    document.querySelectorAll('.note.focused').forEach(el=>el.classList.remove('focused'));
+  }
+},{passive:true});
 
 // ── 텍스트 ──
 function updateText(id,text){
