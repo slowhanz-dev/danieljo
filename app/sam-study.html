@@ -11,7 +11,7 @@
 
 <!-- Roblox-style favicon SVG -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%231565C0'/><rect x='15' y='15' width='70' height='70' rx='10' fill='%23FF3E3E'/><text y='72' x='50' text-anchor='middle' font-size='58' font-family='Arial Black'>S</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%231565C0'/><rect x='20' y='20' width='140' height='140' rx='24' fill='%23FF3E3E'/><text y='130' x='90' text-anchor='middle' font-size='100' font-family='Arial Black' fill='white'>S</text></svg>">
+
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -396,6 +396,8 @@ body::after{
 }
 .btn-out{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer}
 .greeting{font-size:12px;color:rgba(255,255,255,.7);padding:0 2px}
+.header-bottom-row{display:flex;justify-content:space-between;align-items:center}
+.last-updated{font-size:10px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:10px}
 
 /* ── 탭 바 ── */
 .tab-bar{
@@ -575,7 +577,8 @@ body::after{
   border-radius:20px;padding:5px 12px;font-size:12px;color:var(--cyan);font-weight:500;
 }
 
-.tt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:420px){.tt-grid{grid-template-columns:repeat(3,1fr)}}
 .tt-col{
   background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
   padding:10px;overflow:hidden;
@@ -642,6 +645,34 @@ body::after{
 .fx-piece{position:absolute;top:-20px;animation:fxFall linear forwards}
 @keyframes fxFall{0%{transform:translateY(0) rotate(0) scale(1);opacity:1}100%{transform:translateY(100vh) rotate(540deg) scale(.4);opacity:0}}
 </style>
+<script>
+// iOS 홈화면 아이콘 동적 생성
+(function(){
+  try{
+    var c=document.createElement("canvas");c.width=180;c.height=180;
+    var ctx=c.getContext("2d");
+    // 배경
+    var g=ctx.createLinearGradient(0,0,180,180);
+    g.addColorStop(0,"#1565C0");g.addColorStop(1,"#0D47A1");
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.roundRect(0,0,180,180,40);ctx.fill();
+    // 빨간 블록
+    var g2=ctx.createLinearGradient(20,20,160,160);
+    g2.addColorStop(0,"#FF3E3E");g2.addColorStop(1,"#CC0000");
+    ctx.fillStyle=g2;
+    ctx.beginPath();ctx.roundRect(20,20,140,140,24);ctx.fill();
+    // S 텍스트
+    ctx.fillStyle="#FFFFFF";
+    ctx.font="bold 100px Arial Black,Arial";
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText("S",90,95);
+    var link=document.createElement("link");
+    link.rel="apple-touch-icon";
+    link.href=c.toDataURL("image/png");
+    document.head.appendChild(link);
+  }catch(e){}
+})();
+</script>
 </head>
 <body>
 
@@ -673,13 +704,13 @@ body::after{
         <button class="btn-out" onclick="logout()">로그아웃</button>
       </div>
     </div>
-    <div class="greeting" id="user-greeting">Sam 님, 오늘도 파이팅!</div>
+    <div class="header-bottom-row"><div class="greeting" id="user-greeting">Sam 님, 오늘도 파이팅!</div><div class="last-updated" id="last-updated">-</div></div>
   </div>
 
   <!-- 탭 바 -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">🏠 홈</button>
-    <button class="tab-btn" data-tab="quest" onclick="switchTab('quest')">⚔️ 퀘스트</button>
+    <button class="tab-btn" data-tab="quest" onclick="switchTab('quest')">📚 공부목록</button>
     <button class="tab-btn" data-tab="timetable" onclick="switchTab('timetable')">📅 시간표</button>
   </div>
 
@@ -726,7 +757,7 @@ body::after{
     <!-- ─── 퀘스트 탭 ─── -->
     <div id="tab-quest" style="display:none">
       <div class="sec-header">
-        <div class="sec-title">⚔️ 내 퀘스트 목록</div>
+        <div class="sec-title">📚 내 공부 목록</div>
         <button class="btn-add" onclick="openAddModal()">+ 추가</button>
       </div>
       <div id="subject-list"></div>
@@ -747,7 +778,7 @@ body::after{
 <div class="modal-wrap" id="add-modal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">➕ 새 퀘스트 추가</div>
+    <div class="modal-title">➕ 새 수업 추가</div>
     <div class="modal-row">
       <div class="modal-label">아이콘</div>
       <div class="icon-row">
