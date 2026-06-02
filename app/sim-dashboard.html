@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>현경 · 업무 현황판</title>
+<title>SIM · 업무 현황판</title>
 <meta name="theme-color" content="#1a1a18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -623,7 +623,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;background:var(--bg);color:va
   font-weight:500;
   letter-spacing:-.01em;
   overflow:hidden;
-  min-height:100px;
+  display:block;
 }
 .sticky-note textarea::placeholder{
   color:rgba(0,0,0,.3);
@@ -2690,11 +2690,15 @@ function updateStickyText(id,text){
 // textarea를 내용 길이에 맞게 자동 확장
 function autoResizeStickyTextarea(ta){
   if(!ta)return;
-  ta.style.height='auto';
-  ta.style.height=Math.max(100,ta.scrollHeight)+'px';
+  ta.style.height='0px';
+  ta.style.height=(ta.scrollHeight+2)+'px';
 }
 function autoResizeAllStickyTextareas(){
   document.querySelectorAll('.sticky-note textarea').forEach(autoResizeStickyTextarea);
+}
+// 폰트 로드 후 한 번 더 (한글 폰트 늦게 로딩되면 처음 측정이 부정확함)
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(()=>autoResizeAllStickyTextareas());
 }
 
 function deleteStickyNote(id){
