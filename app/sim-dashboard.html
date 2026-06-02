@@ -2900,9 +2900,9 @@ function rearrangeLayoutForSim(){
   const digest=document.getElementById('digest');
   const inbox=document.getElementById('inboxBox');
   const sticky=document.getElementById('stickySection');
-  // Tasks(잔업)를 스티키 노트 바로 다음에 배치
+  // Tasks(잔업)를 스티키 노트 바로 위에 배치
   if(main&&sticky&&inbox&&sticky.parentNode===main){
-    main.insertBefore(inbox,sticky.nextSibling);
+    main.insertBefore(inbox,sticky);
   }
   // Calendar는 맨 아래
   if(main&&digest&&digest.parentNode===main)main.appendChild(digest);
