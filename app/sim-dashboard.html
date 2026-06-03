@@ -2900,16 +2900,20 @@ function rearrangeLayoutForSim(){
   const digest=document.getElementById('digest');
   const inbox=document.getElementById('inboxBox');
   const sticky=document.getElementById('stickySection');
+  const projects=document.getElementById('projectsSection');
   const oneThing=document.querySelector('.one-thing-panel');
-  // 순서: One Thing → 캘린더(digest) → 스티키 → Tasks(inbox)
-  if(main&&oneThing&&digest){
-    main.insertBefore(digest,oneThing.nextSibling);
+  // 순서: One Thing → 오늘의 할일(projects) → 스티키 → 캘린더 → Tasks
+  if(main&&oneThing&&projects){
+    main.insertBefore(projects,oneThing.nextSibling);
   }
-  if(main&&digest&&sticky){
-    main.insertBefore(sticky,digest.nextSibling);
+  if(main&&projects&&sticky){
+    main.insertBefore(sticky,projects.nextSibling);
   }
-  if(main&&sticky&&inbox){
-    main.insertBefore(inbox,sticky.nextSibling);
+  if(main&&sticky&&digest){
+    main.insertBefore(digest,sticky.nextSibling);
+  }
+  if(main&&digest&&inbox){
+    main.insertBefore(inbox,digest.nextSibling);
   }
 }
 
