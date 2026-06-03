@@ -2900,12 +2900,17 @@ function rearrangeLayoutForSim(){
   const digest=document.getElementById('digest');
   const inbox=document.getElementById('inboxBox');
   const sticky=document.getElementById('stickySection');
-  // Tasks(잔업)를 스티키 노트 바로 위에 배치
-  if(main&&sticky&&inbox&&sticky.parentNode===main){
-    main.insertBefore(inbox,sticky);
+  const oneThing=document.querySelector('.one-thing-panel');
+  // 순서: One Thing → 캘린더(digest) → 스티키 → Tasks(inbox)
+  if(main&&oneThing&&digest){
+    main.insertBefore(digest,oneThing.nextSibling);
   }
-  // Calendar는 맨 아래
-  if(main&&digest&&digest.parentNode===main)main.appendChild(digest);
+  if(main&&digest&&sticky){
+    main.insertBefore(sticky,digest.nextSibling);
+  }
+  if(main&&sticky&&inbox){
+    main.insertBefore(inbox,sticky.nextSibling);
+  }
 }
 
 // 지원사업 박스가 다른 코드에 의해 다시 표시되지 않도록 차단
