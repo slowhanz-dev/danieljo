@@ -5,14 +5,19 @@
 <script>
 'use strict';
 const CLIENT_ID="281308186420-orapn1qc6687or4bimjlv864ke3ed9ii.apps.googleusercontent.com";
-const SCOPES='openid email https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/calendar.readonly';
+const LEGACY_SCOPES='openid email https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/calendar.readonly';
 const params=new URLSearchParams(location.search);
+const readOnly=params.get('mode')==='tasks-read';
+const SCOPES=readOnly?'openid email https://www.googleapis.com/auth/tasks.readonly':LEGACY_SCOPES;
+let hint='',selectAccount=!readOnly,optionsReady=!readOnly;
 const state=params.get('state')||'';
 const target=params.get('return_origin')||'';
 const valid=target==='https://os.bunnar.com'&&/^[a-zA-Z0-9_-]{16,128}$/.test(state)&&Boolean(window.opener);
 const button=document.getElementById('connect');
 const status=document.getElementById('status');
 let oauth=null;
+function ready(){button.disabled=!oauth||!optionsReady;}
+if(readOnly){document.querySelector('h1').textContent='분나 OS · Google Tasks 조회 연결';document.querySelector('main>p').textContent='할 일 조회만 연결합니다. 분나 OS 로그인은 변경되지 않습니다.';window.addEventListener('message',event=>{if(!valid||event.origin!==target||event.source!==window.opener||event.data?.type!=='bunnar-google-options'||event.data.state!==state)return;hint=typeof event.data.hint==='string'?event.data.hint.slice(0,300):'';selectAccount=event.data.selectAccount===true;optionsReady=true;ready();});if(valid)window.opener.postMessage({type:'bunnar-google-ready',state},target);}
 function show(text){status.textContent=text;}
 function deliver(value){if(valid&&window.opener)window.opener.postMessage({type:'bunnar-google-token',state,...value},target);}
 if(!valid){show('분나 OS의 Google 연결 버튼에서 이 창을 열어 주세요.');}
@@ -21,15 +26,16 @@ else{
  script.onerror=()=>show('Google 연결 모듈을 불러오지 못했습니다. 창을 닫고 다시 연결해 주세요.');
  script.onload=()=>{
   if(!window.google?.accounts?.oauth2){show('Google 연결 모듈을 확인하지 못했습니다. 다시 연결해 주세요.');return;}
-  oauth=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,error_callback:()=>{button.disabled=false;show('Google 로그인 창이 닫혔거나 열리지 않았습니다. 연결 버튼을 다시 눌러 주세요.');},callback:response=>{
+  oauth=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,...(readOnly?{include_granted_scopes:false}:{}),error_callback:()=>{button.disabled=false;show('Google 로그인 창이 닫혔거나 열리지 않았습니다. 연결 버튼을 다시 눌러 주세요.');},callback:response=>{
    if(response.error||!response.access_token){show('Google 연결이 취소되었습니다.');deliver({error:'cancelled'});return;}
-   if(!google.accounts.oauth2.hasGrantedAllScopes(response,'https://www.googleapis.com/auth/tasks','https://www.googleapis.com/auth/calendar.readonly')){show('할 일과 일정 접근 권한이 필요합니다.');deliver({error:'missing_scope'});return;}
+   if(!google.accounts.oauth2.hasGrantedAllScopes(response,...(readOnly?['https://www.googleapis.com/auth/tasks.readonly']:['https://www.googleapis.com/auth/tasks','https://www.googleapis.com/auth/calendar.readonly']))){show(readOnly?'할 일 조회 권한이 필요합니다.':'할 일과 일정 접근 권한이 필요합니다.');deliver({error:'missing_scope'});return;}
    show('연결했습니다. 작업대로 돌아가는 중…');
    deliver({token:{access_token:response.access_token,expires_in:Number(response.expires_in)||3600,scope:response.scope||''}});
   }});
-  button.disabled=false;show('아래 버튼을 눌러 사용할 Google 계정을 선택하세요.');
+  ready();show(readOnly?'아래 버튼을 눌러 Google 연결을 이어가세요.':'아래 버튼을 눌러 사용할 Google 계정을 선택하세요.');
  };
  document.head.appendChild(script);
- button.addEventListener('click',()=>{if(!oauth)return;button.disabled=true;show('Google 계정 선택과 권한 확인을 진행해 주세요.');oauth.requestAccessToken({prompt:'select_account'});});
+ button.addEventListener('click',()=>{if(!oauth)return;button.disabled=true;show(readOnly?'Google 연결을 확인하고 있습니다.':'Google 계정 선택과 권한 확인을 진행해 주세요.');oauth.requestAccessToken({prompt:selectAccount?'select_account':'',...(hint?{hint}:{})});});
 }
 </script></body></html>
+
