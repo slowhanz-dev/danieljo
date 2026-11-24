@@ -3,7 +3,7 @@
  * 저장소에는 민감정보(고객·은행·송금증)를 포함하지 않습니다.
  */
 'use strict';
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.2.0';
 const SCHEMA = 'bunnar.export/1';
 const LS_KEY = 'bunnar-export-v1';
 
@@ -30,7 +30,7 @@ const COUNTRY_CC = { australia: 'AU', taiwan: 'TW', japan: 'JP', 'united states'
 /* ============================== defaults ============================== */
 function defaultSettings() {
   return {
-    seller: { company: 'BETTERHAND (BUNNAR)', address: '', regNo: '', email: '', web: 'www.bunnar.com', phone: '', signer: '' },
+    seller: { company: 'BETTERHAND (BUNNAR)', address: '', regNo: '', email: '', web: 'www.bunnar.com', phone: '', signer: '', customsCode: '' },
     bank: { bank: '', swift: '', beneficiary: '', account: '', note: '' },
     pricing: {
       tiers: [
@@ -42,7 +42,7 @@ function defaultSettings() {
       moqNote: '최소 주문 수량 산정 방식·제품별 최소 수량은 추후 확정 (확인 필요)',
     },
     defaults: { incoterms: '', origin: 'Republic of Korea', dimDivisor: 5000, shipRequires: 'full' },
-    logo: '',
+    logo: '', setup: {}, lastBackup: '',
   };
 }
 const P = (sku, nameEn, nameKo) => ({ id: 'p_' + sku, sku, nameEn, nameKo, priceKrw: 0, piecesPerSet: 2, weightKg: 0, stock: 0, hsCode: '', hsStatus: 'pending' });
@@ -61,6 +61,8 @@ function defaultVerify() {
     { key: 'zero', label: '영세율 적용 여부 (Zero-rated VAT)', status: 'pending', note: '' },
     { key: 'perf', label: '직접 수출실적 인정 여부 (Export record)', status: 'pending', note: '' },
     { key: 'inco', label: '인코텀즈·운임 부담 조건 (Incoterms)', status: 'pending', note: '' },
+    { key: 'control', label: '세관장확인대상·전략물자 해당 여부', status: 'pending', note: '' },
+    { key: 'refund', label: '관세환급 신청 (수출신고 수리일로부터 2년 이내)', status: 'pending', note: '' },
   ];
 }
 
@@ -80,12 +82,16 @@ function migrate(s) {
   const d = defaultSettings();
   s.settings = Object.assign(d, s.settings || {});
   for (const k of ['seller', 'bank', 'pricing', 'defaults']) s.settings[k] = Object.assign(defaultSettings()[k], s.settings[k] || {});
+  s.settings.setup = s.settings.setup || {};
   s.products = s.products || [];
   s.deals = (s.deals || []).map(normDeal);
   return s;
 }
 function normDeal(d) {
-  return Object.assign({ items: [], charges: [], payments: [], shipments: [], docs: [], files: [], logs: [], checks: {}, verify: defaultVerify(), settlement: { costs: [], note: '' }, todo: '', archived: false }, d);
+  d = Object.assign({ items: [], charges: [], payments: [], shipments: [], docs: [], files: [], logs: [], checks: {}, verify: defaultVerify(), settlement: { costs: [], note: '' }, todo: '', archived: false, buyerCheck: {} }, d);
+  for (const v of defaultVerify()) if (!d.verify.some(x => x.key === v.key)) d.verify.push(v);
+  for (const s of d.shipments) { if (s.declMode === 'courier') s.declMode = 'express'; if (s.declMode === 'none') s.declMode = 'agent'; if (s.declDate === undefined) s.declDate = ''; }
+  return d;
 }
 let saveTimer = null;
 function save() {
@@ -177,7 +183,18 @@ function shipSummary(d, s) {
   };
 }
 const METHOD = { DHL: 'DHL Express', EMS: 'EMS', forwarder: '국내 지정 물류업체 인도', other: '기타 운송' };
-const DECL = { unset: '확인 필요', formal: '정식 수출신고 (필증)', courier: '특송 간이·목록 신고', none: '신고 대상 아님 / 물류업체 처리' };
+const DECL = { unset: '확인 필요', formal: '정식 수출신고 (일반 수출통관 · 필증 발급)', simple: '간이 수출신고 (전자상거래 · FOB 400만원 이하)', express: '특송 목록통관 (FOB 200만원 이하 · 필증 없음)', post: '우편물 목록통관 (FOB 200만원 이하 · 필증 없음)', agent: '포워더·관세사가 신고 대행 (필증 사본 받기)' };
+/* KOTRA p.102 수출신고 종류 비교 */
+const DECL_INFO = {
+  formal: { pil: true, limit: null, note: '금액 제한 없음. 수출신고필증 발급 → 수출실적·영세율·관세환급·재수입 면세 모두 가능. 특송(DHL)으로 보낼 때는 특송사에 필증을 전달해 일반화물로 적재 등록해야 합니다.' },
+  simple: { pil: true, limit: 4000000, note: '전자상거래 물품 대상, FOB 400만원 이하. 필증 발급, 관세환급·재수입 면세 가능 (일부 거래형태는 실적 불인정).' },
+  express: { pil: false, limit: 2000000, note: '특송사가 목록으로 신고. FOB 200만원 이하만 가능. 수출신고필증 없음 → 관세환급·재수입 면세 불가. 수출실적은 HS코드·사업자번호를 기재해야 인정.' },
+  post: { pil: false, limit: 2000000, note: '우편물(EMS 등) 목록. FOB 200만원 이하만 가능. 필증 없음 → 수출실적·관세환급·재수입 면세 불가.' },
+  agent: { pil: true, limit: null, note: '포워더 또는 관세사가 우리 회사를 수출자로 신고하는 경우. 반드시 수출신고필증 사본을 받아 첨부하세요. 국내 물류업체에 인도만 하는 경우 직접 수출실적 인정 여부는 확인 필요.' },
+};
+const needsPil = s => !!DECL_INFO[s.declMode]?.pil;
+function shipKrw(d, s) { return Math.round(shipSummary(d, s).value * num(d.pricing.fxRate)); }
+function loadDeadline(s) { return s.declDate ? addDays(s.declDate, 30) : ''; }
 const isIntl = s => s.method === 'DHL' || s.method === 'EMS';
 
 /* 출고 조건 (Shipping gate) */
@@ -198,6 +215,10 @@ function shipGate(d, s) {
   }
   if (s.method === 'DHL' && s.account === 'buyer') g.push({ ok: !!s.accountApproved && !!(s.approvalRef || '').trim(), t: 'DHL 고객 계정 사용 승인 확인 + 승인 근거 입력' });
   g.push({ ok: s.declMode && s.declMode !== 'unset', t: `수출신고 방식 결정 (${DECL[s.declMode || 'unset']})` });
+  const info = DECL_INFO[s.declMode], krwv = shipKrw(d, s);
+  if (info?.limit) g.push({ ok: krwv <= info.limit, t: `신고 방식 금액 한도: 통관가액 약 ${krw(krwv)} ${krwv <= info.limit ? '≤' : '>'} ${krw(info.limit)}${krwv > info.limit ? ' → 정식 수출신고 필요' : ''}` });
+  if (info?.pil) g.push({ ok: !!(s.declNo || '').trim() && !!s.declAccepted, t: '수출신고 수리 확인 + 신고번호 입력 (필증 발급 방식)' });
+  if (s.declDate && today() > loadDeadline(s)) g.push({ ok: false, t: `적재 기한 경과 (수리일 ${s.declDate} + 30일 = ${loadDeadline(s)}) → 관세사와 기한연장·취하 확인` });
   return g;
 }
 const gateOk = (d, s) => shipGate(d, s).every(x => x.ok);
@@ -215,6 +236,7 @@ const STAGES = [
     checks: [
       { k: 'customer', t: '고객 정보 입력 (이름·국가·이메일)', auto: d => !!(d.customer.name && d.customer.country && d.customer.email) },
       { k: 'address', t: '배송지 주소·연락처 확인', auto: d => !!(d.customer.shipAddress || '').trim() },
+      { k: 'buyer', t: '바이어 실존·신뢰 확인 (KOTRA 체크리스트)' },
       { k: 'request', t: '요청 제품·수량·희망 일정 기록' },
       { k: 'reply', t: '문의 답변 이메일 발송' },
     ], next: '제품과 수량이 정해지면 02 견적에서 품목을 입력합니다.' },
@@ -257,7 +279,8 @@ const STAGES = [
       { k: 'cipl', t: '배송별 CI·PL 발행', auto: d => allShips(d, s => !isIntl(s) || (hasIssued(d, 'CI', s.id) && hasIssued(d, 'PL', s.id))) },
       { k: 'hs', t: 'HS코드 확인', auto: d => d.verify.find(v => v.key === 'hs')?.status === 'ok' },
       { k: 'mode', t: '수출신고 방식 결정', auto: d => allShips(d, s => s.declMode && s.declMode !== 'unset') },
-      { k: 'cert', t: '정식 신고 건: 신고번호·필증 첨부', auto: d => allShips(d, s => s.declMode !== 'formal' || (!!(s.declNo || '').trim() && d.files.some(f => f.kind === 'declaration' && f.shipmentId === s.id))) },
+      { k: 'limit', t: '신고 방식 금액 한도 확인 (목록통관 FOB 200만원 이하)', auto: d => allShips(d, s => !DECL_INFO[s.declMode]?.limit || shipKrw(d, s) <= DECL_INFO[s.declMode].limit) },
+      { k: 'cert', t: '필증 발급 건: 신고번호·수리일·필증 첨부', auto: d => allShips(d, s => !needsPil(s) || (!!(s.declNo || '').trim() && !!s.declDate && d.files.some(f => f.kind === 'declaration' && f.shipmentId === s.id))) },
     ], next: '07 배송에서 픽업을 예약하고 출고 조건을 확인합니다.' },
   { key: 'shipping', no: '07', ko: '배송', en: 'Shipping', kind: 'awb',
     desc: '배송 예약, 운송장 등록, 출고 완료 처리를 합니다. 조건이 모두 충족되어야 출고 완료 버튼이 활성화됩니다.',
@@ -289,8 +312,20 @@ function nextTodo(d) {
   const st = currentStage(d);
   if (!st) return { st: null, t: '모든 단계 완료 — 보관 처리 가능' };
   const c = stageChecks(d, st).find(c => !c.done && !c.optional);
-  return { st, t: c ? c.t : st.next };
+  return { st, c, t: c ? c.t : st.next };
 }
+/* '바로 하기' — 체크리스트 항목마다 그 일을 하는 화면으로 바로 이동 */
+const GO = {
+  inquiry: { customer: 'customer', address: 'customer', buyer: 'customer', request: 'note', reply: 'mail:inquiry' },
+  quotation: { items: 'items', price: 'items', stock: 'items', extra: 'items', qt: 'doc:QT' },
+  invoice: { pi: 'doc:PI', match: 'doc:PI', sent: 'mail:pi' },
+  payment: { receipt: 'pay:receipt', credited: 'pay:credited', fee: 'pay:credited' },
+  packing: { alloc: 'ship', inspect: 'ship', boxes: 'ship', date: 'ship', mark: 'sdoc:MARK' },
+  declaration: { cipl: 'sdoc:CI', hs: 'guide', mode: 'ship', limit: 'ship', cert: 'ship' },
+  shipping: { acct: 'ship', book: 'ship', awb: 'ship', shipped: 'ship', notify: 'mail:shipped' },
+  settlement: { balance: 'doc:FI', export: 'ship', verify: 'verify', archive: 'mail:thanks' },
+};
+const goBtn = (stKey, k, label = '하기 ›', cls = 'ghost') => GO[stKey]?.[k] ? `<button class="btn sm ${cls} go" data-act="go" data-stage="${stKey}" data-k="${k}">${label}</button>` : '';
 const STATUS_PILL = { done: '<span class="pill green">완료</span>', doing: '<span class="pill amber">진행 중</span>', todo: '<span class="pill">대기</span>' };
 
 /* ============================== deals ============================== */
@@ -574,7 +609,7 @@ function renderKR(sn, draft) {
 /* ============================== emails ============================== */
 const EMAILS = {
   inquiry: '문의 답변 (Inquiry reply)', quote: '견적 발송 (Quotation)', pi: 'PI 발송 (Proforma invoice)', dhl: 'DHL 계정 확인 요청 (Buyer DHL account)',
-  paid: '입금 확인 (Payment received)', shipped: '출고·운송장 안내 (Dispatched)', balance: '잔금 청구 (Final invoice)',
+  paid: '입금 확인 (Payment received)', shipped: '출고·운송장 안내 (Dispatched)', balance: '잔금 청구 (Final invoice)', thanks: '감사·관계 유지 (After-sales)',
 };
 function emailTpl(d, key) {
   const t = totals(d), c = d.customer, S = state.settings;
@@ -586,14 +621,120 @@ function emailTpl(d, key) {
   const T = {
     inquiry: [`BUNNAR wholesale inquiry`, `${hi}\n\nThank you for your interest in BUNNAR porcelain.\n\nTo prepare a quotation, could you please confirm:\n- the items and quantities you need\n- the delivery address and preferred shipping method (e.g. your own DHL account)\n- your preferred timing\n\nOur wholesale pricing is tiered by total quantity, and shipping is quoted separately.`],
     quote: [`BUNNAR quotation ${qt?.no || ''}`.trim(), `${hi}\n\nPlease find attached our quotation${qt ? ' ' + qt.no : ''} for ${t.sets} sets, totalling USD ${usd(t.goods)} (goods only).\n\nShipping and any printing services are quoted separately. Stock is confirmed at the time of order.\n\nPlease let us know if you would like to proceed or adjust the selection.`],
-    pi: [`Proforma invoice ${pi?.no || ''}`.trim(), `${hi}\n\nPlease find attached proforma invoice ${pi?.no || '[PI no.]'} for USD ${usd(t.total)}.${pi?.originalNo ? `\nThis revised invoice replaces ${pi.originalNo}; please pay only the revised amount.` : ''}\n\n${d.terms.type === 'deposit' ? `Deposit due upon confirmation: USD ${usd(t.deposit)}.` : 'Payment is due in full upon confirmation, before preparation.'}\n${ships.length > 1 ? '\nThe order will be shipped in parts:\n' + shipLinesTxt + '\n' : ''}\nGoods will be prepared for dispatch once the payment has been credited to our account. Please send us the remittance slip after the transfer.`],
+    pi: [`Proforma invoice ${pi?.no || ''}`.trim(), `${hi}\n\nPlease find attached proforma invoice ${pi?.no || '[PI no.]'} for USD ${usd(t.total)}.${pi?.originalNo ? `\nThis revised invoice replaces ${pi.originalNo}; please pay only the revised amount.` : ''}\n\n${d.terms.type === 'deposit' ? `Deposit due upon confirmation: USD ${usd(t.deposit)}.` : 'Payment is due in full upon confirmation, before preparation.'}\n${ships.length > 1 ? '\nThe order will be shipped in parts:\n' + shipLinesTxt + '\n' : ''}\nGoods will be prepared for dispatch once the payment has been credited to our account. Please send us the remittance slip after the transfer.\n\nFor your security: our bank details will never change by email. If you receive any message about changed bank details, please call us to verify before making a payment.`],
     dhl: [`DHL account for your shipment`, `${hi}\n\nAs agreed, we will ship using your DHL account.\n\nCould you please confirm:\n- your DHL account number\n- that you authorise BUNNAR to book the shipment on this account (duties and taxes billed to the receiver)\n\nWe will only book the pickup after your written confirmation.`],
     paid: [`Payment received — thank you`, `${hi}\n\nWe confirm that your payment of USD ${usd(t.credited)} has been credited to our account. Thank you.\n\nWe are now preparing your order and will send the tracking details once it has been dispatched.`],
     shipped: [`Your BUNNAR order has been dispatched`, `${hi}\n\nYour order has been dispatched.\n\n${shipLinesTxt || '- [shipment details]'}\n\nArrival dates depend on the carrier and customs clearance and cannot be guaranteed. Import duties and local taxes are the buyer's responsibility.`],
+    thanks: [`Thank you for your order`, `${hi}\n\nThank you again for your order. It was a pleasure working with you, and we hope the pieces are well received by your customers.\n\nIf anything arrived damaged or not as expected, please send us photos and we will resolve it promptly.\n\nWe would be glad to support your next order — just let us know which items are moving well.`],
     balance: [`Final invoice ${fi?.no || ''}`.trim(), `${hi}\n\nPlease find attached final invoice ${fi?.no || '[FI no.]'}.\n\nGoods total: USD ${usd(t.goods)}\n${d.charges.map(ch => `${ch.label}: USD ${usd(ch.amount)}`).join('\n')}${d.charges.length ? '\n' : ''}Less payment received: USD ${usd(t.credited)}\nBalance due: USD ${usd(t.balance)}\n\nPlease let us know once the transfer has been made.`],
   }[key];
   return { subject: T[0], body: T[1] + sign };
 }
+
+/* ============================== guide (KOTRA 수출가이드북 기반) ==============================
+ * 출처: KOTRA 「수출, 더 이상 어렵지 않아요」 개정3판 (KOTRA자료 25-210, 2025.12). 쪽수는 책 기준.
+ * 법령·제도는 바뀔 수 있으므로 최종 판단은 관세사·세무사·KOTRA에 확인합니다.
+ */
+const KOTRA_SRC = 'KOTRA 「수출, 더 이상 어렵지 않아요」 개정3판 (2025.12)';
+const GUIDE = {
+  inquiry: {
+    why: '처음 문의가 왔을 때 가장 중요한 일은 바이어가 실제로 있는 회사인지 확인하는 것입니다. KOTRA에 따르면 무역사기의 90% 이상은 거래 전에 간단히 확인만 해도 막을 수 있습니다.',
+    steps: ['고객 정보(회사명·국가·이메일·배송지)를 기록합니다.', '회사 홈페이지, 회사 도메인 이메일, 대표 전화 등 두 가지 이상의 경로로 회사가 실제로 있는지 확인합니다.', '고객 정보 편집 화면에서 KOTRA 바이어 체크리스트 10문항을 점검합니다.', '요청 제품·수량·희망 납기·배송 방식(고객 DHL 계정을 쓰는지)을 물어봅니다.', '가능하면 24시간 안에 답장합니다. 빠른 응답이 신뢰를 만듭니다.'],
+    cautions: ['큰 회사라면서 개인 이메일(gmail 등)이나 휴대폰으로만 연락하면 의심하세요.', '시장 규모에 비해 지나치게 많은 주문이나 지나치게 좋은 조건은 사기 신호입니다.', '비자 초청장, 공장 방문, 등록비·변호사비 같은 선입금 요구는 거절하세요.', '의심되면 KOTRA 무역사기 상담 ☎1600-7119(2번→6번)이나 해외수입업체 연락처 확인 서비스를 이용하세요.'],
+    ref: 'p.118–125 무역사기 / p.120 바이어 진위 체크리스트' },
+  quotation: {
+    why: '견적은 계약의 출발점입니다. 수출 가격은 국내 판매가와 다른 기준으로 정해야 하고, 원가 아래로 팔지 않도록 기준선을 먼저 정해 둡니다.',
+    steps: ['품목과 수량을 입력하면 앱이 수량 구간 할인을 자동으로 계산합니다.', '오늘 환율을 확인해 입력합니다. 원화 환율이 내리면(원화 강세) 같은 달러를 받아도 원화 수입이 줄어듭니다.', '재고와 입고 예정일을 확인하고, 부족한 품목은 백오더로 표시합니다.', '배송비·인쇄비 등은 별도 비용으로 분리합니다.', '견적서(QT)를 발행해 이메일로 보내고 유효기간을 적어 둡니다.'],
+    cautions: ['수출원가 = 제조원가 + 물류비(포장·운송·보험) + 금융비용 + 행정비용(통관 수수료) + 마진입니다.', '운임은 오퍼를 보내기 전에 포워더 3~4곳에서 견적을 받아 비교합니다. 물품, 박스 크기, 중량, 출고지, 바이어 주소를 알려 주면 됩니다.', '가격조건(인코텀즈)을 정해 두세요. 고객 DHL 계정을 쓰면 국제 운임은 바이어가 부담합니다.'],
+    ref: 'p.68–69 인코텀즈 / p.81 운임 견적 / p.89 수출원가 계산' },
+  invoice: {
+    why: 'PI(Proforma Invoice)는 바이어에게 결제를 요청하는 문서이고, 송금(T/T) 거래에서는 사실상 계약서 역할을 합니다. 바이어는 PI를 보고 송금합니다.',
+    steps: ['품목·수량·단가·총액·결제조건·은행 정보가 맞는지 확인합니다.', 'PI를 발행하고 PDF로 저장한 뒤 이메일로 보냅니다.', '고객이 주문 확정 회신을 보내면 체크합니다.', '주문이 바뀌면 기존 PI는 그대로 두고 수정본(R1)을 새로 발행합니다.'],
+    cautions: ['신규 바이어라면 선적 전 100% 사전송금(T/T in advance)이 수출자에게 가장 안전합니다.', '"은행 계좌가 바뀌었다"는 이메일은 해킹 사기일 가능성이 큽니다. 계좌는 이메일로 바꾸지 않는다고 미리 알리세요(이메일 템플릿에 포함되어 있습니다).', '분할 배송이나 백오더가 있으면 PI 노트에 배송 계획을 적어 두어야 분쟁이 줄어듭니다.'],
+    ref: 'p.70–72 결제조건 / p.119 이메일 사기' },
+  payment: {
+    why: '고객이 보낸 송금증은 위조될 수 있습니다. 우리 은행 계좌에 실제로 들어온 금액을 확인한 뒤에만 출고합니다.',
+    steps: ['송금증을 받으면 "송금증 수령"으로 기록합니다. 아직 입금이 아닙니다.', '은행 앱이나 외화 계좌에서 실제 입금을 확인한 뒤 "실입금 확인"으로 기록합니다.', '해외송금 수수료 때문에 금액이 줄었으면 인정한 금액과 사유를 메모합니다.', '원화로 환전했다면 원화 금액도 기록합니다(정산용).', '입금 확인 이메일을 보냅니다.'],
+    cautions: ['송금증만 믿고 출고하는 것은 대표적인 무역사기 피해 유형(서류 위조)입니다.', '계약한 바이어가 아닌 제3자가 대신 송금했다면 한국은행 사전신고 대상일 수 있습니다. 송금인 이름을 꼭 확인하세요.', '대만·일본·싱가포르·베트남·몽골 바이어는 KOTRA GTPP(카드 결제, 수수료 1.5%)로 결제받을 수도 있습니다.'],
+    ref: 'p.73 외국환 계산서 / p.77 GTPP / p.111 외환 관리 / p.119 서류 위조' },
+  packing: {
+    why: '포장명세서(PL)와 박스 라벨은 세관, 운송사, 바이어가 물건을 확인하는 기준입니다. 박스마다 무엇이 들었는지 적어 두면 수량 부족이나 파손 클레임을 막을 수 있습니다.',
+    steps: ['배송(분할 배송)마다 보낼 품목을 배정합니다.', '출고 전에 수량·파손·인쇄 상태를 검수합니다. 사진을 찍어 두면 좋습니다.', '박스마다 가로·세로·높이(cm), 순중량, 총중량을 기록합니다.', '부피무게(가로×세로×높이÷5000)가 실중량보다 크면 운임은 부피무게로 청구됩니다.', '박스마다 Shipping Mark(C/NO. 1/2 등)를 붙입니다.'],
+    cautions: ['클레임 원인 1순위는 품질 불량, 포장 파손, 수량 부족입니다. 선적 전 검사로 예방하세요.', '도자기는 파손 위험이 크므로 완충재와 이중 박스를 쓰고, 적하보험 가입을 검토하세요.', 'KOTRA 회원은 DHL 특송 할인(50~77%)을 받을 수 있습니다.'],
+    ref: 'p.86 KOTRA 수출물류 협업(DHL 할인) / p.93 포장명세서 / p.110 클레임' },
+  declaration: {
+    why: '수출신고는 물건을 외국으로 보내기 전에 세관에 신고하는 절차입니다. 수출신고필증이 있어야 수출실적 인정, 부가세 영세율, 관세환급, 반품 재수입 면세를 받을 수 있습니다.',
+    steps: ['배송마다 상업송장(CI)과 포장명세서(PL)를 발행합니다. 신고할 때 필요합니다.', 'HS코드를 확인합니다. 관세법령정보포털(unipass.customs.go.kr/clip)이나 ☎125(20번→4번)에서 확인할 수 있습니다.', '신고 방식을 정합니다. FOB 200만원을 넘으면 목록통관을 쓸 수 없어 정식 수출신고를 해야 합니다.', '관세사에게 의뢰하거나 유니패스에서 직접 신고합니다(통관고유부호와 신고인부호 필요).', '신고가 수리되면 수출신고필증 PDF를 첨부하고 신고번호와 수리일을 입력합니다.'],
+    cautions: ['특송 목록통관은 수출신고필증이 나오지 않아 관세환급과 재수입 면세를 받을 수 없습니다. 수출실적은 HS코드와 사업자번호를 기재해야 인정됩니다.', '수출신고 수리일로부터 30일 안에 적재(선적)하지 않으면 신고 취소와 과태료 대상입니다.', 'HS코드로 세관장확인대상·전략물자 해당 여부를 확인하세요. 도자기 식기는 보통 해당되지 않지만 직접 확인해야 합니다.', 'CI·PL·운송장의 수량, 중량, 금액이 서로 일치해야 합니다.'],
+    ref: 'p.97–105 수출통관 / p.128–143 수출신고 꿀팁' },
+  shipping: {
+    why: '물건을 실제로 운송사에 넘기는 단계입니다. 입금, 검수, 서류, 승인 같은 출고 조건이 모두 갖춰졌을 때만 출고합니다.',
+    steps: ['고객 DHL 계정을 쓴다면 계정번호와 "사용 승인"을 이메일로 받아 둡니다.', 'DHL 픽업을 예약하고 운송장(AWB) 번호를 받습니다.', '정식 수출신고 건은 특송사에 수출신고필증을 전달해 일반화물로 적재 등록해 달라고 요청합니다.', '출고 완료로 처리하고 고객에게 운송장 번호를 안내합니다.', '유니패스 → 정보조회 → 수출이행내역에서 적재(수출이행)가 되었는지 확인합니다.'],
+    cautions: ['항공 운송장(AWB)은 B/L과 달리 권리증권이 아닙니다. 대금은 반드시 출고 전에 받으세요.', '고객 계정 사용 승인 없이 픽업을 예약하면 운임 분쟁이 생길 수 있습니다.', '도착일은 운송사와 통관 사정에 따라 달라지므로 보장하지 않는다고 안내하세요.'],
+    ref: 'p.91 AWB / p.139 수출 유형별 적재관리' },
+  settlement: {
+    why: '돈과 서류를 마무리하는 단계입니다. 잔금을 받고 수출실적, 영세율, 관세환급에 필요한 증빙을 모아 둡니다.',
+    steps: ['잔금이 남아 있으면 최종 청구서(FI)를 발행하고 입금을 확인합니다.', '원화 입금액과 비용을 입력해 실제 수익을 확인합니다.', '수출신고필증, 송금증, 입금 내역, 운송장을 한곳에 보관합니다. 부가세 신고 때 필요합니다.', '관세환급은 수출신고 수리일로부터 2년 안에 신청합니다. 중소 제조기업은 간이정액환급을 받을 수 있습니다.', '감사 이메일로 관계를 이어 가고 재주문을 제안합니다.'],
+    cautions: ['직접수출의 수출실적 인정 금액은 수출신고필증의 FOB 금액입니다.', '영세율과 수출실적 인정 여부는 세무사·관세사에게 확인한 뒤 "확인됨"으로 바꾸세요.', '수출대금 회수가 늦어지면 외환 규정상 신고 의무가 생길 수 있습니다(예: 선적 후 3년 초과 수령은 한국은행 사전신고).'],
+    ref: 'p.14 수출실적 인정 / p.108 거래선 유지 / p.111 외환 관리 / p.112–115 관세환급' },
+};
+const BUYER_CHECK = [
+  '기업 및 연락처 정보가 정확하지 않거나 휴대폰으로만 연락한다',
+  '취급 품목이 너무 다양하고 서로 관련이 없다',
+  '현지 시장 규모에 비해 지나치게 많은 주문으로 유혹한다',
+  '일반 거래조건보다 수출자에게 지나치게 유리한 조건을 제시한다',
+  '선적을 재촉하면서 거래조건을 수시로 바꾼다',
+  '선수금 일부를 보내 신뢰를 쌓은 뒤 나머지는 사후 송금으로 바꾸려 한다',
+  '특수한 사정을 내세워 장황하게 설명한다',
+  '공신력 있는 기관을 사칭하거나 유력 인사·정부와의 관계를 강조한다',
+  '홈페이지에 대기업과 비슷한 회사명이 많이 검색된다',
+  '사업자등록증 등 증빙 제출 요구에 응하지 않는다',
+];
+const GLOSSARY = [
+  ['QT · Quotation', '견적서. 가격·수량·유효기간을 제시합니다.'],
+  ['PI · Proforma Invoice', '결제 요청용 견적 송장. 송금 거래에서는 계약서 역할을 합니다.'],
+  ['FI · Final Invoice', '선금 이후 잔금(추가 비용 포함)을 청구하는 최종 송장.'],
+  ['CI · Commercial Invoice', '상업송장. 물품 명세와 대금을 적은 서류로 세관 신고의 증빙이 됩니다. 배송마다 작성합니다.'],
+  ['PL · Packing List', '포장명세서. 박스별 내용물, 순중량·총중량, 부피를 적습니다. CI·운송장과 일치해야 합니다.'],
+  ['AWB · Air Waybill', '항공화물운송장(특송 운송장 포함). 화물을 받았다는 증빙이며 권리증권은 아닙니다.'],
+  ['B/L · Bill of Lading', '선하증권(해상). 원본을 가진 사람이 화물을 찾는 유가증권입니다.'],
+  ['HS코드 (세번)', '국제 상품분류 번호. 국제 공통 6자리, 한국은 10자리(HSK)를 씁니다. 관세율·환급·규제 여부가 이 번호로 정해집니다.'],
+  ['FOB 금액', '수출물품이 배·비행기에 실리기까지의 금액(운임·보험료 제외). 수출실적과 통관 기준 금액입니다.'],
+  ['인코텀즈 (Incoterms 2020)', '운송 중 비용과 위험을 어디까지 누가 부담하는지 정한 국제 규칙. 수출은 FOB, 수입은 CIF를 많이 씁니다.'],
+  ['  EXW', '공장 인도. 우리 창고에서 넘기면 이후 비용·위험은 모두 바이어 부담입니다(수출통관도 바이어 측).'],
+  ['  FCA', '운송인 인도. 수출통관을 마친 뒤 바이어가 지정한 운송인(예: 바이어 DHL 계정)에게 넘깁니다.'],
+  ['  FOB / CIF', 'FOB는 선적항에서 배에 실을 때까지 수출자 부담. CIF는 목적항까지의 운임·보험을 수출자가 내지만 위험은 선적 시점에 넘어갑니다(해상 운송용).'],
+  ['  DAP / DDP', 'DAP는 목적지 도착 인도(수입 관세는 바이어 부담). DDP는 수입 관세까지 수출자가 부담합니다.'],
+  ['T/T 사전송금', '물품을 보내기 전에 은행 송금으로 대금을 받는 방식. 수출자에게 가장 안전합니다.'],
+  ['송금증 vs 실입금', '송금증은 고객이 보낸 증빙일 뿐(위조 가능)이고, 실입금은 우리 계좌에서 확인한 돈입니다. 출고 기준은 실입금입니다.'],
+  ['수출신고필증', '세관이 수출신고를 수리하면 발급하는 공식 서류. 수출실적·영세율·관세환급의 증빙입니다.'],
+  ['정식통관 / 목록통관', '정식통관은 수출신고 후 필증을 발급받는 방식(금액 제한 없음). 목록통관은 특송·우편으로 FOB 200만원 이하일 때만 가능하며 필증이 없습니다.'],
+  ['적재이행', '수출신고가 수리된 물품이 실제로 배·비행기에 실린 것. 수리일로부터 30일 안에 적재해야 합니다.'],
+  ['통관고유부호', '관세청이 수출입 업체에 부여하는 식별번호. 유니패스 → 업무지원 → 통관고유부호에서 신청합니다.'],
+  ['UNI-PASS', '관세청 전자통관시스템(unipass.customs.go.kr). 직접 신고하거나 수출이행 내역·실적을 조회할 수 있습니다.'],
+  ['부피무게', '가로×세로×높이(cm)÷5000. 실중량보다 크면 운임은 부피무게로 청구됩니다.'],
+  ['영세율', '수출 재화에 부가가치세 0%를 적용하는 제도. 수출신고필증 등 증빙이 필요합니다.'],
+  ['관세환급 (간이정액)', '수출신고 수리일로부터 2년 이내 신청. 중소 제조기업은 FOB 1만원당 정해진 금액을 환급받는 간이정액환급을 쓸 수 있습니다.'],
+  ['백오더 / 분할 배송', '재고가 부족한 품목을 나중에 보내는 것. 배송마다 CI·PL을 따로 작성하고, 통관가액은 그 배송분만 적습니다.'],
+];
+const CONTACTS = [
+  ['KOTRA 대표 · 무역사기 상담', '☎1600-7119 (2번 해외진출 → 6번 무역사기)'],
+  ['관세청 고객지원센터 (HS코드 상담)', '☎125 → 20번 → 4번'],
+  ['한국무역보험공사 (수출보험·해외 신용조사)', '☎1588-3884'],
+  ['무역안보관리원 (전략물자)', '☎02-6000-6400 · yestrade.go.kr'],
+  ['KOTRA 경기지원본부', '☎031-273-6032'],
+  ['관세법령정보포털 (HS코드 검색)', 'unipass.customs.go.kr/clip'],
+];
+const SETUP = [
+  { k: 'seller', t: '판매자 정보(영문 주소·사업자번호) 입력', auto: () => !!state.settings.seller.address && !!state.settings.seller.regNo, go: 'settings' },
+  { k: 'bank', t: '은행 정보(외화 입금 계좌·SWIFT) 입력', auto: () => !!state.settings.bank.account && !!state.settings.bank.swift, go: 'settings' },
+  { k: 'price', t: '제품 기준가(VAT 포함 소비자가) 입력', auto: () => state.products.some(p => num(p.priceKrw) > 0), go: 'settings' },
+  { k: 'customs', t: '통관고유부호 발급 (유니패스 → 업무지원 → 통관고유부호)', auto: () => !!(state.settings.seller.customsCode || '').trim(), go: 'settings' },
+  { k: 'broker', t: '수출신고 방법 결정: 관세사 의뢰 또는 유니패스 직접 신고(신고인부호 신청)' },
+  { k: 'hs', t: '제품 HS코드 확인 (관세법령정보포털 또는 ☎125)', auto: () => state.products.length > 0 && state.products.every(p => p.hsStatus === 'ok'), go: 'settings' },
+  { k: 'kotra', t: 'KOTRA 회원가입 (DHL 할인, 무역사기 상담, 바이어 확인 서비스)' },
+  { k: 'backup', t: '첫 데이터 백업 받기', auto: () => !!state.settings.lastBackup, go: 'settings' },
+];
 
 /* ============================== render ============================== */
 function render() {
@@ -603,6 +744,7 @@ function render() {
   let html = header();
   html += '<main class="main">';
   if (ui.view === 'settings') html += viewSettings();
+  else if (ui.view === 'guide') html += viewGuide();
   else if (ui.view === 'deal' && deal()) html += viewDeal(deal());
   else { ui.view = 'home'; html += viewHome(); }
   html += '</main>';
@@ -618,7 +760,7 @@ function render() {
 }
 function header() {
   return `<header class="hdr"><div class="logo" data-act="home">BUNNAR Export<span>수출 실무 관리</span><small>v${APP_VERSION}</small></div>
-  <nav class="nav"><button class="${ui.view !== 'settings' ? 'on' : ''}" data-act="home">수출 현황 (Overview)</button><button class="${ui.view === 'settings' ? 'on' : ''}" data-act="settings">설정·제품·데이터 (Settings)</button></nav></header>`;
+  <nav class="nav"><button class="${ui.view !== 'settings' && ui.view !== 'guide' ? 'on' : ''}" data-act="home">수출 현황 (Overview)</button><button class="${ui.view === 'guide' ? 'on' : ''}" data-act="guideView">📘 수출 가이드 (Guide)</button><button class="${ui.view === 'settings' ? 'on' : ''}" data-act="settings">설정·제품·데이터 (Settings)</button></nav></header>`;
 }
 
 /* ---------- home ---------- */
@@ -627,6 +769,7 @@ function viewHome() {
   const counts = STAGES.map(st => state.deals.filter(d => !d.archived && currentStage(d)?.key === st.key));
   let h = `<div class="row" style="margin-bottom:12px"><h2 style="font-size:20px">수출 현황 <span class="faint" style="font-weight:400;font-size:14px">Export Overview</span></h2><span class="spacer"></span>
     <button class="btn pri" data-act="newDeal">+ 새 수출 건 (New export)</button></div>`;
+  h += setupPanel();
   h += '<div class="sec-title">업무 흐름 (Workflow) · 단계별 진행 건수</div><div class="flow">';
   STAGES.forEach((st, i) => {
     h += `<div class="flow-item"><div class="mini"><div class="n">${st.no}</div><div class="t">${st.ko}</div><div class="e">${st.en}</div><div class="c">${counts[i].length}</div>
@@ -668,7 +811,8 @@ function viewDeal(d) {
     <div class="kv"><span class="k">실입금 (Credited)</span><span class="v">USD ${usd(t.credited)}</span></div>
     <div class="kv"><span class="k">잔액 (Balance)</span><span class="v">USD ${usd(t.balance)}</span></div>
     <div class="kv"><span class="k">결제 상태</span><span><span class="pill ${ps.cls}">${ps.label}</span></span></div>
-    <div class="todo-box"><b>다음 할 일 (Next)</b>${nt.st ? `<b style="display:inline;color:var(--text)">${nt.st.no} ${nt.st.ko}</b> — ` : ''}${esc(nt.t)}
+    <div class="todo-box"><b>지금 할 일 (Do this next)</b>${nt.st ? `<b style="display:inline;color:var(--text)">${nt.st.no} ${nt.st.ko}</b> — ` : ''}${esc(nt.t)}
+      ${nt.c ? `<div class="row" style="margin-top:6px">${goBtn(nt.st.key, nt.c.k, '바로 하기 →', 'pri')}<button class="btn sm" data-act="guide" data-stage="${nt.st.key}">📘 왜 해야 하나요?</button></div>` : ''}
       <input class="inp" style="margin-top:6px" placeholder="메모: 직접 적는 다음 할 일 (선택)" data-bind="deal:todo" value="${esc(d.todo)}"></div></div>`;
   h += '<div class="strip-wrap"><div class="strip">';
   STAGES.forEach((st, i) => { h += card(d, st, cur && cur.key === st.key) + (i < STAGES.length - 1 ? '<div class="flow-arrow">→</div>' : ''); });
@@ -701,15 +845,15 @@ function card(d, st, isCur) {
   const files = d.files.filter(f => f.stage === st.key);
   return `<section class="card ${status} ${isCur ? 'current' : ''}" id="card-${st.key}">
   <div class="card-h"><span class="no">${st.no}</span><div class="tt">${st.ko}<small>${st.en}</small></div>${STATUS_PILL[status]}</div>
-  <div class="card-b"><div class="desc">${st.desc}</div>
+  <div class="card-b"><div class="desc">${st.desc}</div><div><button class="btn sm guide-btn" data-act="guide" data-stage="${st.key}">📘 이 단계 가이드 — 왜·어떻게·주의</button></div>
   <div class="blk"><div class="blk-t">체크리스트 (Checklist)</div><ul class="checks">${cs.map(c => {
     const id = `deal:checks.${st.key}_${c.k}`;
-    return `<li><label class="${c.auto ? 'disabled' : ''} ${c.done ? 'isdone' : ''}"><input type="checkbox" ${c.done ? 'checked' : ''} ${c.auto ? 'disabled' : `data-bind="${id}" data-t="b"`}><span><span class="txt">${esc(c.t)}</span>${c.auto ? '<span class="auto" title="데이터로 자동 판정됩니다">자동</span>' : ''}${c.optional ? ' <span class="opt">(선택)</span>' : ''}</span></label></li>`;
+    return `<li class="ck"><label class="${c.auto ? 'disabled' : ''} ${c.done ? 'isdone' : ''}"><input type="checkbox" ${c.done ? 'checked' : ''} ${c.auto ? 'disabled' : `data-bind="${id}" data-t="b"`}><span><span class="txt">${esc(c.t)}</span>${c.auto ? '<span class="auto" title="입력한 데이터로 자동 판정됩니다">자동</span>' : ''}${c.optional ? ' <span class="opt">(선택)</span>' : ''}</span></label>${c.done ? '' : goBtn(st.key, c.k)}</li>`;
   }).join('')}</ul></div>
   ${cardBody(d, st)}
   <div class="blk"><div class="blk-t">첨부 (Files)<span class="spacer"></span><button class="btn sm" data-act="attach" data-stage="${st.key}" data-kind="${st.kind}">+ 첨부</button></div>
   ${files.length ? `<div class="files">${files.map(fileRow).join('')}</div>` : '<div class="empty">첨부 없음</div>'}</div>
-  </div><div class="next"><b>다음 업무 (Next)</b>${esc(nextC ? nextC.t : st.next)}</div></section>`;
+  </div><div class="next"><b>다음 업무 (Next)</b>${esc(nextC ? nextC.t : st.next)}${nextC ? `<div style="margin-top:6px">${goBtn(st.key, nextC.k, '바로 하기 →', 'pri')}</div>` : ''}</div></section>`;
 }
 const FILE_KIND = { remittance: '송금증', declaration: '수출신고필증', awb: '운송장', dhl: 'DHL 승인', other: '기타' };
 function fileRow(f) { return `<div class="file"><span class="pill">${FILE_KIND[f.kind] || f.kind}</span><a data-act="openFile" data-id="${f.id}" title="${esc(f.name)}">${esc(f.name)}</a><button class="btn sm ghost" data-act="delFile" data-id="${f.id}">×</button></div>`; }
@@ -732,6 +876,7 @@ function cardBody(d, st) {
     case 'inquiry': {
       const notes = d.logs.filter(l => l.kind === 'note').slice(-2).reverse();
       return B('고객 (Customer)', `<div class="stat"><span class="k">고객</span><span class="v">${esc(d.customer.name || '—')}</span><span class="k">국가</span><span class="v">${esc(d.customer.country || '—')} ${d.customer.cc ? `(${esc(d.customer.cc)})` : ''}</span><span class="k">이메일</span><span class="v">${esc(d.customer.email || '—')}</span></div>
+        ${riskCount(d) ? `<div class="err">바이어 위험 신호 ${riskCount(d)}개 — 고객 정보 편집에서 확인</div>` : ''}
         ${notes.length ? `<div class="small muted" style="margin-top:6px">${notes.map(n => '💬 ' + esc(n.text.slice(0, 80))).join('<br>')}</div>` : ''}
         <div class="row" style="margin-top:8px"><button class="btn sm" data-act="drawer" data-k="customer">고객 정보 편집</button><button class="btn sm" data-act="emailKey" data-key="inquiry">✉ 답변 이메일</button></div>`);
     }
@@ -761,6 +906,7 @@ function cardBody(d, st) {
       return B('입금 (Payments)', `<div class="stat"><span class="k">출고 필요 입금액</span><span class="v">USD ${usd(t.needForShip)}</span>
         <span class="k">송금증 기준 (미확정)</span><span class="v">USD ${usd(t.receipts)}</span><span class="k">실입금 확인</span><span class="v strong">USD ${usd(t.credited)}</span>
         <span class="k">원화 입금액</span><span class="v">${krw(t.creditedKrw)}</span><span class="k">잔액</span><span class="v strong">USD ${usd(t.balance)}</span></div>
+        ${d.payments.some(p => p.thirdParty) ? '<div class="err">제3자 송금 기록이 있습니다 — 은행에 신고 필요 여부 확인</div>' : ''}
         ${t.receipts > 0 && t.credited < t.receipts - 0.004 ? '<div class="warn">송금증은 받았지만 실입금 확인이 안 된 금액이 있습니다. 은행에서 입금을 확인하세요.</div>' : ''}
         ${list.length ? `<div class="files" style="margin-top:6px">${list.map(p => `<div class="file"><span class="pill ${p.kind === 'credited' ? 'green' : 'amber'}">${p.kind === 'credited' ? '실입금' : '송금증'}</span><span class="num">${esc(p.date)} · USD ${usd(p.amount)}</span></div>`).join('')}</div>` : ''}
         <div class="row" style="margin-top:8px"><button class="btn sm" data-act="payForm" data-kind="receipt">+ 송금증 수령</button><button class="btn sm pri" data-act="payForm" data-kind="credited">+ 실입금 확인</button><button class="btn sm" data-act="emailKey" data-key="paid">✉</button></div>`);
@@ -778,7 +924,10 @@ function cardBody(d, st) {
     case 'declaration': {
       const html = d.shipments.map(s => { const ss = shipSummary(d, s); return `<div class="ship"><div class="ship-h">${s.no}차 배송 <span class="pill">${DECL[s.declMode || 'unset']}</span></div>
         <div class="stat"><span class="k">이번 배송 통관가액</span><span class="v strong">USD ${usd(ss.value)}</span><span class="k">주문 전체 금액</span><span class="v">USD ${usd(t.total)}</span>
-        <span class="k">신고번호</span><span class="v">${esc(s.declNo || '—')}</span><span class="k">신고 수리</span><span class="v">${s.declAccepted ? '수리됨' : '—'}</span></div>
+        <span class="k">원화 환산 (FOB 기준 참고)</span><span class="v">${krw(shipKrw(d, s))}</span>
+        <span class="k">신고번호</span><span class="v">${esc(s.declNo || '—')}</span><span class="k">신고 수리</span><span class="v">${s.declAccepted ? '수리됨 ' + esc(s.declDate || '') : '—'}</span></div>
+        ${DECL_INFO[s.declMode]?.limit && shipKrw(d, s) > DECL_INFO[s.declMode].limit ? '<div class="err">이 금액은 선택한 목록통관 한도를 넘습니다 → 정식 수출신고 필요</div>' : ''}
+        ${s.declMode === 'unset' && shipKrw(d, s) > 2000000 ? '<div class="warn">FOB 200만원 초과 → 정식 수출신고 대상입니다 (관세사 의뢰 또는 유니패스)</div>' : ''}
         <div class="row">${docButtons(d, ['CI', 'PL'], s.id)}<button class="btn sm" data-act="drawer" data-k="ship" data-sid="${s.id}">신고 정보</button><button class="btn sm" data-act="attach" data-stage="declaration" data-kind="declaration" data-sid="${s.id}">필증 첨부</button></div>
         ${docMini(d, ['CI', 'PL'], s.id)}</div>`; }).join('');
       return B('배송별 서류 (Per shipment)', (html || '<div class="empty">05 검수·포장에서 배송을 먼저 추가하세요.</div>') + '<div class="tiny faint" style="margin-top:6px">수출신고필증은 공식 발급 문서를 첨부만 합니다. 앱이 생성하지 않습니다.</div>');
@@ -786,6 +935,8 @@ function cardBody(d, st) {
     case 'shipping': {
       const html = d.shipments.map(s => { const g = shipGate(d, s), ok = g.every(x => x.ok); return `<div class="ship"><div class="ship-h">${s.no}차 · ${METHOD[s.method]}${s.method === 'DHL' ? ` <span class="pill">${s.account === 'buyer' ? '고객 계정' : '당사 계정'}</span>` : ''}${s.shippedAt ? `<span class="pill green">출고 ${esc(s.shippedAt)}</span>` : ''}${s.exportDone ? '<span class="pill blue">수출이행</span>' : ''}</div>
         <div class="stat"><span class="k">운송장</span><span class="v">${esc(s.awb || '—')}</span><span class="k">픽업 예약</span><span class="v">${s.pickupBooked ? '완료' : '—'}</span></div>
+        ${s.method === 'DHL' && needsPil(s) && !s.shippedAt ? '<div class="warn">정식 신고 건: DHL에 수출신고필증을 전달하고 "일반화물 적재"로 처리해 달라고 요청하세요 (목록통관으로 나가면 필증과 연결되지 않습니다).</div>' : ''}
+        ${s.declDate && !s.shippedAt ? `<div class="${today() > loadDeadline(s) ? 'err' : 'warn'}">적재 기한 ${esc(loadDeadline(s))} (수출신고 수리일 + 30일)</div>` : ''}
         ${s.shippedAt ? '' : `<ul class="gate">${g.map(x => `<li class="${x.ok ? 'yes' : 'no'}">${esc(x.t)}</li>`).join('')}</ul>`}
         <div class="row"><button class="btn sm" data-act="drawer" data-k="ship" data-sid="${s.id}">배송 정보</button>
         ${s.shippedAt ? `<button class="btn sm" data-act="unship" data-sid="${s.id}">출고 취소</button>` : `<button class="btn sm pri" data-act="ship" data-sid="${s.id}" ${ok ? '' : 'disabled title="출고 조건 미충족"'}>출고 완료</button>`}
@@ -806,11 +957,46 @@ function cardBody(d, st) {
   return '';
 }
 
+/* ---------- guidance views ---------- */
+function setupDone(x) { return x.auto ? !!x.auto() : !!state.settings.setup[x.k]; }
+function setupPanel(full) {
+  const done = SETUP.filter(setupDone).length;
+  if (!full && (done === SETUP.length || state.settings.setupHidden)) return '';
+  return `<div class="panel coach" style="margin-bottom:16px"><div class="row"><b>🚀 처음 시작하기 (Getting started)</b><span class="pill ${done === SETUP.length ? 'green' : 'amber'}">${done} / ${SETUP.length}</span><span class="spacer"></span>
+    ${full ? '' : '<button class="btn sm" data-act="guideView">📘 수출 가이드 보기</button><button class="btn sm ghost" data-act="hideSetup">숨기기</button>'}</div>
+    <p class="small muted" style="margin:6px 0 8px">수출이 처음이라면 아래 준비를 먼저 해 두세요. 한 번만 하면 이후 모든 수출 건에 적용됩니다.</p>
+    <ul class="checks">${SETUP.map(x => { const ok = setupDone(x); return `<li class="ck"><label class="${x.auto ? 'disabled' : ''} ${ok ? 'isdone' : ''}"><input type="checkbox" ${ok ? 'checked' : ''} ${x.auto ? 'disabled' : `data-bind="set:setup.${x.k}" data-t="b"`}><span><span class="txt">${esc(x.t)}</span>${x.auto ? '<span class="auto">자동</span>' : ''}</span></label>${!ok && x.go ? `<button class="btn sm ghost" data-act="${x.go}">하기 ›</button>` : ''}</li>`; }).join('')}</ul></div>`;
+}
+function guideBody(key) {
+  const g = GUIDE[key], st = STAGES.find(x => x.key === key);
+  return `<div class="gd"><div class="gd-why"><b>왜 하나요?</b><p>${esc(g.why)}</p></div>
+    <div><b>이렇게 하세요</b><ol>${g.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div>
+    <div class="gd-warn"><b>⚠ 주의 · 흔한 실수</b><ul>${g.cautions.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+    <div class="tiny faint">참고: ${esc(KOTRA_SRC)} ${esc(g.ref)}</div></div>`;
+}
+function viewGuide() {
+  const declRows = Object.entries(DECL_INFO).map(([k, v]) => `<tr><td><b>${esc(DECL[k])}</b></td><td>${v.limit ? krw(v.limit) + ' 이하' : '제한 없음'}</td><td>${v.pil ? '○' : '✕'}</td><td class="small">${esc(v.note)}</td></tr>`).join('');
+  return `<h2 style="font-size:20px;margin-bottom:4px">수출 가이드 <span class="faint" style="font-weight:400;font-size:14px">Export guide for beginners</span></h2>
+  <p class="small muted" style="margin-bottom:14px">${esc(KOTRA_SRC)} 내용을 BUNNAR 업무 흐름에 맞춰 정리했습니다. 각 단계 카드의 📘 버튼으로도 볼 수 있습니다. 법령과 제도는 바뀔 수 있으니 최종 판단은 관세사·세무사·KOTRA에 확인하세요.</p>
+  ${setupPanel(true)}
+  <div class="sec-title">8단계 업무 가이드</div>
+  ${STAGES.map(st => `<details class="panel gd-acc" ${ui.guideOpen === st.key ? 'open' : ''}><summary><b>${st.no} ${st.ko}</b> <span class="faint">${st.en}</span> — <span class="muted small">${esc(GUIDE[st.key].why.split('.')[0])}.</span></summary>${guideBody(st.key)}</details>`).join('')}
+  <div class="sec-title" style="margin-top:18px">수출신고 방식 비교 (KOTRA p.102)</div>
+  <div class="panel" style="overflow-x:auto"><table class="t"><thead><tr><th>방식</th><th>금액 기준 (FOB)</th><th>필증</th><th>설명</th></tr></thead><tbody>${declRows}</tbody></table>
+  <div class="tiny faint" style="margin-top:6px">FOB 200만원을 넘거나, 수출실적·관세환급·영세율 증빙이 필요하면 정식 수출신고를 합니다 (p.128).</div></div>
+  <div class="sec-title" style="margin-top:18px">용어 사전 (Glossary)</div>
+  <div class="panel"><table class="t"><tbody>${GLOSSARY.map(([a, b]) => `<tr><td style="width:220px;white-space:pre"><b>${esc(a)}</b></td><td>${esc(b)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="sec-title" style="margin-top:18px">도움 받을 곳 (Contacts)</div>
+  <div class="panel"><table class="t"><tbody>${CONTACTS.map(([a, b]) => `<tr><td style="width:300px">${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
 /* ---------- drawers ---------- */
+const riskCount = d => Object.values(d.buyerCheck || {}).filter(Boolean).length;
 function drawerHtml(d) {
   const k = ui.drawer.kind;
-  const titles = { customer: '고객 정보 (Customer)', items: '품목·가격 (Items & pricing)', ship: '배송 (Shipment)', pay: '결제 기록 (Payments)', email: '고객 응대 이메일 (Email)', settle: '정산 (Settlement)' };
+  const titles = { guide: '📘 단계 가이드 (Guide)', customer: '고객 정보 (Customer)', items: '품목·가격 (Items & pricing)', ship: '배송 (Shipment)', pay: '결제 기록 (Payments)', email: '고객 응대 이메일 (Email)', settle: '정산 (Settlement)' };
   let b = '';
+  if (k === 'guide') { const st = STAGES.find(x => x.key === ui.drawer.stage); b = `<h3 style="font-size:17px">${st.no} ${st.ko} <span class="faint" style="font-weight:400">${st.en}</span></h3>${guideBody(st.key)}<div class="row">${STAGES.map(x => `<button class="btn sm ${x.key === st.key ? 'pri' : ''}" data-act="guide" data-stage="${x.key}">${x.no}</button>`).join('')}<span class="spacer"></span><button class="btn sm" data-act="guideView">전체 가이드·용어 사전</button></div>`; }
   if (k === 'customer') b = drCustomer(d);
   if (k === 'items') b = drItems(d);
   if (k === 'ship') b = drShip(d, d.shipments.find(s => s.id === ui.drawer.sid));
@@ -834,7 +1020,11 @@ function drCustomer(d) {
     ${F('이메일', p + 'email', c.email, { type: 'email' })}${F('전화', p + 'phone', c.phone)}
     ${F('청구지 주소 (Bill to)', p + 'billAddress', c.billAddress, { area: true })}${F('배송지 주소 (Ship to)', p + 'shipAddress', c.shipAddress, { area: true })}
     ${F('고객 메모 (내부)', p + 'notes', c.notes, { area: true, cls: 'full' })}</div>
-    <p class="tiny faint">고객 정보는 이 브라우저에만 저장됩니다. 고객 발송 문서에는 영문으로 입력하세요.</p>`;
+    <p class="tiny faint">고객 정보는 이 브라우저에만 저장됩니다. 고객 발송 문서에는 영문으로 입력하세요.</p>
+    <fieldset><legend>바이어 진위 체크리스트 (KOTRA p.120) — 해당하면 체크</legend>
+    ${BUYER_CHECK.map((t, i) => CB(esc(t), `deal:buyerCheck.${i}`, d.buyerCheck[i])).join('')}
+    ${riskCount(d) ? `<div class="err">위험 신호 ${riskCount(d)}개입니다. 거래를 서두르지 말고 2가지 이상의 경로로 회사를 확인하세요. KOTRA 무역사기 상담 ☎1600-7119 (2번→6번), 한국무역보험공사 해외 신용조사 ☎1588-3884.</div>` : '<div class="ok">체크된 위험 신호가 없습니다. 그래도 회사 홈페이지, 도메인 이메일, 전화번호는 직접 확인하세요.</div>'}
+    ${CB('<b>확인 완료</b> — 회사 실존·연락처를 확인했고 거래를 진행합니다', 'deal:checks.inquiry_buyer', d.checks.inquiry_buyer)}</fieldset>`;
 }
 function drItems(d) {
   const t = totals(d), disc = dealDiscount(d), tier = tierFor(d.pricing.tiers, t.sets);
@@ -896,9 +1086,12 @@ function drShip(d, s) {
   <tfoot><tr><td colspan="4">${s.boxes.length}박스</td><td class="r">${kg(ss.nw)}</td><td class="r">${kg(ss.gw)}</td><td class="r">${kg(ss.vol)}</td><td class="r">${kg(ss.charge)}</td><td colspan="2"></td></tr></tfoot></table></div>
   <div class="row"><button class="btn sm" data-act="addBox" data-sid="${s.id}">+ 박스 추가</button></div></fieldset>
   <fieldset><legend>수출신고 (Declaration) — 신고와 수출이행은 별개</legend><div class="grid2">
-  ${F('신고 방식', b + 'declMode', s.declMode, { options: DECL })}${F('수출신고번호', b + 'declNo', s.declNo)}</div>
-  <div class="row">${CB('신고 수리됨', b + 'declAccepted', s.declAccepted)}</div>
-  <div class="row"><label class="chk"><input type="checkbox" data-act="toggleExport" data-sid="${s.id}" ${s.exportDone ? 'checked' : ''} ${!s.shippedAt ? 'disabled' : ''}>수출이행(선적·인도) 완료</label><span class="tiny faint">${s.shippedAt ? '' : '출고 완료 후 체크할 수 있습니다'}</span></div></fieldset>
+  ${F('신고 방식', b + 'declMode', s.declMode, { options: DECL })}${F('수출신고번호', b + 'declNo', s.declNo)}${F('신고 수리일', b + 'declDate', s.declDate || '', { type: 'date' })}
+  <div class="f"><span>적재 기한 (수리일 + 30일)</span><div class="num" style="padding:6px 0">${s.declDate ? esc(loadDeadline(s)) : '—'}</div></div></div>
+  <div class="small">이번 배송 통관가액 ≈ <b>${krw(shipKrw(d, s))}</b> (USD ${usd(ss.value)} × 환율 ${num(d.pricing.fxRate).toLocaleString('ko-KR')}) — ${shipKrw(d, s) > 2000000 ? '<b>FOB 200만원 초과 → 목록통관 불가, 정식 수출신고</b>' : '200만원 이하: 목록통관도 가능하지만 수출실적·환급이 필요하면 정식 신고'}</div>
+  ${DECL_INFO[s.declMode] ? `<div class="${DECL_INFO[s.declMode].limit && shipKrw(d, s) > DECL_INFO[s.declMode].limit ? 'err' : 'warn'}">${esc(DECL_INFO[s.declMode].note)}</div>` : '<div class="warn">신고 방식을 고르세요. 잘 모르겠으면 📘 06 수출신고 가이드의 "수출신고 방식 비교"를 보세요.</div>'}
+  <div class="row">${CB('신고 수리됨', b + 'declAccepted', s.declAccepted)}<button class="btn sm" data-act="guide" data-stage="declaration">📘 수출신고 가이드</button></div>
+  <div class="row"><label class="chk"><input type="checkbox" data-act="toggleExport" data-sid="${s.id}" ${s.exportDone ? 'checked' : ''} ${!s.shippedAt ? 'disabled' : ''}>수출이행(적재) 완료</label><span class="tiny faint">${s.shippedAt ? '유니패스 → 정보조회 → 수출이행내역(건별)에서 적재 확인 후 체크' : '출고 완료 후 체크할 수 있습니다'}</span></div></fieldset>
   <fieldset><legend>배송 (Dispatch)</legend><div class="grid2">${F('운송장 번호 (AWB / Tracking)', b + 'awb', s.awb)}<div class="f"><span>&nbsp;</span>${CB('픽업·인도 예약 완료', b + 'pickupBooked', s.pickupBooked)}</div></div>
   ${F('메모', b + 'note', s.note, { area: true })}
   <div class="sec-title" style="margin:6px 0 0">출고 조건 (Shipping gate)</div><ul class="gate">${g.map(x => `<li class="${x.ok ? 'yes' : 'no'}">${esc(x.t)}</li>`).join('')}</ul>
@@ -907,14 +1100,15 @@ function drShip(d, s) {
 function drPay(d) {
   const t = totals(d), f = ui.payForm || { kind: 'credited', date: today(), amount: '', krw: '', ref: '', note: '' };
   ui.payForm = f;
-  const rows = d.payments.map(p => `<tr><td><span class="pill ${p.kind === 'credited' ? 'green' : 'amber'}">${p.kind === 'credited' ? '실입금' : '송금증'}</span></td><td class="num">${esc(p.date)}</td><td class="r num">${usd(p.amount)}</td><td class="r num">${p.kind === 'credited' ? krw(p.krw) : ''}</td><td class="small">${esc(p.ref)} ${esc(p.note)}</td>
+  const rows = d.payments.map(p => `<tr><td><span class="pill ${p.kind === 'credited' ? 'green' : 'amber'}">${p.kind === 'credited' ? '실입금' : '송금증'}</span></td><td class="num">${esc(p.date)}</td><td class="r num">${usd(p.amount)}</td><td class="r num">${p.kind === 'credited' ? krw(p.krw) : ''}</td><td class="small">${esc(p.payer)} ${esc(p.ref)} ${esc(p.note)}${p.thirdParty ? ' <span class="pill red">제3자 송금</span>' : ''}</td>
     <td>${p.fileId ? `<a class="small" style="cursor:pointer;text-decoration:underline" data-act="openFile" data-id="${p.fileId}">파일</a>` : ''}</td><td><button class="btn sm ghost" data-act="delPay" data-id="${p.id}">×</button></td></tr>`).join('');
   return `<div class="stat"><span class="k">청구 총액</span><span class="v">USD ${usd(t.total)}</span><span class="k">출고 필요 입금액</span><span class="v">USD ${usd(t.needForShip)}</span>
     <span class="k">송금증 합계 (입금 미확정)</span><span class="v">USD ${usd(t.receipts)}</span><span class="k">실입금 합계</span><span class="v strong">USD ${usd(t.credited)}</span><span class="k">잔액</span><span class="v strong">USD ${usd(t.balance)}</span></div>
   <fieldset><legend>기록 추가</legend><div class="grid3">
   ${F('구분', 'ui:payForm.kind', f.kind, { options: { receipt: '송금증 수령 (고객이 보낸 증빙)', credited: '실입금 확인 (은행 계좌 확인)' } })}${F('일자', 'ui:payForm.date', f.date, { type: 'date' })}
   ${F(f.kind === 'credited' ? '입금 인정액 USD' : '송금증 금액 USD', 'ui:payForm.amount', f.amount, { t: 'n' })}
-  ${f.kind === 'credited' ? F('원화 입금액 (KRW, 환전 후)', 'ui:payForm.krw', f.krw, { t: 'n' }) : ''}${F('참조 (송금인·은행 거래번호)', 'ui:payForm.ref', f.ref)}${F('메모', 'ui:payForm.note', f.note)}
+  ${f.kind === 'credited' ? F('원화 입금액 (KRW, 환전 후)', 'ui:payForm.krw', f.krw, { t: 'n' }) : ''}${F('송금인 이름 (Remitter)', 'ui:payForm.payer', f.payer || '', { ph: '송금증·입금내역의 이름' })}${F('참조 (은행 거래번호)', 'ui:payForm.ref', f.ref)}
+  <div class="full">${CB('송금인이 계약한 바이어와 다름 (제3자 송금)', 'ui:payForm.thirdParty', f.thirdParty)}${f.thirdParty ? '<div class="err">계약 바이어가 아닌 제3자로부터 대금을 받으면 한국은행 사전신고 대상일 수 있습니다 (KOTRA p.111). 거래 은행에 먼저 문의하세요.</div>' : ''}</div>${F('메모', 'ui:payForm.note', f.note)}
   <label class="f full"><span>${f.kind === 'credited' ? '입금 확인 캡처 (선택)' : '송금증 파일 (선택)'}</span><input type="file" data-filefor="pay"></label></div>
   ${f.kind === 'receipt' ? '<div class="warn">송금증은 고객이 송금했다는 증빙일 뿐입니다. 실입금 확인 전에는 출고 조건에 반영되지 않습니다.</div>' : '<div class="ok">실입금은 은행 계좌에서 직접 확인한 금액만 입력하세요. 수수료가 차감되어 들어왔다면 인정액과 메모를 함께 기록합니다.</div>'}
   <div class="row"><button class="btn pri" data-act="addPay">기록 추가</button></div></fieldset>
@@ -984,7 +1178,7 @@ function viewSettings() {
   <div class="set-grid">
   <div class="panel"><div class="sec-title" style="margin:0">판매자 정보 (Seller / Exporter) — 영문</div>
     <div class="grid2">${F('회사명', s + 'seller.company', S.seller.company)}${F('서명자 / 담당자', s + 'seller.signer', S.seller.signer)}${F('주소', s + 'seller.address', S.seller.address, { area: true, cls: 'full' })}
-    ${F('사업자등록번호', s + 'seller.regNo', S.seller.regNo)}${F('전화', s + 'seller.phone', S.seller.phone)}${F('이메일', s + 'seller.email', S.seller.email)}${F('웹사이트', s + 'seller.web', S.seller.web)}</div>
+    ${F('사업자등록번호', s + 'seller.regNo', S.seller.regNo)}${F('통관고유부호 (유니패스 발급)', s + 'seller.customsCode', S.seller.customsCode)}${F('전화', s + 'seller.phone', S.seller.phone)}${F('이메일', s + 'seller.email', S.seller.email)}${F('웹사이트', s + 'seller.web', S.seller.web)}</div>
     <label class="f"><span>문서 로고 이미지 (선택, 없으면 텍스트 "bunnar")</span><input type="file" accept="image/*" data-filefor="logo"></label>${S.logo ? '<button class="btn sm" data-act="clearLogo">로고 제거</button>' : ''}</div>
   <div class="panel"><div class="sec-title" style="margin:0">은행 정보 (Bank) — 이 브라우저에만 저장</div>
     <div class="grid2">${F('은행', s + 'bank.bank', S.bank.bank)}${F('SWIFT/BIC', s + 'bank.swift', S.bank.swift)}${F('예금주 (Beneficiary)', s + 'bank.beneficiary', S.bank.beneficiary)}${F('계좌번호', s + 'bank.account', S.bank.account)}${F('추가 문구 (예: Wise 안내)', s + 'bank.note', S.bank.note, { cls: 'full' })}</div>
@@ -1065,6 +1259,29 @@ const A = {
   home() { ui.view = 'home'; ui.dealId = null; ui.drawer = null; window.scrollTo(0, 0); render(); },
   settings() { ui.view = 'settings'; ui.drawer = null; window.scrollTo(0, 0); render(); },
   filter(el) { ui.filter = el.dataset.v; render(); },
+  guideView() { ui.view = 'guide'; ui.drawer = null; window.scrollTo(0, 0); render(); },
+  hideSetup() { state.settings.setupHidden = true; commit(); toast('수출 가이드 화면에서 다시 볼 수 있습니다'); },
+  guide(el) { if (ui.view !== 'deal') { ui.guideOpen = el.dataset.stage; A.guideView(); return; } ui.drawer = { kind: 'guide', stage: el.dataset.stage }; render(); },
+  go(el) {
+    const d = deal(), tgt = GO[el.dataset.stage]?.[el.dataset.k] || '', [type, arg] = tgt.split(':');
+    const E = ds => ({ dataset: ds });
+    const firstShip = () => d.shipments.find(s => !s.shippedAt) || d.shipments[0];
+    if (type === 'customer') return A.drawer(E({ k: 'customer' }));
+    if (type === 'items') return A.drawer(E({ k: 'items' }));
+    if (type === 'mail') return A.emailKey(E({ key: arg }));
+    if (type === 'pay') return A.payForm(E({ kind: arg }));
+    if (type === 'doc') return A.newDoc(E({ type: arg }));
+    if (type === 'guide') return A.guide(E({ stage: el.dataset.stage }));
+    if (type === 'note') { const t = $('[data-bind="ui:newLog"]'); if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'center' }); t.focus(); } return; }
+    if (type === 'verify') { $('.lower select')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (!d.shipments.length) return A.addShip();
+    if (type === 'ship') { const s = firstShip(); return A.drawer(E({ k: 'ship', sid: s.id })); }
+    if (type === 'sdoc') {
+      const act = activeShips(d).length ? activeShips(d) : d.shipments;
+      if (arg === 'CI') { const s1 = act.find(s => !hasIssued(d, 'CI', s.id)); if (s1) return A.newDoc(E({ type: 'CI', sid: s1.id })); const s2 = act.find(s => !hasIssued(d, 'PL', s.id)); return A.newDoc(E({ type: 'PL', sid: (s2 || act[0]).id })); }
+      const s = act.find(x => !hasIssued(d, arg, x.id)) || act[0]; return A.newDoc(E({ type: arg, sid: s.id }));
+    }
+  },
   newDeal() { const d = newDeal(); state.deals.unshift(d); ui.view = 'deal'; ui.dealId = d.id; ui.drawer = { kind: 'customer' }; commit(); },
   openDeal(el) { ui.view = 'deal'; ui.dealId = el.dataset.id; window.scrollTo(0, 0); render(); },
   drawer(el) { ui.drawer = { kind: el.dataset.k, sid: el.dataset.sid }; if (el.dataset.k === 'email' && !ui.email.body) A.emailReset(); render(); },
@@ -1105,7 +1322,7 @@ const A = {
   async addPay() {
     const d = deal(), f = ui.payForm;
     if (!(num(f.amount) > 0)) { alert('금액을 입력하세요.'); return; }
-    const p = { id: uid(), kind: f.kind, date: f.date || today(), amount: r2(f.amount), krw: f.kind === 'credited' ? Math.round(num(f.krw)) : 0, ref: f.ref, note: f.note, fileId: '' };
+    const p = { id: uid(), kind: f.kind, date: f.date || today(), amount: r2(f.amount), krw: f.kind === 'credited' ? Math.round(num(f.krw)) : 0, ref: f.ref, note: f.note, payer: f.payer || '', thirdParty: !!f.thirdParty, fileId: '' };
     if (ui.payFile) p.fileId = await storeFile(d, ui.payFile, { kind: 'remittance', stage: 'payment' });
     d.payments.push(p);
     log(d, `${f.kind === 'credited' ? '실입금 확인' : '송금증 수령'} USD ${usd(p.amount)}${p.krw ? ` (${krw(p.krw)})` : ''}`);
@@ -1171,6 +1388,7 @@ const A = {
     const withFiles = !!el.dataset.files, out = { schema: SCHEMA, app: 'BUNNAR Export', version: APP_VERSION, exportedAt: nowStr(), data: state };
     if (withFiles) { out.files = {}; for (const d of state.deals) for (const f of d.files) { const b = await FileDB.get(f.id).catch(() => null); if (b) out.files[f.id] = await blobToB64(b); } }
     download(`bunnar-export-backup_${ymd()}${withFiles ? '_files' : ''}.json`, JSON.stringify(out));
+    state.settings.lastBackup = nowStr(); save(); render();
     toast('백업 파일을 저장했습니다 — 비공개 위치에 보관하세요');
   },
   csv() {
