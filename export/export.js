@@ -71,7 +71,7 @@ function defaultVerify() {
 let state = null;
 const ui = { view: 'home', dealId: null, drawer: null, modal: null, filter: 'active', payForm: null, payFile: null, newLog: '', email: { key: 'pi', subject: '', body: '' } };
 
-function freshState() { return { schema: SCHEMA, version: APP_VERSION, settings: defaultSettings(), products: defaultProducts(), deals: [] }; }
+function freshState() { return { schema: SCHEMA, version: APP_VERSION, settings: defaultSettings(), products: defaultProducts(), deals: [], priceLists: [] }; }
 function load() {
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -85,6 +85,7 @@ function migrate(s) {
   for (const k of ['seller', 'bank', 'pricing', 'defaults']) s.settings[k] = Object.assign(defaultSettings()[k], s.settings[k] || {});
   s.settings.setup = s.settings.setup || {};
   s.products = s.products || [];
+  s.priceLists = s.priceLists || [];
   s.deals = (s.deals || []).map(normDeal);
   return s;
 }
@@ -135,8 +136,21 @@ function calcUnit(priceKrw, disc, fx, vatMode, vatRate) {
   if (vatMode === 'deductOnce') v = v / (1 + num(vatRate) / 100); // VAT는 최대 1회만 차감
   return r2(v / num(fx));
 }
+/* 수량별 단가: 제품 단가표(구간별 고정 USD)가 있으면 우선, 없으면 기준가 × (1−할인율) ÷ 환율 */
+const tierKey = t => 't' + num(t.min);
+function tableUnit(d, it) {
+  if (!d.pricing.discountAuto || !it.tierPrices) return 0;
+  const t = tierFor(d.pricing.tiers, dealQty(d));
+  return t ? num(it.tierPrices[tierKey(t)]) : 0;
+}
+function productTierUnit(p, t, P = state.settings.pricing) {
+  const o = num(p.tierPrices?.[tierKey(t)]);
+  return o > 0 ? { v: r2(o), fixed: true } : { v: calcUnit(p.priceKrw, t.discount, P.fxRate, P.vatMode, P.vatRate), fixed: false };
+}
+function tierLabel(t) { return `${num(t.min)}${t.max == null || t.max === '' ? '+' : '–' + num(t.max)}`; }
 function unitOf(d, it) {
   if (it.manual) return r2(it.unitUsd);
+  const tu = tableUnit(d, it); if (tu > 0) return r2(tu);
   return calcUnit(it.priceKrw, dealDiscount(d), d.pricing.fxRate, d.pricing.vatMode, d.pricing.vatRate);
 }
 function totals(d) {
@@ -1043,7 +1057,7 @@ function drItems(d) {
       <input style="margin-top:3px" data-bind="${b}desc" value="${esc(it.desc)}" placeholder="영문 품목명"></td>
       <td style="width:62px"><input class="n" data-bind="${b}qty" data-t="n" value="${num(it.qty)}"></td>
       <td style="width:92px"><input class="n" data-bind="${b}priceKrw" data-t="n" value="${num(it.priceKrw)}" ${it.manual ? 'disabled' : ''}></td>
-      <td style="width:88px">${it.manual ? `<input class="n" data-bind="${b}unitUsd" data-t="n" value="${num(it.unitUsd)}">` : `<div class="num" style="text-align:right;padding:4px 6px">${usd(u)}</div>`}
+      <td style="width:88px">${it.manual ? `<input class="n" data-bind="${b}unitUsd" data-t="n" value="${num(it.unitUsd)}">` : `<div class="num" style="text-align:right;padding:4px 6px">${usd(u)}${tableUnit(d, it) > 0 ? '<div class="tiny faint">단가표</div>' : ''}</div>`}
         <label class="chk tiny" style="justify-content:flex-end"><input type="checkbox" data-bind="${b}manual" data-t="b" ${it.manual ? 'checked' : ''}>수동</label></td>
       <td class="r num" style="width:84px">${usd(r2(num(it.qty) * u))}</td>
       <td style="width:54px;text-align:center"><input type="checkbox" data-bind="${b}backorder" data-t="b" ${it.backorder ? 'checked' : ''} title="백오더"></td>
@@ -1140,8 +1154,59 @@ function drSettle(d) {
   <p class="tiny faint">세무 판단(영세율·수출실적)은 앱이 확정하지 않습니다. 확인 필요 항목에서 상태를 관리하세요.</p>`;
 }
 
+/* ---------- 수량별 단가표 (Price list by quantity) ---------- */
+function priceTablePanel() {
+  const P = state.settings.pricing, tiers = P.tiers;
+  const head = tiers.map(t => `<th class="r">${tierLabel(t)}세트<div class="tiny faint" style="font-weight:400">할인 ${num(t.discount)}%${t.negotiable ? ' · 협의' : ''}</div></th>`).join('');
+  const rows = state.products.map(p => `<tr><td>${esc(p.nameEn) || '<span class="faint">(이름 없음)</span>'}<div class="tiny faint">기준가 ${num(p.priceKrw) ? krw(p.priceKrw) : '미입력'}</div></td>${tiers.map(t => {
+    const u = productTierUnit(p, t), calc = calcUnit(p.priceKrw, t.discount, P.fxRate, P.vatMode, P.vatRate);
+    return `<td class="r" style="min-width:110px"><input class="n" data-bind="root:products.#${p.id}.tierPrices.${tierKey(t)}" data-t="nn" value="${u.fixed ? u.v : ''}" placeholder="${calc ? usd(calc) : '—'}" title="비워 두면 자동 계산값(${calc ? usd(calc) : '기준가 필요'}) 사용">
+      <div class="tiny ${u.fixed ? '' : 'faint'}">${u.fixed ? '고정 단가' : calc ? '자동 계산' : '기준가 필요'}</div></td>`; }).join('')}</tr>`).join('');
+  const hist = (state.priceLists || []).slice().reverse().map(x => `<div class="docitem" data-act="openPriceList" data-id="${x.id}"><span class="no">${esc(x.no)}</span><span class="tiny faint">${esc(x.issuedAt)}</span></div>`).join('');
+  return `<div class="panel" style="grid-column:1/-1"><div class="row"><div class="sec-title" style="margin:0">수량별 단가표 (Price list by quantity) — USD / 세트</div><span class="spacer"></span><button class="btn pri sm" data-act="openPriceList">단가표 미리보기·PDF (고객용 영문)</button></div>
+    <p class="tiny faint" style="margin:6px 0">칸을 비워 두면 기준가 × (1 − 구간 할인율)${P.vatMode === 'deductOnce' ? ' ÷ 1.1' : ''} ÷ 환율 ${num(P.fxRate).toLocaleString('ko-KR')}원으로 자동 계산합니다. 금액을 입력하면 그 구간의 <b>고정 단가</b>가 됩니다. 견적에서는 주문 전체 세트 수에 맞는 구간 단가가 자동으로 적용되고, 품목을 추가할 때의 단가표가 그 수출 건에 복사됩니다(이후 단가표를 바꿔도 기존 건·발행 문서는 바뀌지 않음). 첫 구간 미만 수량과 최소 주문 금액(USD ${usd(P.minOrderUsd)}) 미달은 개별 확인합니다.</p>
+    <div style="overflow-x:auto"><table class="t"><thead><tr><th>제품</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+    ${hist ? `<div class="sec-title" style="margin:12px 0 6px">발행한 단가표 (Issued)</div><div class="doclist">${hist}</div>` : ''}</div>`;
+}
+function buildPriceSnap(e) {
+  const S = state.settings, P = S.pricing;
+  return { type: 'PRICE', title: 'WHOLESALE PRICE LIST', no: e.no, date: e.date, validUntil: e.validUntil, notes: e.notes, seller: clone(S.seller), logo: S.logo || '',
+    minOrderUsd: num(P.minOrderUsd), tiers: P.tiers.map(t => ({ label: tierLabel(t), negotiable: !!t.negotiable })),
+    rows: state.products.filter(p => p.nameEn).map(p => ({ name: p.nameEn, pcs: num(p.piecesPerSet), prices: P.tiers.map(t => productTierUnit(p, t).v) })) };
+}
+function renderPriceList(sn, draft) {
+  const s = sn.seller;
+  const th = sn.tiers.map(t => `<th class="r">${esc(t.label)} SETS${t.negotiable ? '*' : ''}</th>`).join('');
+  const rows = sn.rows.map(r => `<tr><td>${esc(r.name)}</td><td class="c">${r.pcs || ''}</td>${r.prices.map(v => `<td class="r">${v > 0 ? usd(v) : 'On request'}</td>`).join('')}</tr>`).join('');
+  return paper(sn, `<div class="d-top">${dLogo(sn)}<div class="d-title">${sn.title}</div></div>
+    <div class="d-2col">${dSeller(sn)}${dMeta('Price List Details', [['Price List No.', sn.no], ['Issue Date', sn.date], ['Valid Until', sn.validUntil], ['Currency', 'USD per set'], ['Minimum Order', sn.minOrderUsd ? `USD ${usd(sn.minOrderUsd)} (goods value)` : '']])}</div>
+    <table class="d-tbl"><thead><tr><th>DESCRIPTION</th><th class="c">PCS/SET</th>${th}</tr></thead><tbody>${rows}</tbody></table>
+    <div class="d-foot-note">Unit price is determined by the total number of sets in one order (mixed items allowed).${sn.tiers.some(t => t.negotiable) ? ' * Larger quantities: final price confirmed individually.' : ''}</div>
+    ${dNotes(sn.notes, 'TERMS')}${dFooter()}`, draft);
+}
+function priceDefaults() {
+  const key = `PRL-${ymd()}-`; let n = 0; for (const x of state.priceLists || []) if (x.no.startsWith(key)) n = Math.max(n, parseInt(x.no.slice(key.length), 10) || 0);
+  return { no: key + pad(n + 1), date: today(), validUntil: addDays(today(), 90),
+    notes: [`Minimum order: USD ${usd(state.settings.pricing.minOrderUsd)} in goods value, excluding shipping and printing.`, 'Prices are per set and exclude international shipping and printing services, which are quoted separately.', 'Payment: 100% bank transfer before dispatch unless otherwise agreed.', 'Stock availability is confirmed at the time of order.', "Import duties, local taxes and destination customs charges are the buyer's responsibility."].join('\n') };
+}
+function priceModalHtml() {
+  const m = ui.modal, issued = m.viewId ? state.priceLists.find(x => x.id === m.viewId) : null;
+  const sn = issued ? issued.snapshot : buildPriceSnap(m.edits), b = 'ui:modal.edits.';
+  const missing = sn.rows.filter(r => r.prices.some(v => !(v > 0))).length;
+  const side = issued ? `<div class="row"><b>수량별 단가표</b>${DOC_STATUS.issued}</div><div class="small muted">발행: ${esc(issued.issuedAt)}<br>발행한 단가표는 바뀌지 않습니다. 새 가격은 새 단가표로 발행하세요.</div>`
+    : `<div class="row"><b>수량별 단가표</b>${DOC_STATUS.draft}</div>
+      ${missing ? `<div class="warn">${missing}개 제품에 가격이 없는 구간이 있습니다 ("On request"로 표시). 설정에서 기준가나 고정 단가를 입력하세요.</div>` : '<div class="ok">모든 제품·구간에 단가가 있습니다.</div>'}
+      ${F('발행일', b + 'date', m.edits.date, { type: 'date', live: true })}${F('유효기간 (Valid until)', b + 'validUntil', m.edits.validUntil, { type: 'date', live: true })}
+      ${F('Terms (영문)', b + 'notes', m.edits.notes, { area: true, live: true })}
+      <div class="tiny faint">고객에게 보내는 문서라 할인율과 원화 기준가는 표시하지 않습니다. 가격을 바꾸려면 닫고 설정의 단가표를 수정하세요.</div>`;
+  return `<div class="overlay"></div><div class="modal"><div class="modal-h"><b class="num">${esc(sn.no)}</b><span class="faint small">WHOLESALE PRICE LIST</span><span class="spacer"></span>
+    <button class="btn" data-act="printDoc">PDF 출력 / 인쇄</button>${issued ? '' : '<button class="btn pri" data-act="issuePriceList">발행 기록 저장</button>'}<button class="btn" data-act="closeModal">닫기</button></div>
+    <div class="modal-b"><div class="modal-side">${side}</div><div class="modal-prev" id="doc-preview">${renderPriceList(sn, !issued)}</div></div></div>`;
+}
+
 /* ---------- document modal ---------- */
 function modalHtml() {
+  if (ui.modal.price) return priceModalHtml();
   const d = state.deals.find(x => x.id === ui.modal.dealId), doc = d?.docs.find(x => x.id === ui.modal.docId);
   if (!doc) { ui.modal = null; return ''; }
   const sn = snapOf(d, doc), errs = verifyMath(sn), warns = doc.status === 'draft' ? docWarnings(d, doc, sn) : [];
@@ -1205,6 +1270,7 @@ function viewSettings() {
   <div class="panel" style="grid-column:1/-1"><div class="sec-title" style="margin:0">제품 (Products)</div>
     <div style="overflow-x:auto"><table class="t"><thead><tr><th>영문명 / 국문명</th><th class="r">기준가 ₩ (VAT 포함)</th><th class="r">세트당 피스</th><th class="r">세트 중량kg</th><th class="r">재고</th><th>HS코드</th><th>HS 상태</th><th></th></tr></thead><tbody>${prods}</tbody></table></div>
     <div class="row"><button class="btn sm" data-act="addProduct">+ 제품 추가</button><span class="tiny faint">기준가가 0인 제품은 견적에서 수동 단가로 입력하세요.</span></div></div>
+  ${priceTablePanel()}
   <div class="panel" style="grid-column:1/-1"><div class="sec-title" style="margin:0">데이터 (Backup · Export)</div>
     <div class="row"><button class="btn pri" data-act="backup" data-files="1">전체 백업 JSON (첨부 포함)</button><button class="btn" data-act="backup">백업 JSON (첨부 제외)</button>
     <label class="btn">JSON 복원<input type="file" accept="application/json,.json" data-filefor="restore" hidden></label>
@@ -1240,7 +1306,7 @@ function afterBind(r) {
     d.updatedAt = nowStr();
     if (r.path === 'customer.country' && !d.customer.cc) { const cc = COUNTRY_CC[String(r.v).trim().toLowerCase()]; if (cc) d.customer.cc = cc; }
     if (r.path === 'customer.cc') d.customer.cc = String(r.v).toUpperCase().slice(0, 3);
-    if (r.last === 'productId') { const p = productOf(r.v); if (p) Object.assign(r.obj, { desc: p.nameEn, priceKrw: p.priceKrw, piecesPerSet: p.piecesPerSet, hsCode: p.hsCode }); }
+    if (r.last === 'productId') { const p = productOf(r.v); if (p) Object.assign(r.obj, { desc: p.nameEn, priceKrw: p.priceKrw, piecesPerSet: p.piecesPerSet, hsCode: p.hsCode, tierPrices: clone(p.tierPrices || {}) }); }
     if (r.last === 'manual' && r.v) { r.obj.manual = false; const u = unitOf(d, r.obj); r.obj.manual = true; r.obj.unitUsd = u; }
     if (r.last === 'discountAuto' && !r.v) d.pricing.discount = (() => { d.pricing.discountAuto = true; const x = dealDiscount(d); d.pricing.discountAuto = false; return x; })();
     if (r.path.endsWith('.method') && r.v !== 'DHL') r.obj.account = 'seller';
@@ -1307,7 +1373,7 @@ const A = {
   delItem(el) { const d = deal(); d.items = d.items.filter(i => i.id !== el.dataset.id); d.shipments.forEach(s => delete s.alloc[el.dataset.id]); commit(); },
   addCharge() { deal().charges.push({ id: uid(), label: '', amount: 0 }); commit(); },
   delCharge(el) { const d = deal(); d.charges = d.charges.filter(c => c.id !== el.dataset.id); commit(); },
-  reapplyPolicy() { const d = deal(), P = state.settings.pricing; if (!confirm('현재 설정의 환율·할인 구간·VAT 방식을 이 수출 건에 다시 적용합니다. (발행된 문서는 바뀌지 않습니다)')) return; Object.assign(d.pricing, { minOrderUsd: num(P.minOrderUsd), fxRate: P.fxRate, fxDate: P.fxDate, vatMode: P.vatMode, vatRate: P.vatRate, tiers: clone(P.tiers), discountAuto: true }); log(d, `가격 정책 재적용 (환율 ${P.fxRate})`); commit(); },
+  reapplyPolicy() { const d = deal(), P = state.settings.pricing; if (!confirm('현재 설정의 환율·할인 구간·VAT 방식·제품 기준가·수량별 단가표를 이 수출 건에 다시 적용합니다. (발행된 문서는 바뀌지 않습니다)')) return; Object.assign(d.pricing, { minOrderUsd: num(P.minOrderUsd), fxRate: P.fxRate, fxDate: P.fxDate, vatMode: P.vatMode, vatRate: P.vatRate, tiers: clone(P.tiers), discountAuto: true }); d.items.forEach(i => { const pr = productOf(i.productId); if (pr) Object.assign(i, { priceKrw: pr.priceKrw, tierPrices: clone(pr.tierPrices || {}) }); }); log(d, `가격 정책·단가표 재적용 (환율 ${P.fxRate})`); commit(); },
   /* shipments */
   addShip() { const d = deal(); const s = newShipment(d); if (!d.shipments.length) d.items.forEach(i => { if (!i.backorder) s.alloc[i.id] = num(i.qty); }); d.shipments.push(s); log(d, `${s.no}차 배송 추가`); ui.drawer = { kind: 'ship', sid: s.id }; commit(); },
   delShip(el) { const d = deal(); if (!confirm('이 배송을 삭제할까요?')) return; d.shipments = d.shipments.filter(s => s.id !== el.dataset.sid); ui.drawer = null; commit(); },
@@ -1358,6 +1424,12 @@ const A = {
   },
   openDoc(el) { ui.modal = { dealId: deal().id, docId: el.dataset.id }; render(); },
   closeModal() { ui.modal = null; render(); },
+  openPriceList(el) { ui.modal = { price: true, viewId: el.dataset.id || null, edits: priceDefaults() }; render(); },
+  issuePriceList() {
+    const sn = buildPriceSnap(ui.modal.edits);
+    if (!confirm(`${sn.no} 단가표를 발행 기록으로 저장합니다. 저장된 단가표는 바뀌지 않습니다.`)) return;
+    const x = { id: uid(), no: sn.no, issuedAt: nowStr(), snapshot: sn }; state.priceLists.push(x); ui.modal.viewId = x.id; commit(); toast('저장했습니다. PDF 출력으로 고객에게 보내세요.');
+  },
   issueDoc() {
     const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId), sn = buildSnap(d, doc);
     const errs = verifyMath(sn); if (errs.length) { alert('자동 검산 오류가 있어 발행할 수 없습니다:\n' + errs.join('\n')); return; }
@@ -1372,9 +1444,11 @@ const A = {
   voidDoc() { const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId); const why = prompt('무효 처리 사유 (기록에 남습니다):'); if (why === null) return; doc.status = 'void'; doc.voidReason = why; log(d, `${doc.type} 무효: ${doc.no} — ${why}`); commit(); },
   delDoc() { const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId); if (!confirm('초안을 삭제할까요?')) return; d.docs = d.docs.filter(x => x !== doc); log(d, `${doc.type} 초안 삭제: ${doc.no}`); ui.modal = null; commit(); },
   printDoc() {
-    const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId);
-    $('#print-root').innerHTML = renderDoc(snapOf(d, doc), doc.status === 'draft');
-    const old = document.title; document.title = `${doc.no}_BUNNAR${doc.status === 'draft' ? '_DRAFT' : ''}`;
+    let html, name;
+    if (ui.modal.price) { const iss = ui.modal.viewId && state.priceLists.find(x => x.id === ui.modal.viewId); const sn = iss ? iss.snapshot : buildPriceSnap(ui.modal.edits); html = renderPriceList(sn, false); name = `${sn.no}_BUNNAR_PriceList`; }
+    else { const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId); html = renderDoc(snapOf(d, doc), doc.status === 'draft'); name = `${doc.no}_BUNNAR${doc.status === 'draft' ? '_DRAFT' : ''}`; }
+    $('#print-root').innerHTML = html;
+    const old = document.title; document.title = name;
     document.body.classList.add('printing');
     const done = () => { document.body.classList.remove('printing'); document.title = old; $('#print-root').innerHTML = ''; window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
@@ -1493,7 +1567,8 @@ document.addEventListener('input', e => {
   if (el.dataset.bind && el.dataset.live) {
     applyBind(el);
     const d = state.deals.find(x => x.id === ui.modal?.dealId), doc = d?.docs.find(x => x.id === ui.modal.docId);
-    if (doc && $('#doc-preview')) $('#doc-preview').innerHTML = renderDoc(snapOf(d, doc), doc.status === 'draft');
+    if (ui.modal?.price && $('#doc-preview')) $('#doc-preview').innerHTML = renderPriceList(buildPriceSnap(ui.modal.edits), true);
+    else if (doc && $('#doc-preview')) $('#doc-preview').innerHTML = renderDoc(snapOf(d, doc), doc.status === 'draft');
   } else if (el.dataset.bind && el.dataset.bind.startsWith('ui:')) applyBind(el); // 메모 입력 중 보존
 });
 document.addEventListener('keydown', e => {
