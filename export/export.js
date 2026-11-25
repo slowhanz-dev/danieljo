@@ -34,9 +34,7 @@ function defaultSettings() {
     bank: { bank: '', swift: '', beneficiary: '', account: '', note: '' },
     pricing: {
       tiers: [
-        { min: 30, max: 99, discount: 25, negotiable: false, note: '' },
-        { min: 100, max: 299, discount: 30, negotiable: false, note: '' },
-        { min: 300, max: null, discount: 33, negotiable: true, note: '33~35% 개별 협의' },
+        { min: 1, max: null, discount: 27.5, negotiable: false, note: '전 수량 공통 도매 할인 (설정에서 변경 가능)' },
       ],
       vatRate: 10, vatMode: 'included', fxRate: 1400, fxDate: today(),
       minOrderUsd: 500,
@@ -84,6 +82,8 @@ function migrate(s) {
   s.settings = Object.assign(d, s.settings || {});
   for (const k of ['seller', 'bank', 'pricing', 'defaults']) s.settings[k] = Object.assign(defaultSettings()[k], s.settings[k] || {});
   s.settings.setup = s.settings.setup || {};
+  const tt = s.settings.pricing.tiers || [];
+  if (tt.length === 3 && tt.map(t => `${t.min}/${t.discount}`).join() === '30/25,100/30,300/33') s.settings.pricing.tiers = defaultSettings().pricing.tiers; // 구 기본값 → 단일 할인
   s.products = s.products || [];
   s.priceLists = s.priceLists || [];
   s.deals = (s.deals || []).map(normDeal);
@@ -147,7 +147,7 @@ function productTierUnit(p, t, P = state.settings.pricing) {
   const o = num(p.tierPrices?.[tierKey(t)]);
   return o > 0 ? { v: r2(o), fixed: true } : { v: calcUnit(p.priceKrw, t.discount, P.fxRate, P.vatMode, P.vatRate), fixed: false };
 }
-function tierLabel(t) { return `${num(t.min)}${t.max == null || t.max === '' ? '+' : '–' + num(t.max)}`; }
+function tierLabel(t) { return num(t.min) <= 1 && (t.max == null || t.max === '') ? 'All' : `${num(t.min)}${t.max == null || t.max === '' ? '+' : '–' + num(t.max)}`; }
 function unitOf(d, it) {
   if (it.manual) return r2(it.unitUsd);
   const tu = tableUnit(d, it); if (tu > 0) return r2(tu);
@@ -395,7 +395,7 @@ function defaultEdits(d, type, s) {
   if (type === 'QT') {
     e.validUntil = addDays(today(), 14);
     if (minOrder(d) > 0) lines.push(`Minimum order: USD ${usd(minOrder(d))} in goods value (excluding shipping and printing).`);
-    lines.push('Prices are based on the total quantity above; a change in quantity may change the discount tier.');
+    if ((d.pricing.tiers || []).length > 1) lines.push('Prices are based on the total quantity above; a change in quantity may change the discount tier.');
     lines.push('International shipping and printing services are quoted separately.');
     lines.push('Stock availability is confirmed at the time of order.');
     lines.push("Import duties, local taxes and destination customs charges are the buyer's responsibility.");
@@ -665,7 +665,7 @@ const GUIDE = {
     ref: 'p.118–125 무역사기 / p.120 바이어 진위 체크리스트' },
   quotation: {
     why: '견적은 계약의 출발점입니다. 수출 가격은 국내 판매가와 다른 기준으로 정해야 하고, 원가 아래로 팔지 않도록 기준선을 먼저 정해 둡니다.',
-    steps: ['품목과 수량을 입력하면 앱이 수량 구간 할인을 자동으로 계산합니다.', '오늘 환율을 확인해 입력합니다. 원화 환율이 내리면(원화 강세) 같은 달러를 받아도 원화 수입이 줄어듭니다.', '재고와 입고 예정일을 확인하고, 부족한 품목은 백오더로 표시합니다.', '배송비·인쇄비 등은 별도 비용으로 분리합니다.', '견적서(QT)를 발행해 이메일로 보내고 유효기간을 적어 둡니다.'],
+    steps: ['품목과 수량을 입력하면 앱이 도매 할인율을 자동으로 적용해 USD 단가를 계산합니다.', '오늘 환율을 확인해 입력합니다. 원화 환율이 내리면(원화 강세) 같은 달러를 받아도 원화 수입이 줄어듭니다.', '재고와 입고 예정일을 확인하고, 부족한 품목은 백오더로 표시합니다.', '배송비·인쇄비 등은 별도 비용으로 분리합니다.', '견적서(QT)를 발행해 이메일로 보내고 유효기간을 적어 둡니다.'],
     cautions: ['수출원가 = 제조원가 + 물류비(포장·운송·보험) + 금융비용 + 행정비용(통관 수수료) + 마진입니다.', '운임은 오퍼를 보내기 전에 포워더 3~4곳에서 견적을 받아 비교합니다. 물품, 박스 크기, 중량, 출고지, 바이어 주소를 알려 주면 됩니다.', '가격조건(인코텀즈)을 정해 두세요. 고객 DHL 계정을 쓰면 국제 운임은 바이어가 부담합니다.'],
     ref: 'p.68–69 인코텀즈 / p.81 운임 견적 / p.89 수출원가 계산' },
   invoice: {
@@ -1069,7 +1069,7 @@ function drItems(d) {
     ${F('VAT 처리', pr + 'vatMode', d.pricing.vatMode, { options: { included: 'VAT 포함가 기준 (차감 없음)', deductOnce: 'VAT 1회 차감 (÷1.1)' } })}
     <label class="f"><span>할인율 (%)</span><input class="n" data-bind="${pr}discount" data-t="n" value="${d.pricing.discountAuto ? disc : num(d.pricing.discount)}" ${d.pricing.discountAuto ? 'disabled' : ''}></label></div>
     <div class="row">${F('최소 주문 금액 USD (상품 기준)', pr + 'minOrderUsd', d.pricing.minOrderUsd, { t: 'n' })}<span class="small ${belowMin(d, t) ? '' : 'muted'}" style="${belowMin(d, t) ? 'color:var(--red)' : ''}">현재 상품 금액 USD ${usd(t.goods)} — ${t.goods <= 0 ? '품목 입력 전' : belowMin(d, t) ? `USD ${usd(minOrder(d) - t.goods)} 부족` : '충족 ✓'}</span></div>
-    <div class="row">${CB('수량 구간 할인 자동 적용', pr + 'discountAuto', d.pricing.discountAuto)}<span class="small muted">· 총 ${t.sets}세트 → ${tier ? `${tier.min}${tier.max ? '–' + tier.max : '+'}개 구간 ${tier.discount}%${tier.negotiable ? ' (개별 협의: ' + esc(tier.note) + ')' : ''}` : '할인 구간 미만'}</span>
+    <div class="row">${CB('설정의 도매 할인율 자동 적용', pr + 'discountAuto', d.pricing.discountAuto)}<span class="small muted">· 총 ${t.sets}세트 → ${tier ? `${tier.min}${tier.max ? '–' + tier.max : '+'}개 구간 ${tier.discount}%${tier.negotiable ? ' (개별 협의: ' + esc(tier.note) + ')' : ''}` : '할인 구간 미만'}</span>
     <span class="spacer"></span><button class="btn sm" data-act="reapplyPolicy">현재 설정 정책 다시 적용</button></div>
     <div class="tiny faint">단가 = 기준가(VAT 포함 소비자가) × (1 − 할인율)${d.pricing.vatMode === 'deductOnce' ? ' ÷ 1.1' : ''} ÷ 환율 → 소수 둘째 자리 반올림. 발행된 문서에는 영향이 없습니다.</div></fieldset>
     <fieldset><legend>품목 (Items)</legend><div style="overflow-x:auto"><table class="t"><thead><tr><th>품목</th><th class="r">수량(세트)</th><th class="r">기준가 ₩</th><th class="r">단가 USD</th><th class="r">금액 USD</th><th>백오더</th><th></th></tr></thead>
@@ -1157,7 +1157,7 @@ function drSettle(d) {
 /* ---------- 수량별 단가표 (Price list by quantity) ---------- */
 function priceTablePanel() {
   const P = state.settings.pricing, tiers = P.tiers;
-  const head = tiers.map(t => `<th class="r">${tierLabel(t)}세트<div class="tiny faint" style="font-weight:400">할인 ${num(t.discount)}%${t.negotiable ? ' · 협의' : ''}</div></th>`).join('');
+  const head = tiers.map(t => `<th class="r">${tierLabel(t) === 'All' ? '도매 단가' : tierLabel(t) + '세트'}<div class="tiny faint" style="font-weight:400">할인 ${num(t.discount)}%${t.negotiable ? ' · 협의' : ''}</div></th>`).join('');
   const rows = state.products.map(p => `<tr><td>${esc(p.nameEn) || '<span class="faint">(이름 없음)</span>'}<div class="tiny faint">기준가 ${num(p.priceKrw) ? krw(p.priceKrw) : '미입력'}</div></td>${tiers.map(t => {
     const u = productTierUnit(p, t), calc = calcUnit(p.priceKrw, t.discount, P.fxRate, P.vatMode, P.vatRate);
     return `<td class="r" style="min-width:110px"><input class="n" data-bind="root:products.#${p.id}.tierPrices.${tierKey(t)}" data-t="nn" value="${u.fixed ? u.v : ''}" placeholder="${calc ? usd(calc) : '—'}" title="비워 두면 자동 계산값(${calc ? usd(calc) : '기준가 필요'}) 사용">
@@ -1176,12 +1176,12 @@ function buildPriceSnap(e) {
 }
 function renderPriceList(sn, draft) {
   const s = sn.seller;
-  const th = sn.tiers.map(t => `<th class="r">${esc(t.label)} SETS${t.negotiable ? '*' : ''}</th>`).join('');
+  const th = sn.tiers.map(t => `<th class="r">${t.label === 'All' ? 'UNIT PRICE' : esc(t.label) + ' SETS'}${t.negotiable ? '*' : ''}</th>`).join('');
   const rows = sn.rows.map(r => `<tr><td>${esc(r.name)}</td><td class="c">${r.pcs || ''}</td>${r.prices.map(v => `<td class="r">${v > 0 ? usd(v) : 'On request'}</td>`).join('')}</tr>`).join('');
   return paper(sn, `<div class="d-top">${dLogo(sn)}<div class="d-title">${sn.title}</div></div>
     <div class="d-2col">${dSeller(sn)}${dMeta('Price List Details', [['Price List No.', sn.no], ['Issue Date', sn.date], ['Valid Until', sn.validUntil], ['Currency', 'USD per set'], ['Minimum Order', sn.minOrderUsd ? `USD ${usd(sn.minOrderUsd)} (goods value)` : '']])}</div>
     <table class="d-tbl"><thead><tr><th>DESCRIPTION</th><th class="c">PCS/SET</th>${th}</tr></thead><tbody>${rows}</tbody></table>
-    <div class="d-foot-note">Unit price is determined by the total number of sets in one order (mixed items allowed).${sn.tiers.some(t => t.negotiable) ? ' * Larger quantities: final price confirmed individually.' : ''}</div>
+    <div class="d-foot-note">${sn.tiers.length > 1 ? 'Unit price is determined by the total number of sets in one order (mixed items allowed).' : 'Wholesale unit prices apply to all quantities (mixed items allowed), subject to the minimum order.'}${sn.tiers.some(t => t.negotiable) ? ' * Larger quantities: final price confirmed individually.' : ''}</div>
     ${dNotes(sn.notes, 'TERMS')}${dFooter()}`, draft);
 }
 function priceDefaults() {
