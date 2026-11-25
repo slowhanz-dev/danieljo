@@ -39,7 +39,8 @@ function defaultSettings() {
         { min: 300, max: null, discount: 33, negotiable: true, note: '33~35% 개별 협의' },
       ],
       vatRate: 10, vatMode: 'included', fxRate: 1400, fxDate: today(),
-      moqNote: '최소 주문 수량 산정 방식·제품별 최소 수량은 추후 확정 (확인 필요)',
+      minOrderUsd: 500,
+      moqNote: '최소 주문: 상품 금액(배송비·인쇄비 제외) 기준 USD 이상. 제품별 최소 수량은 추후 확정',
     },
     defaults: { incoterms: '', origin: 'Republic of Korea', dimDivisor: 5000, shipRequires: 'full' },
     logo: '', setup: {}, lastBackup: '',
@@ -90,6 +91,7 @@ function migrate(s) {
 function normDeal(d) {
   d = Object.assign({ items: [], charges: [], payments: [], shipments: [], docs: [], files: [], logs: [], checks: {}, verify: defaultVerify(), settlement: { costs: [], note: '' }, todo: '', archived: false, buyerCheck: {} }, d);
   for (const v of defaultVerify()) if (!d.verify.some(x => x.key === v.key)) d.verify.push(v);
+  if (d.pricing && d.pricing.minOrderUsd == null) d.pricing.minOrderUsd = 500;
   for (const s of d.shipments) { if (s.declMode === 'courier') s.declMode = 'express'; if (s.declMode === 'none') s.declMode = 'agent'; if (s.declDate === undefined) s.declDate = ''; }
   return d;
 }
@@ -152,6 +154,8 @@ function totals(d) {
   const needForShip = d.terms.shipRequires === 'deposit' && d.terms.type === 'deposit' ? deposit : total;
   return { lines, goods, charges, total, sets, pieces, deposit, receipts, credited, creditedKrw, balance, needForShip };
 }
+const minOrder = d => num(d.pricing.minOrderUsd);
+const belowMin = (d, t = totals(d)) => minOrder(d) > 0 && t.goods > 0 && t.goods < minOrder(d) - 0.004;
 function payStatus(d, t = totals(d)) {
   if (t.total <= 0) return { label: '금액 미정', cls: '' };
   if (t.credited >= t.total - 0.004) return { label: '입금 완료', cls: 'green' };
@@ -245,6 +249,7 @@ const STAGES = [
     checks: [
       { k: 'items', t: '제품·수량 입력', auto: d => d.items.length > 0 && d.items.every(i => num(i.qty) > 0) },
       { k: 'price', t: '모든 품목 단가 산정 (0원 없음)', auto: d => d.items.length > 0 && totals(d).lines.every(l => l.unit > 0) },
+      { k: 'moq', t: '최소 주문 금액 충족 (상품 금액 기준)', auto: d => d.items.length > 0 && totals(d).goods > 0 && !belowMin(d) },
       { k: 'stock', t: '재고·입고 예정 확인' },
       { k: 'extra', t: '배송비·인쇄비 별도 안내' },
       { k: 'qt', t: '견적서(QT) 발행·발송', auto: d => hasIssued(d, 'QT'), optional: true },
@@ -317,7 +322,7 @@ function nextTodo(d) {
 /* '바로 하기' — 체크리스트 항목마다 그 일을 하는 화면으로 바로 이동 */
 const GO = {
   inquiry: { customer: 'customer', address: 'customer', buyer: 'customer', request: 'note', reply: 'mail:inquiry' },
-  quotation: { items: 'items', price: 'items', stock: 'items', extra: 'items', qt: 'doc:QT' },
+  quotation: { items: 'items', price: 'items', moq: 'items', stock: 'items', extra: 'items', qt: 'doc:QT' },
   invoice: { pi: 'doc:PI', match: 'doc:PI', sent: 'mail:pi' },
   payment: { receipt: 'pay:receipt', credited: 'pay:credited', fee: 'pay:credited' },
   packing: { alloc: 'ship', inspect: 'ship', boxes: 'ship', date: 'ship', mark: 'sdoc:MARK' },
@@ -335,7 +340,7 @@ function newDeal() {
   const d = normDeal({
     id: uid(), code: `EX-${ymd()}-${pad(seq)}`, createdAt: nowStr(), updatedAt: nowStr(),
     customer: { name: '', contact: '', country: '', cc: '', email: '', phone: '', billAddress: '', shipAddress: '', notes: '' },
-    pricing: { fxRate: S.pricing.fxRate, fxDate: S.pricing.fxDate, vatMode: S.pricing.vatMode, vatRate: S.pricing.vatRate, tiers: clone(S.pricing.tiers), discountAuto: true, discount: 0 },
+    pricing: { fxRate: S.pricing.fxRate, fxDate: S.pricing.fxDate, vatMode: S.pricing.vatMode, vatRate: S.pricing.vatRate, minOrderUsd: num(S.pricing.minOrderUsd), tiers: clone(S.pricing.tiers), discountAuto: true, discount: 0 },
     terms: { type: 'full', depositPct: 50, shipRequires: S.defaults.shipRequires || 'full' },
   });
   d.logs.push({ id: uid(), at: nowStr(), kind: 'system', text: '수출 건 생성' });
@@ -375,6 +380,7 @@ function defaultEdits(d, type, s) {
   const ships = activeShips(d), lines = [];
   if (type === 'QT') {
     e.validUntil = addDays(today(), 14);
+    if (minOrder(d) > 0) lines.push(`Minimum order: USD ${usd(minOrder(d))} in goods value (excluding shipping and printing).`);
     lines.push('Prices are based on the total quantity above; a change in quantity may change the discount tier.');
     lines.push('International shipping and printing services are quoted separately.');
     lines.push('Stock availability is confirmed at the time of order.');
@@ -486,6 +492,7 @@ function docWarnings(d, doc, sn) {
   if (!sn.seller.address) w.push('판매자 주소가 비어 있습니다 (설정).');
   if (['PI', 'FI'].includes(doc.type) && !(sn.bank.account || '').trim()) w.push('은행 정보가 비어 있습니다 (설정 → 은행 정보, 이 브라우저에만 저장).');
   if ((sn.lines || []).some(l => !(l.unit > 0))) w.push('단가가 0인 품목이 있습니다.');
+  if (['QT', 'PI'].includes(doc.type) && belowMin(d)) w.push(`상품 금액 USD ${usd(totals(d).goods)}이 최소 주문 금액 USD ${usd(minOrder(d))}에 못 미칩니다. 예외로 진행하는지 확인하세요.`);
   if (!(sn.lines || []).length && doc.type !== 'MARK') w.push('품목이 없습니다.');
   if (doc.type === 'CI') {
     if ((sn.lines || []).some(l => !l.hs)) w.push('HS코드가 없는 품목이 있습니다 (문서에 TBC로 표시).');
@@ -619,7 +626,7 @@ function emailTpl(d, key) {
   const ships = activeShips(d);
   const shipLinesTxt = ships.map(s => { const ss = shipSummary(d, s); return `- Shipment ${s.no}: ${ss.sets} sets (${ss.pieces} pieces)${s.awb ? ` — ${METHOD[s.method]} AWB ${s.awb}` : ''}`; }).join('\n');
   const T = {
-    inquiry: [`BUNNAR wholesale inquiry`, `${hi}\n\nThank you for your interest in BUNNAR porcelain.\n\nTo prepare a quotation, could you please confirm:\n- the items and quantities you need\n- the delivery address and preferred shipping method (e.g. your own DHL account)\n- your preferred timing\n\nOur wholesale pricing is tiered by total quantity, and shipping is quoted separately.`],
+    inquiry: [`BUNNAR wholesale inquiry`, `${hi}\n\nThank you for your interest in BUNNAR porcelain.\n\nTo prepare a quotation, could you please confirm:\n- the items and quantities you need\n- the delivery address and preferred shipping method (e.g. your own DHL account)\n- your preferred timing\n\nOur wholesale pricing is tiered by total quantity${minOrder(d) > 0 ? `, with a minimum order of USD ${usd(minOrder(d))} in goods value` : ''}. Shipping is quoted separately.`],
     quote: [`BUNNAR quotation ${qt?.no || ''}`.trim(), `${hi}\n\nPlease find attached our quotation${qt ? ' ' + qt.no : ''} for ${t.sets} sets, totalling USD ${usd(t.goods)} (goods only).\n\nShipping and any printing services are quoted separately. Stock is confirmed at the time of order.\n\nPlease let us know if you would like to proceed or adjust the selection.`],
     pi: [`Proforma invoice ${pi?.no || ''}`.trim(), `${hi}\n\nPlease find attached proforma invoice ${pi?.no || '[PI no.]'} for USD ${usd(t.total)}.${pi?.originalNo ? `\nThis revised invoice replaces ${pi.originalNo}; please pay only the revised amount.` : ''}\n\n${d.terms.type === 'deposit' ? `Deposit due upon confirmation: USD ${usd(t.deposit)}.` : 'Payment is due in full upon confirmation, before preparation.'}\n${ships.length > 1 ? '\nThe order will be shipped in parts:\n' + shipLinesTxt + '\n' : ''}\nGoods will be prepared for dispatch once the payment has been credited to our account. Please send us the remittance slip after the transfer.\n\nFor your security: our bank details will never change by email. If you receive any message about changed bank details, please call us to verify before making a payment.`],
     dhl: [`DHL account for your shipment`, `${hi}\n\nAs agreed, we will ship using your DHL account.\n\nCould you please confirm:\n- your DHL account number\n- that you authorise BUNNAR to book the shipment on this account (duties and taxes billed to the receiver)\n\nWe will only book the pickup after your written confirmation.`],
@@ -888,7 +895,8 @@ function cardBody(d, st) {
         <span class="k">할인율 ${d.pricing.discountAuto ? '(구간 자동)' : '(수동)'}</span><span class="v">${disc}%${tier?.negotiable ? ' · 협의' : ''}</span>
         <span class="k">환율</span><span class="v">₩${num(d.pricing.fxRate).toLocaleString('ko-KR')} / USD</span>
         <span class="k">상품 금액</span><span class="v strong">USD ${usd(t.goods)}</span>${d.charges.length ? `<span class="k">별도 비용</span><span class="v">USD ${usd(t.charges)}</span>` : ''}</div>
-        ${low ? `<div class="warn">수량 ${t.sets}세트는 할인 구간 미만입니다. 최소 주문 수량 기준은 확인 필요.</div>` : ''}
+        ${belowMin(d, t) ? `<div class="err">최소 주문 금액 미달: 상품 금액 USD ${usd(t.goods)} &lt; USD ${usd(minOrder(d))} (부족 USD ${usd(minOrder(d) - t.goods)}). 수량을 늘리도록 안내하거나 예외 여부를 결정하세요.</div>` : ''}
+        ${low ? `<div class="warn">수량 ${t.sets}세트는 수량 할인 구간 미만입니다. 적용할 할인율을 확인하세요.</div>` : ''}
         ${stockWarn.length ? `<div class="warn">재고 초과: ${stockWarn.map(i => esc(i.desc)).join(', ')}</div>` : ''}
         ${d.items.some(i => i.backorder) ? `<div class="warn">백오더: ${d.items.filter(i => i.backorder).map(i => esc(i.desc)).join(', ')}</div>` : ''}
         <div class="row" style="margin-top:8px"><button class="btn sm pri" data-act="drawer" data-k="items">품목·가격 편집</button>${docButtons(d, ['QT'])}<button class="btn sm" data-act="emailKey" data-key="quote">✉</button></div>`) + (docMini(d, ['QT']) ? B('견적서', docMini(d, ['QT'])) : '');
@@ -1046,6 +1054,7 @@ function drItems(d) {
     <div class="grid4">${F('환율 (KRW/USD)', pr + 'fxRate', d.pricing.fxRate, { t: 'n' })}${F('환율 기준일', pr + 'fxDate', d.pricing.fxDate, { type: 'date' })}
     ${F('VAT 처리', pr + 'vatMode', d.pricing.vatMode, { options: { included: 'VAT 포함가 기준 (차감 없음)', deductOnce: 'VAT 1회 차감 (÷1.1)' } })}
     <label class="f"><span>할인율 (%)</span><input class="n" data-bind="${pr}discount" data-t="n" value="${d.pricing.discountAuto ? disc : num(d.pricing.discount)}" ${d.pricing.discountAuto ? 'disabled' : ''}></label></div>
+    <div class="row">${F('최소 주문 금액 USD (상품 기준)', pr + 'minOrderUsd', d.pricing.minOrderUsd, { t: 'n' })}<span class="small ${belowMin(d, t) ? '' : 'muted'}" style="${belowMin(d, t) ? 'color:var(--red)' : ''}">현재 상품 금액 USD ${usd(t.goods)} — ${t.goods <= 0 ? '품목 입력 전' : belowMin(d, t) ? `USD ${usd(minOrder(d) - t.goods)} 부족` : '충족 ✓'}</span></div>
     <div class="row">${CB('수량 구간 할인 자동 적용', pr + 'discountAuto', d.pricing.discountAuto)}<span class="small muted">· 총 ${t.sets}세트 → ${tier ? `${tier.min}${tier.max ? '–' + tier.max : '+'}개 구간 ${tier.discount}%${tier.negotiable ? ' (개별 협의: ' + esc(tier.note) + ')' : ''}` : '할인 구간 미만'}</span>
     <span class="spacer"></span><button class="btn sm" data-act="reapplyPolicy">현재 설정 정책 다시 적용</button></div>
     <div class="tiny faint">단가 = 기준가(VAT 포함 소비자가) × (1 − 할인율)${d.pricing.vatMode === 'deductOnce' ? ' ÷ 1.1' : ''} ÷ 환율 → 소수 둘째 자리 반올림. 발행된 문서에는 영향이 없습니다.</div></fieldset>
@@ -1190,6 +1199,7 @@ function viewSettings() {
     <div class="grid4">${F('기본 환율 (KRW/USD)', s + 'pricing.fxRate', S.pricing.fxRate, { t: 'n' })}${F('환율 기준일', s + 'pricing.fxDate', S.pricing.fxDate, { type: 'date' })}
     ${F('VAT 처리 방식 (확인 필요)', s + 'pricing.vatMode', S.pricing.vatMode, { options: { included: 'VAT 포함 소비자가 × (1−할인율), 별도 차감 없음', deductOnce: '할인 후 VAT 1회 차감 (÷1.1)' } })}${F('VAT율 (%)', s + 'pricing.vatRate', S.pricing.vatRate, { t: 'n' })}</div>
     <table class="t"><thead><tr><th>최소 수량</th><th>최대 수량</th><th>할인율 %</th><th>개별 협의</th><th>비고</th><th></th></tr></thead><tbody>${tiers}</tbody></table>
+    <div class="grid4">${F('최소 주문 금액 USD (상품 금액, 배송비 제외)', s + 'pricing.minOrderUsd', S.pricing.minOrderUsd, { t: 'n' })}</div>
     <div class="row"><button class="btn sm" data-act="addTier">+ 구간 추가</button>${F('', s + 'pricing.moqNote', S.pricing.moqNote, { cls: 'spacer' })}</div>
     <div class="tiny faint">수량 기준: 주문 전체 세트 수. 국내 VAT 포함 소비자가 기준. VAT는 어떤 경우에도 두 번 차감되지 않습니다. 배송비·인쇄비는 별도 비용으로 청구합니다.</div></div>
   <div class="panel" style="grid-column:1/-1"><div class="sec-title" style="margin:0">제품 (Products)</div>
@@ -1297,7 +1307,7 @@ const A = {
   delItem(el) { const d = deal(); d.items = d.items.filter(i => i.id !== el.dataset.id); d.shipments.forEach(s => delete s.alloc[el.dataset.id]); commit(); },
   addCharge() { deal().charges.push({ id: uid(), label: '', amount: 0 }); commit(); },
   delCharge(el) { const d = deal(); d.charges = d.charges.filter(c => c.id !== el.dataset.id); commit(); },
-  reapplyPolicy() { const d = deal(), P = state.settings.pricing; if (!confirm('현재 설정의 환율·할인 구간·VAT 방식을 이 수출 건에 다시 적용합니다. (발행된 문서는 바뀌지 않습니다)')) return; Object.assign(d.pricing, { fxRate: P.fxRate, fxDate: P.fxDate, vatMode: P.vatMode, vatRate: P.vatRate, tiers: clone(P.tiers), discountAuto: true }); log(d, `가격 정책 재적용 (환율 ${P.fxRate})`); commit(); },
+  reapplyPolicy() { const d = deal(), P = state.settings.pricing; if (!confirm('현재 설정의 환율·할인 구간·VAT 방식을 이 수출 건에 다시 적용합니다. (발행된 문서는 바뀌지 않습니다)')) return; Object.assign(d.pricing, { minOrderUsd: num(P.minOrderUsd), fxRate: P.fxRate, fxDate: P.fxDate, vatMode: P.vatMode, vatRate: P.vatRate, tiers: clone(P.tiers), discountAuto: true }); log(d, `가격 정책 재적용 (환율 ${P.fxRate})`); commit(); },
   /* shipments */
   addShip() { const d = deal(); const s = newShipment(d); if (!d.shipments.length) d.items.forEach(i => { if (!i.backorder) s.alloc[i.id] = num(i.qty); }); d.shipments.push(s); log(d, `${s.no}차 배송 추가`); ui.drawer = { kind: 'ship', sid: s.id }; commit(); },
   delShip(el) { const d = deal(); if (!confirm('이 배송을 삭제할까요?')) return; d.shipments = d.shipments.filter(s => s.id !== el.dataset.sid); ui.drawer = null; commit(); },
