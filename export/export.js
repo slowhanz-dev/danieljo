@@ -1416,12 +1416,12 @@ function loadSample() {
   const au = newDeal();
   au.code = 'EX-SAMPLE-AU';
   au.customer = { name: 'Sample Café AU (테스트)', contact: 'Test Buyer', country: 'Australia', cc: 'AU', email: 'buyer@example.com', phone: '', billAddress: '', shipAddress: 'Sample address, Sydney NSW\nAustralia', notes: '예시 데이터 — 실제 고객 정보 아님' };
-  au.items = [it('Espresso Cup 75ml & Saucer', 12, 16.11), it('Flat White Cup 190ml & Saucer', 30, 21.71), it('Cappuccino Cup 190ml & Saucer', 24, 22.27, { backorder: true }), it('Americano Cup 300ml & Saucer', 24, 22.83), it('Caffè Latte Cup 270ml & Saucer', 24, 24.50)];
+  au.items = [it('Espresso Cup 75ml & Saucer', 12, 15.00), it('Flat White Cup 190ml & Saucer', 30, 20.00), it('Cappuccino Cup 190ml & Saucer', 24, 21.00, { backorder: true }), it('Americano Cup 300ml & Saucer', 24, 22.00), it('Caffè Latte Cup 270ml & Saucer', 24, 23.00)]; // 가상 단가 (실제 도매가 아님)
   au.terms = { type: 'full', depositPct: 50, shipRequires: 'full' };
   const s1 = newShipment(au); au.shipments.push(s1); au.items.filter(i => !i.backorder).forEach(i => { s1.alloc[i.id] = i.qty; });
   const s2 = newShipment(au); au.shipments.push(s2); au.items.filter(i => i.backorder).forEach(i => { s2.alloc[i.id] = i.qty; });
   s1.plannedDate = addDays(today(), 1); s2.plannedDate = addDays(today(), 14);
-  au.payments.push({ id: uid(), kind: 'receipt', date: today(), amount: 2515.02, krw: 0, ref: 'Remittance slip (sample)', note: '송금증만 수령 — 실입금 확인 전', fileId: '' });
+  au.payments.push({ id: uid(), kind: 'receipt', date: today(), amount: 2364.00, krw: 0, ref: 'Remittance slip (sample)', note: '송금증만 수령 — 실입금 확인 전', fileId: '' });
   au.checks = { inquiry_request: true, inquiry_reply: true, quotation_stock: true, quotation_extra: true };
   log(au, '고객 요청: Option A 원래 선택 + 카페라떼 24세트 추가. 카푸치노는 12월 초 입고 예정 → 2차 배송', 'note');
   log(au, '인쇄 서비스(로고 인쇄) 문의 — 단가·최소 수량 별도 견적 예정. 이번 주문에는 미포함', 'note');
@@ -1430,10 +1430,10 @@ function loadSample() {
   const tw = newDeal();
   tw.code = 'EX-SAMPLE-TW';
   tw.customer = { name: 'Sample Shop TW (테스트)', contact: 'Test Buyer', country: 'Taiwan', cc: 'TW', email: 'buyer@example.com', phone: '', billAddress: '', shipAddress: '', notes: '예시 데이터 — 실제 고객 정보 아님' };
-  tw.items = [it('Sample item A', 30, 9.87, { piecesPerSet: 1 }), it('Sample item B', 18, 10.14, { piecesPerSet: 1 })];
+  tw.items = [it('Sample item A', 30, 10.00, { piecesPerSet: 1 }), it('Sample item B', 18, 12.00, { piecesPerSet: 1 })];
   tw.charges = [{ id: uid(), label: 'Domestic shipping to designated forwarder (Korea)', amount: 12 }];
   tw.terms = { type: 'deposit', depositPct: 50, shipRequires: 'full' };
-  tw.payments.push({ id: uid(), kind: 'credited', date: today(), amount: 239.31, krw: 0, ref: 'Deposit (sample)', note: '선금 인정액', fileId: '' });
+  tw.payments.push({ id: uid(), kind: 'credited', date: today(), amount: 258.00, krw: 0, ref: 'Deposit (sample)', note: '선금 인정액', fileId: '' });
   const t1 = newShipment(tw); t1.method = 'forwarder'; t1.account = 'seller'; t1.shipTo = 'Designated forwarder warehouse (Korea) — sample\nAttn: Sample Shop TW'; tw.items.forEach(i => { t1.alloc[i.id] = i.qty; });
   t1.boxes = [{ id: uid(), l: 40, w: 30, h: 30, gw: 0, nw: 0, contents: 'Sample item A ×30' }, { id: uid(), l: 40, w: 30, h: 25, gw: 0, nw: 0, contents: 'Sample item B ×18' }];
   t1.declMode = 'unset'; tw.shipments.push(t1);
