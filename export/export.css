@@ -273,3 +273,19 @@ legend{font-size:12px;font-weight:600;padding:0 6px}
 .gd-acc[open] summary::before{content:'▾ '}
 .gd-acc[open] summary{margin-bottom:10px}
 .todo-box .btn.pri{font-size:12px}
+
+/* Carton Label 100 × 150 mm */
+.paper.label{width:100mm;min-height:150mm;height:150mm;padding:6mm 6mm 5mm;display:flex;flex-direction:column;gap:3mm;font-size:9pt;overflow:hidden}
+.paper.label + .paper.label{margin-top:12px}
+.lb-top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5pt solid #111;padding-bottom:2mm}
+.lb-brand{font-size:20pt;font-weight:700;letter-spacing:.03em}
+.lb-ref{font-size:8pt;color:#333}
+.lb-lbl{font-size:7.5pt;font-weight:700;color:#555}
+.lb-to{font-size:11pt;font-weight:700;line-height:1.3;margin-top:-2mm}
+.lb-cno{display:flex;justify-content:space-between;align-items:center;border:1.5pt solid #111;padding:2mm 3mm}
+.lb-cno span{font-size:9pt;font-weight:700}
+.lb-cno b{font-size:24pt}
+.lb-grid{display:grid;grid-template-columns:24mm 1fr;gap:1.5mm 3mm;font-size:9pt}
+.lb-grid span{color:#555}
+.lb-foot{margin-top:auto;border-top:.6pt solid #111;padding-top:2mm;font-size:8pt;font-weight:700;letter-spacing:.03em}
+@media print{ #print-root .paper.label{min-height:0;height:150mm;margin:0} }
