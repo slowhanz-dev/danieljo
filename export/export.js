@@ -3,7 +3,7 @@
  * 저장소에는 민감정보(고객·은행·송금증)를 포함하지 않습니다.
  */
 'use strict';
-const APP_VERSION = '0.4.0';
+const APP_VERSION = '0.5.0';
 const SCHEMA = 'bunnar.export/1';
 const LS_KEY = 'bunnar-export-v1';
 
@@ -1426,7 +1426,14 @@ function viewSettings() {
     <div class="tiny faint">수량 기준: 주문 전체 세트 수. 국내 VAT 포함 소비자가 기준. VAT는 어떤 경우에도 두 번 차감되지 않습니다. 배송비·인쇄비는 별도 비용으로 청구합니다.</div></div>
   <div class="panel" style="grid-column:1/-1"><div class="sec-title" style="margin:0">제품 (Products)</div>
     <div style="overflow-x:auto"><table class="t"><thead><tr><th>영문명 / 국문명</th><th class="r">기준가 ₩ (VAT 포함)</th><th class="r">세트당 피스</th><th class="r">세트 중량kg</th><th class="r">재고</th><th>HS코드</th><th>HS 상태</th><th></th></tr></thead><tbody>${prods}</tbody></table></div>
-    <div class="row"><button class="btn sm" data-act="addProduct">+ 제품 추가</button><span class="tiny faint">기준가가 0인 제품은 견적에서 수동 단가로 입력하세요.</span></div></div>
+    <div class="row"><button class="btn sm" data-act="addProduct">+ 제품 추가</button><button class="btn sm pri" data-act="toggleImport">📥 엑셀로 일괄 등록</button><span class="tiny faint">기준가가 0인 제품은 견적에서 수동 단가로 입력하세요.</span></div>
+    ${ui.importOpen ? `<fieldset><legend>엑셀로 제품 일괄 등록</legend>
+      <div class="small muted">방법 1) 엑셀 파일(.xlsx)이나 CSV를 그대로 고르세요. 방법 2) 엑셀·구글시트에서 <b>제목 줄을 포함해</b> 표를 복사(Ctrl+C)한 뒤 아래 칸에 붙여넣기(Ctrl+V)하세요.<br>
+      읽는 열: SKU, 제품명(영문), 제품명(한글), 용량, 소매가(원) · 있으면 세트 중량, 재고, HS코드. 같은 SKU나 같은 영문명이 있으면 새로 만들지 않고 업데이트합니다.</div>
+      <div class="row"><label class="btn">엑셀·CSV 파일 선택<input type="file" accept=".xlsx,.xls,.csv,.tsv,.txt" data-filefor="import" hidden></label></div>
+      <textarea class="inp" style="min-height:90px" placeholder="여기에 붙여넣기 (Ctrl+V)" data-bind="ui:importText">${esc(ui.importText || '')}</textarea>
+      <div class="row"><button class="btn" data-act="previewImport">붙여넣은 내용 미리보기</button></div>
+      ${importPreviewHtml()}</fieldset>` : ''}</div>
   ${priceTablePanel()}
   <div class="panel" style="grid-column:1/-1"><div class="sec-title" style="margin:0">데이터 (Backup · Export)</div>
     <div class="row"><button class="btn pri" data-act="backup" data-files="1">전체 백업 JSON (첨부 포함)</button><button class="btn" data-act="backup">백업 JSON (첨부 제외)</button>
@@ -1434,6 +1441,84 @@ function viewSettings() {
     <button class="btn" data-act="csv">CSV 내보내기 (수출 건·품목)</button><span class="spacer"></span><button class="btn" data-act="loadSample">예시 데이터 불러오기</button><button class="btn danger" data-act="resetAll">전체 초기화</button></div>
     <div class="tiny faint">데이터는 이 브라우저에만 저장됩니다. 정기적으로 백업하고, 백업 파일은 비공개 위치(개인 드라이브 등)에 보관하세요. 마지막 저장: ${esc(state.deals.reduce((m, d) => d.updatedAt > m ? d.updatedAt : m, '—'))}</div></div>
   </div>`;
+}
+
+/* ============================== 제품 일괄 등록 (엑셀·시트 붙여넣기 / 파일) ============================== */
+function parseDelimited(text) {
+  const delim = text.split('\n')[0].includes('\t') ? '\t' : ',';
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"' && f === '') q = true;
+    else if (c === delim) { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim() !== ''));
+}
+const IMPORT_COLS = {
+  sku: ['sku', '상품코드', '품번'], nameEn: ['제품명(영문)', '영문명', '영문 제품명', 'name (en)', 'english name', 'title'], nameKo: ['제품명(한글)', '국문명', '한글명', '제품명', '상품명'],
+  cap: ['용량', 'capacity', 'volume'], priceKrw: ['소매가(원)', '소비자가', '판매가', '소매가', '가격', 'price'], pcs: ['세트당 피스', '구성 수', 'pieces'],
+  weight: ['세트 중량', '중량', '무게', 'weight'], stock: ['재고', 'stock', 'qty'], hs: ['hs코드', 'hs code', 'hs'],
+};
+const normName = s => String(s || '').toLowerCase().replace(/caffè/g, 'cafe').replace(/&/g, ' ').replace(/\band\b/g, ' ').replace(/[0-9]+\s*(ml|oz)\b/g, ' ').replace(/[^a-z]/g, '');
+function importPlan(rows) {
+  if (rows.length < 2) return { error: '제목 줄과 제품 줄이 필요합니다. 엑셀에서 제목 줄(첫 줄)까지 함께 복사하세요.' };
+  const head = rows[0].map(h => String(h).trim().toLowerCase()), col = {};
+  for (const [k, names] of Object.entries(IMPORT_COLS)) { const i = head.findIndex(h => names.some(n => h === n.toLowerCase())); col[k] = i; }
+  if (col.nameEn < 0 && col.nameKo >= 0 && head[col.nameKo] === '제품명') { /* 한글만 있는 표 */ }
+  if (col.nameEn < 0) return { error: '영문 제품명 열을 찾지 못했습니다. 제목에 "제품명(영문)" 또는 "영문명"이 있어야 합니다.' };
+  const get = (r, k) => col[k] >= 0 ? String(r[col[k]] ?? '').trim() : '';
+  const items = [];
+  for (const r of rows.slice(1)) {
+    const en = get(r, 'nameEn'); if (!en) continue;
+    const capRaw = get(r, 'cap'), cap = (capRaw.split(/[,/]/)[0] || '').trim().replace(/\s+/g, '');
+    const ko = get(r, 'nameKo');
+    const pairSet = /saucer/i.test(en) || /소서/.test(ko);
+    const it = { sku: get(r, 'sku'), nameEn: cap && /ml|oz/i.test(cap) && !en.includes(cap) ? `${en} ${cap}` : en, nameKo: ko && capRaw && capRaw !== '-' && !ko.includes(cap) ? `${ko} ${cap}` : ko,
+      priceKrw: num(get(r, 'priceKrw')), piecesPerSet: num(get(r, 'pcs')) || (pairSet ? 2 : 1), weightKg: num(get(r, 'weight')), stock: num(get(r, 'stock')), hsCode: get(r, 'hs') };
+    const ex = state.products.find(p => (it.sku && p.sku === it.sku)) || state.products.find(p => normName(p.nameEn) === normName(en));
+    items.push({ it, ex, hasWeight: col.weight >= 0, hasStock: col.stock >= 0, hasHs: col.hs >= 0 });
+  }
+  return { items, cols: Object.keys(col).filter(k => col[k] >= 0) };
+}
+function importPreviewHtml() {
+  const plan = ui.importPlan; if (!plan) return '';
+  if (plan.error) return `<div class="err">${esc(plan.error)}</div>`;
+  const nNew = plan.items.filter(x => !x.ex).length, nUpd = plan.items.length - nNew, noPrice = plan.items.filter(x => !(x.it.priceKrw > 0)).length;
+  return `<div class="ok">${plan.items.length}개 제품을 읽었습니다 — 새로 추가 ${nNew}개 · 기존 제품 업데이트 ${nUpd}개${noPrice ? ` · <b>가격 없음 ${noPrice}개</b>(0원으로 등록, 나중에 입력)` : ''}</div>
+  <div style="overflow-x:auto;max-height:320px"><table class="t"><thead><tr><th>구분</th><th>SKU</th><th>영문명</th><th>국문명</th><th class="r">소비자가 ₩</th><th class="r">세트당 피스</th></tr></thead><tbody>
+  ${plan.items.map(x => `<tr><td>${x.ex ? '<span class="pill blue">업데이트</span>' : '<span class="pill green">새 제품</span>'}</td><td>${esc(x.it.sku)}</td><td>${esc(x.it.nameEn)}</td><td>${esc(x.it.nameKo)}</td><td class="r num">${x.it.priceKrw ? krw(x.it.priceKrw) : '<span style="color:var(--red)">없음</span>'}</td><td class="r">${x.it.piecesPerSet}</td></tr>`).join('')}</tbody></table></div>
+  <div class="row">${CB('HS코드가 비어 있는 제품에 6911.10 (도자기 식기) 넣기 — 상태는 "확인 필요"로 유지', 'ui:importHsDefault', ui.importHsDefault !== false)}</div>
+  <div class="row"><button class="btn pri" data-act="applyImport">${plan.items.length}개 제품 등록하기</button><button class="btn" data-act="cancelImport">취소</button></div>`;
+}
+function applyImportPlan(plan) {
+  let added = 0, updated = 0;
+  for (const { it, ex, hasWeight, hasStock, hasHs } of plan.items) {
+    const hs = it.hsCode || (ui.importHsDefault !== false ? '6911.10' : '');
+    if (ex) {
+      Object.assign(ex, { sku: it.sku || ex.sku, nameEn: it.nameEn, nameKo: it.nameKo || ex.nameKo, priceKrw: it.priceKrw || ex.priceKrw, piecesPerSet: it.piecesPerSet });
+      if (hasWeight && it.weightKg) ex.weightKg = it.weightKg; if (hasStock) ex.stock = it.stock;
+      if (hasHs && it.hsCode) ex.hsCode = it.hsCode; else if (!ex.hsCode && hs) ex.hsCode = hs;
+      updated++;
+    } else {
+      state.products.push({ id: 'p_' + (it.sku || uid()).replace(/[^a-zA-Z0-9_-]/g, '') + '_' + uid().slice(0, 4), sku: it.sku, nameEn: it.nameEn, nameKo: it.nameKo, priceKrw: it.priceKrw, piecesPerSet: it.piecesPerSet, weightKg: it.weightKg, stock: it.stock, hsCode: hs, hsStatus: 'pending' });
+      added++;
+    }
+  }
+  return { added, updated };
+}
+async function readImportFile(f) {
+  if (/\.(xlsx|xls)$/i.test(f.name)) {
+    const load = src => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); });
+    if (!window.XLSX) { try { await load('vendor/xlsx-0.18.5.full.min.js'); } catch (e) { try { await load('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); } catch (e2) { throw new Error('엑셀 읽기 도구를 불러오지 못했습니다. 엑셀에서 표를 복사해 아래 칸에 붙여넣기 하세요.'); } } }
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const name = wb.SheetNames.find(n => /상품|제품|product|master/i.test(n)) || wb.SheetNames[0];
+    return XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '', raw: false }).filter(r => r.some(x => String(x).trim() !== ''));
+  }
+  return parseDelimited(await f.text());
 }
 
 /* ============================== binding ============================== */
@@ -1655,6 +1740,14 @@ const A = {
   /* settings */
   addTier() { state.settings.pricing.tiers.push({ min: 0, max: null, discount: 0, negotiable: false, note: '' }); commit(); },
   delTier(el) { state.settings.pricing.tiers.splice(+el.dataset.i, 1); commit(); },
+  toggleImport() { ui.importOpen = !ui.importOpen; ui.importPlan = null; render(); },
+  previewImport() { ui.importPlan = importPlan(parseDelimited(ui.importText || '')); render(); },
+  cancelImport() { ui.importPlan = null; ui.importText = ''; render(); },
+  applyImport() {
+    const plan = ui.importPlan; if (!plan?.items) return;
+    const r = applyImportPlan(plan); ui.importPlan = null; ui.importText = ''; ui.importOpen = false; commit();
+    toast(`제품 ${r.added}개 추가, ${r.updated}개 업데이트했습니다`);
+  },
   addProduct() { state.products.push({ id: 'p_' + uid(), sku: '', nameEn: '', nameKo: '', priceKrw: 0, piecesPerSet: 2, weightKg: 0, stock: 0, hsCode: '', hsStatus: 'pending' }); commit(); },
   delProduct(el) { if (!confirm('제품을 삭제할까요? (기존 수출 건의 품목은 유지됩니다)')) return; state.products = state.products.filter(p => p.id !== el.dataset.id); commit(); },
   clearLogo() { state.settings.logo = ''; commit(); },
@@ -1732,6 +1825,7 @@ document.addEventListener('change', async e => {
   if (el.dataset.filefor) {
     const f = el.files[0]; if (!f) return;
     if (el.dataset.filefor === 'pay') { ui.payFile = f; return; }
+    if (el.dataset.filefor === 'import') { try { ui.importPlan = importPlan(await readImportFile(f)); } catch (err) { ui.importPlan = { error: err.message }; } el.value = ''; render(); return; }
     if (el.dataset.filefor === 'logo') { if (f.size > 400000) { alert('로고 이미지는 400KB 이하로 올려주세요.'); return; } state.settings.logo = await blobToB64(f); commit(); return; }
     if (el.dataset.filefor === 'restore') {
       try {
