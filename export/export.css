@@ -288,4 +288,15 @@ legend{font-size:12px;font-weight:600;padding:0 6px}
 .lb-grid{display:grid;grid-template-columns:24mm 1fr;gap:1.5mm 3mm;font-size:9pt}
 .lb-grid span{color:#555}
 .lb-foot{margin-top:auto;border-top:.6pt solid #111;padding-top:2mm;font-size:8pt;font-weight:700;letter-spacing:.03em}
+@page label{size:100mm 150mm;margin:0}
+.paper.label{page:label}
 @media print{ #print-root .paper.label{min-height:0;height:150mm;margin:0} }
+/* automation */
+.outbox{border-color:#e9d3ae;background:#fffbf3}
+.ob-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.ob{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;flex-wrap:wrap}
+.ob-main{display:flex;flex-direction:column;gap:1px;min-width:0}
+.td-list{display:flex;flex-direction:column;gap:6px}
+.td-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;flex-wrap:wrap}
+.td-row:hover{background:var(--surface2)}
+.drawer textarea[data-bind="ui:email.body"]{min-height:380px;font-size:13px}

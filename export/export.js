@@ -3,7 +3,7 @@
  * 저장소에는 민감정보(고객·은행·송금증)를 포함하지 않습니다.
  */
 'use strict';
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.4.0';
 const SCHEMA = 'bunnar.export/1';
 const LS_KEY = 'bunnar-export-v1';
 
@@ -90,7 +90,7 @@ function migrate(s) {
   return s;
 }
 function normDeal(d) {
-  d = Object.assign({ items: [], charges: [], payments: [], shipments: [], docs: [], files: [], logs: [], checks: {}, verify: defaultVerify(), settlement: { costs: [], note: '' }, todo: '', archived: false, buyerCheck: {} }, d);
+  d = Object.assign({ items: [], charges: [], payments: [], shipments: [], docs: [], files: [], logs: [], checks: {}, verify: defaultVerify(), settlement: { costs: [], note: '' }, todo: '', archived: false, buyerCheck: {}, outbox: [] }, d);
   for (const v of defaultVerify()) if (!d.verify.some(x => x.key === v.key)) d.verify.push(v);
   if (d.pricing && d.pricing.minOrderUsd == null) d.pricing.minOrderUsd = 500;
   d.payHold = d.payHold || { on: false, note: '' };
@@ -637,7 +637,7 @@ function renderMarks(sn, draft) {
       ${b && b.l ? `<span>DIMENSIONS</span><b>${b.l} × ${b.w} × ${b.h} CM</b>` : ''}${b && b.contents ? `<span>CONTENTS</span><b>${nl2br(b.contents)}</b>` : ''}</div>
       <div class="lb-foot">MADE IN KOREA · BETTERHAND (BUNNAR)</div></div>`;
     const l2 = sn.boxes.length ? sn.boxes : [null];
-    return '<style>@media print{@page{size:100mm 150mm;margin:0}}</style>' + l2.map(lab).join('');
+    return l2.map(lab).join('');
   }
   const one = (b, i) => `<div class="mark"><div class="mk-brand">BUNNAR</div><div class="mk-to">${nl2br(to)}</div>
     <div class="mk-grid"><span class="k">C/NO.</span><span class="mk-cno">${i + 1} / ${n}</span><span class="k">ORDER REF.</span><span>${esc(sn.piRef || sn.no)}</span>
@@ -687,8 +687,9 @@ function renderKR(sn, draft) {
 const EMAILS = {
   inquiry: '문의 답변 (Inquiry reply)', quote: '견적 발송 (Quotation)', pi: 'PI 발송 (Proforma invoice)', dhl: 'DHL 계정 확인 요청 (Buyer DHL account)',
   paid: '입금 확인 (Payment received)', shipped: '출고·운송장 안내 (Dispatched)', balance: '잔금 청구 (Final invoice)', thanks: '감사·관계 유지 (After-sales)',
+  payissue: '송금 확인 요청 (Payment issue)', broker: '관세사 수출신고 의뢰 (국문)',
 };
-function emailTpl(d, key) {
+function emailTpl(d, key, sid) {
   const t = totals(d), c = d.customer, S = state.settings;
   const hi = `Hi ${c.contact || c.name || 'there'},`;
   const sign = `\n\nBest regards,\n${S.seller.signer || 'BUNNAR'}\n${S.seller.company}\n${[S.seller.email, S.seller.web].filter(Boolean).join(' | ')}`;
@@ -703,6 +704,9 @@ function emailTpl(d, key) {
     paid: [`Payment received — thank you`, `${hi}\n\nWe confirm that your payment of USD ${usd(t.credited)} has been credited to our account. Thank you.\n\nWe are now preparing your order and will send the tracking details once it has been dispatched.`],
     shipped: [`Your BUNNAR order has been dispatched`, `${hi}\n\nYour order has been dispatched.\n\n${shipLinesTxt || '- [shipment details]'}\n\nArrival dates depend on the carrier and customs clearance and cannot be guaranteed. Import duties and local taxes are the buyer's responsibility.`],
     thanks: [`Thank you for your order`, `${hi}\n\nThank you again for your order. It was a pleasure working with you, and we hope the pieces are well received by your customers.\n\nIf anything arrived damaged or not as expected, please send us photos and we will resolve it promptly.\n\nWe would be glad to support your next order — just let us know which items are moving well.`],
+    payissue: [`Regarding your payment${pi ? ' for ' + pi.no : ''}`, `${hi}\n\nThank you for your transfer. There seems to be an issue with the payment on our side${d.payHold?.note ? '' : ''}.\n\nAmount due: USD ${usd(t.needForShip)}\nAmount credited to our account so far: USD ${usd(t.credited)}\n\nCould you please check the transfer details with your bank (amount, beneficiary name and account number, SWIFT code) and send us the bank's transfer confirmation?\n\nWe will prepare your order as soon as the full payment has been credited. If you received any message about changed bank details, please call us before paying — our bank details do not change by email.`],
+    broker: (() => { const s = d.shipments.find(x => x.id === sid) || activeShips(d)[0] || d.shipments[0]; if (!s) return ['[수출신고 의뢰]', '배송 정보가 없습니다.']; const ss = shipSummary(d, s), ci = latestIssued(d, 'CI', s.id), plDoc = latestIssued(d, 'PL', s.id);
+      return [`[수출신고 의뢰] ${c.name || ''} ${s.no}차 배송 (${c.country || ''})`, `관세사님 안녕하세요, ${S.seller.company}입니다.\n아래 건 수출신고를 의뢰드립니다.\n\n■ 수출자: ${S.seller.company}${S.seller.regNo ? ' / 사업자번호 ' + S.seller.regNo : ''}${S.seller.customsCode ? ' / 통관고유부호 ' + S.seller.customsCode : ''}\n■ 바이어: ${c.name || ''} (${c.country || ''})\n■ 품목·수량:\n${ss.lines.map(l => `  - ${l.desc} × ${l.qty}세트 (USD ${usd(l.amount)})`).join('\n')}\n■ 통관가액: USD ${usd(ss.value)} (CI ${ci?.no || '첨부 예정'})${d.shipments.length > 1 ? ` — 분할 출고 ${s.no}/${d.shipments.length}차, 주문 전체 USD ${usd(t.total)}` : ''}\n■ 포장: ${s.boxes.length}박스 / 총중량 ${kg(ss.gw)}kg (PL ${plDoc?.no || '첨부 예정'})\n■ 운송: ${METHOD[s.method]}${s.method === 'DHL' ? (s.account === 'buyer' ? ' (수입자 계정)' : ' (당사 계정)') : ''} / 출고 예정 ${s.plannedDate || '미정'}${s.awb ? ' / 운송장 ' + s.awb : ''}\n■ 결제: T/T 사전송금 ${t.credited >= t.needForShip - 0.004 ? '(입금 완료)' : '(입금 확인 중)'}\n■ 원산지: 대한민국 / HS코드: ${[...new Set(ss.lines.map(l => l.hs).filter(Boolean))].join(', ') || '확인 부탁드립니다'}\n\n첨부: 상업송장(CI), 포장명세서(PL)\n수리되면 수출신고필증(국문·영문) PDF와 신고번호를 보내 주세요. 특송(DHL) 건은 일반화물 적재가 되도록 안내 부탁드립니다.\n\n감사합니다.`]; })(),
     balance: [`Final invoice ${fi?.no || ''}`.trim(), `${hi}\n\nPlease find attached final invoice ${fi?.no || '[FI no.]'}.\n\nGoods total: USD ${usd(t.goods)}\n${d.charges.map(ch => `${ch.label}: USD ${usd(ch.amount)}`).join('\n')}${d.charges.length ? '\n' : ''}Less payment received: USD ${usd(t.credited)}\nBalance due: USD ${usd(t.balance)}\n\nPlease let us know once the transfer has been made.`],
   }[key];
   return { subject: T[0], body: T[1] + sign };
@@ -823,6 +827,65 @@ const SETUP = [
   { k: 'backup', t: '첫 데이터 백업 받기', auto: () => !!state.settings.lastBackup, go: 'settings' },
 ];
 
+/* ============================== automation: 자동 초안 ==============================
+ * 단계가 끝나면 다음에 필요한 문서 초안과 이메일 초안을 자동으로 준비합니다.
+ * 발송·발행은 항상 사람이 확인한 뒤에 합니다 (자동 발송 없음).
+ */
+const autoOn = () => state.settings.automation?.drafts !== false;
+const MAIL_CHECK = { inquiry: 'inquiry_reply', pi: 'order_sent', shipped: 'dispatch_notify' };
+function queueEmail(d, key, trigger, sid) {
+  if (!autoOn()) return;
+  d.outbox = d.outbox || [];
+  const e = emailTpl(d, key, sid), ex = d.outbox.find(x => x.key === key && x.status === 'draft' && (x.sid || '') === (sid || ''));
+  if (ex) Object.assign(ex, { subject: e.subject, body: e.body, trigger, createdAt: nowStr() });
+  else d.outbox.push({ id: uid(), key, sid: sid || '', subject: e.subject, body: e.body, trigger, createdAt: nowStr(), status: 'draft' });
+  log(d, `✉ 메일 초안 준비: ${EMAILS[key]} — ${trigger}`);
+}
+function autoDoc(d, type, sid, why) {
+  if (!autoOn() || findDraft(d, type, sid) || hasIssued(d, type, sid)) return null;
+  const doc = createDoc(d, type, sid || null); log(d, `📄 자동 초안: ${doc.no} — ${why}`); return doc;
+}
+function autoShipDocs(d, why) { for (const s of activeShips(d)) { if (isIntl(s)) { autoDoc(d, 'CI', s.id, why); autoDoc(d, 'PL', s.id, why); } autoDoc(d, 'MARK', s.id, why); } }
+/* 이벤트 → 다음 작업 */
+const AUTO = {
+  created(d) { queueEmail(d, 'inquiry', '새 문의 등록'); },
+  issued(d, doc) {
+    if (doc.type === 'QT') queueEmail(d, 'quote', `견적서 ${doc.no} 발행`);
+    if (doc.type === 'PI') queueEmail(d, 'pi', `PI ${doc.no} 발행`);
+    if (doc.type === 'FI') queueEmail(d, 'balance', `FI ${doc.no} 발행`);
+    if ((doc.type === 'CI' || doc.type === 'PL') && doc.shipmentId && hasIssued(d, 'CI', doc.shipmentId) && hasIssued(d, 'PL', doc.shipmentId)) {
+      const s = d.shipments.find(x => x.id === doc.shipmentId);
+      if (s && (needsPil(s) || s.declMode === 'unset')) queueEmail(d, 'broker', `${s.no}차 CI·PL 발행 → 수출신고 의뢰`, s.id);
+    }
+  },
+  paid(d, before) { const t = totals(d); if (before < t.needForShip - 0.004 && t.credited >= t.needForShip - 0.004) { queueEmail(d, 'paid', '출고 필요액 실입금 확인'); autoShipDocs(d, '입금 확인 → 출고 서류 준비'); if (d.payHold?.on) d.payHold.on = false; } },
+  hold(d) { queueEmail(d, 'payissue', '송금 오류·보류 표시'); },
+  shipAdded(d, s) { if (s.method === 'DHL' && s.account === 'buyer' && !s.accountApproved) queueEmail(d, 'dhl', `${s.no}차 배송: 고객 DHL 계정 사용`); },
+  shipped(d, s) { queueEmail(d, 'shipped', `${s.no}차 배송 출고`); const t = totals(d); if (t.balance > 0.004) autoDoc(d, 'FI', null, `출고 후 잔금 USD ${usd(t.balance)}`); },
+  delivered(d) { if (allShips(d, s => !!s.deliveredAt)) { queueEmail(d, 'thanks', '모든 배송 도착'); autoDoc(d, 'ST', null, '배송 완료 → 정산'); } },
+};
+function outboxPanel(d) {
+  const list = (d.outbox || []).filter(x => x.status === 'draft');
+  if (!list.length) return '';
+  return `<div class="panel outbox" style="margin-top:12px"><div class="row"><b>📤 보낼 메일 초안 (Outbox)</b><span class="pill amber">${list.length}</span><span class="tiny faint">단계가 끝날 때 자동으로 준비된 초안입니다. 열어서 확인·수정한 뒤 보내세요.</span></div>
+    <div class="ob-list">${list.map(x => `<div class="ob"><div class="ob-main"><b>${esc(EMAILS[x.key] || x.key)}</b><span class="small">${esc(x.subject)}</span><span class="tiny faint">${esc(x.trigger)} · ${esc(x.createdAt)}</span></div>
+      <div class="row"><button class="btn sm pri" data-act="openOutbox" data-id="${x.id}">열기</button><button class="btn sm" data-act="sentOutbox" data-id="${x.id}">보냄 처리</button><button class="btn sm ghost" data-act="dropOutbox" data-id="${x.id}">삭제</button></div></div>`).join('')}</div></div>`;
+}
+function draftDocsCount(d) { return d.docs.filter(x => x.status === 'draft').length; }
+function todayPanel() {
+  const deals = state.deals.filter(d => !d.archived);
+  if (!deals.length) return '';
+  const rows = deals.map(d => {
+    const nt = nextTodo(d), mails = (d.outbox || []).filter(x => x.status === 'draft').length, drafts = draftDocsCount(d), alerts = [];
+    if (d.payHold?.on) alerts.push('송금 오류');
+    for (const s of d.shipments) if (s.declDate && !s.shippedAt) { const dl = loadDeadline(s); if (dl <= addDays(today(), 7)) alerts.push(`${s.no}차 적재기한 ${dl}`); }
+    for (const s of d.shipments) if (s.method === 'DHL' && s.account === 'buyer' && !s.accountApproved && activeShips(d).includes(s)) alerts.push(`${s.no}차 DHL 승인 대기`);
+    return `<div class="td-row" data-act="openDeal" data-id="${d.id}"><div><b>${esc(d.customer.name || d.code)}</b><div class="small muted">${nt.st ? nt.st.no + ' ' + esc(nt.st.ko) + ' — ' : ''}${esc(nt.t)}</div></div>
+      <div class="row">${alerts.map(a => `<span class="pill red">${esc(a)}</span>`).join('')}${mails ? `<span class="pill amber">✉ 초안 ${mails}</span>` : ''}${drafts ? `<span class="pill blue">📄 문서 초안 ${drafts}</span>` : ''}<span class="faint">›</span></div></div>`;
+  }).join('');
+  return `<div class="panel" style="margin-bottom:16px"><div class="row" style="margin-bottom:8px"><b>✅ 오늘 할 일 (Today)</b><span class="tiny faint">수출 건마다 지금 할 일, 보낼 메일, 확인할 문서 초안, 주의 알림을 모았습니다.</span><span class="spacer"></span>${CB('<span class="small">자동 초안</span>', 'set:automation.drafts', autoOn())}</div><div class="td-list">${rows}</div></div>`;
+}
+
 /* ============================== render ============================== */
 function render() {
   const ae = document.activeElement, focusKey = ae && ae.dataset ? ae.dataset.bind : null;
@@ -857,6 +920,7 @@ function viewHome() {
   let h = `<div class="row" style="margin-bottom:12px"><h2 style="font-size:20px">수출 현황 <span class="faint" style="font-weight:400;font-size:14px">Export Overview</span></h2><span class="spacer"></span>
     <button class="btn pri" data-act="newDeal">+ 새 수출 건 (New export)</button></div>`;
   h += setupPanel();
+  if (ui.filter !== 'archived') h += todayPanel();
   h += '<div class="sec-title">업무 흐름 (Workflow) · 단계별 진행 건수</div><div class="flow">';
   STAGES.forEach((st, i) => {
     h += `<div class="flow-item"><div class="mini"><div class="n">${st.no}</div><div class="t">${st.ko}</div><div class="e">${st.en}</div><div class="c">${counts[i].length}</div>
@@ -901,6 +965,7 @@ function viewDeal(d) {
     <div class="todo-box"><b>지금 할 일 (Do this next)</b>${nt.st ? `<b style="display:inline;color:var(--text)">${nt.st.no} ${nt.st.ko}</b> — ` : ''}${esc(nt.t)}
       ${nt.c ? `<div class="row" style="margin-top:6px">${goBtn(nt.st.key, nt.c.k, '바로 하기 →', 'pri')}<button class="btn sm" data-act="guide" data-stage="${nt.st.key}">📘 왜 해야 하나요?</button></div>` : ''}
       <input class="inp" style="margin-top:6px" placeholder="메모: 직접 적는 다음 할 일 (선택)" data-bind="deal:todo" value="${esc(d.todo)}"></div></div>`;
+  h += outboxPanel(d);
   h += '<div class="tiny faint" style="margin-top:12px">※ 결제·포장·서류는 병행할 수 있습니다. 실제 입금과 필요한 수출신고는 해외 출고 전에 충족해야 합니다.</div>';
   h += '<div class="strip-wrap" style="margin-top:6px"><div class="strip">';
   STAGES.forEach((st, i) => { h += card(d, st, cur && cur.key === st.key) + (i < STAGES.length - 1 ? '<div class="flow-arrow">→</div>' : ''); });
@@ -1025,7 +1090,7 @@ function cardBody(d, st) {
         <div class="stat"><span class="k">이번 배송 통관가액</span><span class="v strong">USD ${usd(ss.value)}</span><span class="k">주문 전체 금액</span><span class="v">USD ${usd(t.total)}</span>
         <span class="k">품목 / 중량</span><span class="v">${ss.sets}세트 · G.W. ${kg(ss.gw)}kg</span>
         <span class="k">HS코드 없는 품목</span><span class="v">${ss.lines.filter(l => !l.hs).length}개</span></div>
-        <div class="row">${docButtons(d, ['CI', 'PL'], s.id)}</div>${docMini(d, ['CI', 'PL'], s.id)}</div>`; }).join('');
+        <div class="row"><button class="btn sm pri" data-act="shipDocs" data-sid="${s.id}">⚡ ${isIntl(s) ? 'CI·PL·Label' : 'Label'} 한 번에 발행·PDF</button>${docButtons(d, ['CI', 'PL'], s.id)}<button class="btn sm" data-act="emailKey" data-key="broker" data-sid="${s.id}">✉ 관세사 의뢰</button></div>${docMini(d, ['CI', 'PL'], s.id)}</div>`; }).join('');
       return B('배송별 서류 (Per shipment)', html || '<div class="empty">05에서 배송을 먼저 추가하세요.</div>');
     }
     case 'declaration': {
@@ -1228,6 +1293,9 @@ function drPay(d) {
 }
 function drEmail(d) {
   const e = ui.email;
+  if (e.outboxId) return `<div class="ok">자동으로 준비된 초안입니다: <b>${esc(EMAILS[e.key])}</b>. 내용을 확인하고 필요하면 고친 뒤 보내세요.</div>
+  ${F('제목 (Subject)', 'ui:email.subject', e.subject)}${F('본문 (Body)', 'ui:email.body', e.body, { area: true })}
+  <div class="row"><button class="btn" data-act="copyEmail">본문 복사</button>${e.key !== 'broker' && d.customer.email ? `<a class="btn" href="mailto:${esc(d.customer.email)}?subject=${encodeURIComponent(e.subject)}&body=${encodeURIComponent(e.body)}">메일 앱으로 열기</a>` : ''}<button class="btn" data-act="emailReset">최신 데이터로 다시 채우기</button><button class="btn pri" data-act="sentOutbox">보냄 처리 (기록 저장)</button></div>`;
   return `${F('템플릿 (Template)', 'ui:email.key', e.key, { options: EMAILS })}
   <div class="row"><button class="btn sm" data-act="emailReset">템플릿 다시 불러오기</button><span class="tiny faint">현재 수출 건 데이터(문서 번호·금액·배송)로 채워집니다. 발송 전에 내용을 확인하세요.</span></div>
   ${F('제목 (Subject)', 'ui:email.subject', e.subject)}${F('본문 (Body)', 'ui:email.body', e.body, { area: true })}
@@ -1402,7 +1470,9 @@ function afterBind(r) {
     if (r.path.endsWith('.method') && r.v === 'DHL') r.obj.account = 'buyer';
     if (r.path === 'terms.type' && r.v === 'full') d.terms.shipRequires = 'full';
   }
-  if (r.prefix === 'ui' && r.path === 'email.key') { const e = emailTpl(d, r.v); ui.email.subject = e.subject; ui.email.body = e.body; }
+  if (r.prefix === 'deal' && d && r.path === 'payHold.on' && r.v) AUTO.hold(d);
+  if (r.prefix === 'deal' && d && /^shipments\.#[^.]+\.(method|account)$/.test(r.path)) AUTO.shipAdded(d, r.obj);
+  if (r.prefix === 'ui' && r.path === 'email.key') { const e = emailTpl(d, r.v, ui.email.sid); ui.email.subject = e.subject; ui.email.body = e.body; }
   if (r.prefix === 'set' && r.path === 'pricing.tiers') { /* noop */ }
 }
 
@@ -1420,6 +1490,20 @@ const blobToB64 = b => new Promise(r => { const fr = new FileReader(); fr.onload
 const b64ToBlob = async u => (await fetch(u)).blob();
 const commit = () => { save(); render(); };
 
+function issueCore(d, doc, sn) {
+  d.docs.filter(x => x.type === doc.type && x.status === 'issued' && (x.shipmentId || null) === (doc.shipmentId || null)).forEach(x => { x.status = 'superseded'; x.supersededBy = doc.no; });
+  doc.snapshot = sn; doc.status = 'issued'; doc.issuedAt = nowStr();
+  log(d, `${doc.type} 발행: ${doc.no}${doc.originalNo ? ` (원 문서 ${doc.originalNo} 대체)` : ''} · USD ${usd(sn.total ?? sn.value ?? 0)}`);
+  AUTO.issued(d, doc);
+}
+function printHtml(html, name) {
+  $('#print-root').innerHTML = html;
+  const old = document.title; document.title = name;
+  document.body.classList.add('printing');
+  const done = () => { document.body.classList.remove('printing'); document.title = old; $('#print-root').innerHTML = ''; window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  setTimeout(() => window.print(), 50);
+}
 const A = {
   home() { ui.view = 'home'; ui.dealId = null; ui.drawer = null; window.scrollTo(0, 0); render(); },
   settings() { ui.view = 'settings'; ui.drawer = null; window.scrollTo(0, 0); render(); },
@@ -1447,7 +1531,7 @@ const A = {
       const s = act.find(x => !hasIssued(d, arg, x.id)) || act[0]; return A.newDoc(E({ type: arg, sid: s.id }));
     }
   },
-  newDeal() { const d = newDeal(); state.deals.unshift(d); ui.view = 'deal'; ui.dealId = d.id; ui.drawer = { kind: 'customer' }; commit(); },
+  newDeal() { const d = newDeal(); AUTO.created(d); state.deals.unshift(d); ui.view = 'deal'; ui.dealId = d.id; ui.drawer = { kind: 'customer' }; commit(); },
   openDeal(el) { ui.view = 'deal'; ui.dealId = el.dataset.id; window.scrollTo(0, 0); render(); },
   drawer(el) { ui.drawer = { kind: el.dataset.k, sid: el.dataset.sid }; if (el.dataset.k === 'email' && !ui.email.body) A.emailReset(); render(); },
   closeDrawer() { ui.drawer = null; render(); },
@@ -1464,7 +1548,7 @@ const A = {
   delCharge(el) { const d = deal(); d.charges = d.charges.filter(c => c.id !== el.dataset.id); commit(); },
   reapplyPolicy() { const d = deal(), P = state.settings.pricing; if (!confirm('현재 설정의 환율·할인 구간·VAT 방식·제품 기준가·수량별 단가표를 이 수출 건에 다시 적용합니다. (발행된 문서는 바뀌지 않습니다)')) return; Object.assign(d.pricing, { minOrderUsd: num(P.minOrderUsd), fxRate: P.fxRate, fxDate: P.fxDate, vatMode: P.vatMode, vatRate: P.vatRate, tiers: clone(P.tiers), discountAuto: true }); d.items.forEach(i => { const pr = productOf(i.productId); if (pr) Object.assign(i, { priceKrw: pr.priceKrw, tierPrices: clone(pr.tierPrices || {}) }); }); log(d, `가격 정책·단가표 재적용 (환율 ${P.fxRate})`); commit(); },
   /* shipments */
-  addShip() { const d = deal(); const s = newShipment(d); if (!d.shipments.length) d.items.forEach(i => { if (!i.backorder) s.alloc[i.id] = num(i.qty); }); d.shipments.push(s); log(d, `${s.no}차 배송 추가`); ui.drawer = { kind: 'ship', sid: s.id }; commit(); },
+  addShip() { const d = deal(); const s = newShipment(d); if (!d.shipments.length) d.items.forEach(i => { if (!i.backorder) s.alloc[i.id] = num(i.qty); }); d.shipments.push(s); log(d, `${s.no}차 배송 추가`); AUTO.shipAdded(d, s); ui.drawer = { kind: 'ship', sid: s.id }; commit(); },
   delShip(el) { const d = deal(); if (!confirm('이 배송을 삭제할까요?')) return; d.shipments = d.shipments.filter(s => s.id !== el.dataset.sid); ui.drawer = null; commit(); },
   allocRest(el) { const d = deal(), s = d.shipments.find(x => x.id === el.dataset.sid), it = d.items.find(i => i.id === el.dataset.id); s.alloc[it.id] = Math.max(0, num(it.qty) - allocated(d, it.id, s.id)); commit(); },
   addBox(el) { const d = deal(), s = d.shipments.find(x => x.id === el.dataset.sid), last = s.boxes[s.boxes.length - 1]; s.boxes.push({ id: uid(), l: last?.l || 0, w: last?.w || 0, h: last?.h || 0, gw: 0, nw: 0, contents: '' }); commit(); },
@@ -1473,9 +1557,9 @@ const A = {
     const d = deal(), s = d.shipments.find(x => x.id === el.dataset.sid), g = shipGate(d, s);
     if (!g.every(x => x.ok)) { alert('출고 조건이 충족되지 않았습니다:\n\n' + g.filter(x => !x.ok).map(x => '✕ ' + x.t).join('\n')); return; }
     if (!confirm(`${s.no}차 배송을 출고 완료 처리합니다.`)) return;
-    s.shippedAt = today(); log(d, `${s.no}차 배송 출고 완료 (${METHOD[s.method]}${s.awb ? ' · ' + s.awb : ''})`); commit();
+    s.shippedAt = today(); log(d, `${s.no}차 배송 출고 완료 (${METHOD[s.method]}${s.awb ? ' · ' + s.awb : ''})`); AUTO.shipped(d, s); commit();
   },
-  delivered(el) { const d = deal(), s = d.shipments.find(x => x.id === el.dataset.sid); const dt = prompt('도착 확인일 (YYYY-MM-DD)', today()); if (!dt) return; s.deliveredAt = dt; log(d, `${s.no}차 배송 도착 확인 (${dt})`); commit(); },
+  delivered(el) { const d = deal(), s = d.shipments.find(x => x.id === el.dataset.sid); const dt = prompt('도착 확인일 (YYYY-MM-DD)', today()); if (!dt) return; s.deliveredAt = dt; log(d, `${s.no}차 배송 도착 확인 (${dt})`); AUTO.delivered(d); commit(); },
   unship(el) { const d = deal(), s = d.shipments.find(x => x.id === el.dataset.sid); if (!confirm('출고 완료를 취소할까요?')) return; s.shippedAt = ''; s.deliveredAt = ''; s.exportDone = false; log(d, `${s.no}차 배송 출고 취소`); commit(); },
   toggleExport(el) {
     const d = deal(), s = d.shipments.find(x => x.id === el.dataset.sid);
@@ -1490,7 +1574,9 @@ const A = {
     if (!(num(f.amount) > 0)) { alert('금액을 입력하세요.'); return; }
     const p = { id: uid(), kind: f.kind, date: f.date || today(), amount: r2(f.amount), krw: f.kind === 'credited' ? Math.round(num(f.krw)) : 0, ref: f.ref, note: f.note, payer: f.payer || '', thirdParty: !!f.thirdParty, fileId: '' };
     if (ui.payFile) p.fileId = await storeFile(d, ui.payFile, { kind: 'remittance', stage: 'payment' });
+    const before = totals(d).credited;
     d.payments.push(p);
+    if (p.kind === 'credited') AUTO.paid(d, before);
     log(d, `${f.kind === 'credited' ? '실입금 확인' : '송금증 수령'} USD ${usd(p.amount)}${p.krw ? ` (${krw(p.krw)})` : ''}`);
     ui.payForm = { kind: f.kind, date: today(), amount: '', krw: '', ref: '', note: '' }; ui.payFile = null; commit();
   },
@@ -1525,16 +1611,14 @@ const A = {
     const errs = verifyMath(sn); if (errs.length) { alert('자동 검산 오류가 있어 발행할 수 없습니다:\n' + errs.join('\n')); return; }
     const w = docWarnings(d, doc, sn);
     if (!confirm(`${doc.no} 을(를) 발행합니다.\n발행 후에는 수정할 수 없고 수정본으로만 변경됩니다.${w.length ? '\n\n확인할 점:\n- ' + w.join('\n- ') : ''}\n\n계속할까요?`)) return;
-    d.docs.filter(x => x.type === doc.type && x.status === 'issued' && (x.shipmentId || null) === (doc.shipmentId || null)).forEach(x => { x.status = 'superseded'; x.supersededBy = doc.no; });
-    doc.snapshot = sn; doc.status = 'issued'; doc.issuedAt = nowStr();
-    log(d, `${doc.type} 발행: ${doc.no}${doc.originalNo ? ` (원 문서 ${doc.originalNo} 대체)` : ''} · USD ${usd(sn.total ?? sn.value ?? 0)}`);
+    issueCore(d, doc, sn);
     commit(); toast('발행되었습니다. PDF 출력으로 저장하세요.');
   },
   reviseDoc() { const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId); const nd = createDoc(d, doc.type, doc.shipmentId); ui.modal.docId = nd.id; commit(); },
   voidDoc() { const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId); const why = prompt('무효 처리 사유 (기록에 남습니다):'); if (why === null) return; doc.status = 'void'; doc.voidReason = why; log(d, `${doc.type} 무효: ${doc.no} — ${why}`); commit(); },
   delDoc() { const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId); if (!confirm('초안을 삭제할까요?')) return; d.docs = d.docs.filter(x => x !== doc); log(d, `${doc.type} 초안 삭제: ${doc.no}`); ui.modal = null; commit(); },
   printDoc() {
-    let html, name;
+    let html, name; // eslint-disable-line
     if (ui.modal.price) { const iss = ui.modal.viewId && state.priceLists.find(x => x.id === ui.modal.viewId); const sn = iss ? iss.snapshot : buildPriceSnap(ui.modal.edits); html = renderPriceList(sn, false); name = `${sn.no}_BUNNAR_PriceList`; }
     else { const d = deal(), doc = d.docs.find(x => x.id === ui.modal.docId); html = renderDoc(snapOf(d, doc), doc.status === 'draft'); name = `${doc.no}_BUNNAR${doc.status === 'draft' ? '_DRAFT' : ''}`; }
     $('#print-root').innerHTML = html;
@@ -1545,10 +1629,26 @@ const A = {
     setTimeout(() => window.print(), 50);
   },
   /* email */
-  emailKey(el) { ui.email.key = el.dataset.key; A.emailReset(true); ui.drawer = { kind: 'email' }; render(); },
-  emailReset(silent) { const e = emailTpl(deal(), ui.email.key); ui.email.subject = e.subject; ui.email.body = e.body; if (silent !== true) render(); },
+  openOutbox(el) { const d = deal(), x = d.outbox.find(o => o.id === el.dataset.id); ui.email = { key: x.key, subject: x.subject, body: x.body, outboxId: x.id, sid: x.sid || '' }; ui.drawer = { kind: 'email' }; render(); },
+  sentOutbox(el) { const d = deal(), x = d.outbox.find(o => o.id === (el.dataset.id || ui.email.outboxId)); if (!x) return; if (ui.email.outboxId === x.id) Object.assign(x, { subject: ui.email.subject, body: ui.email.body });
+    x.status = 'sent'; x.sentAt = nowStr(); log(d, `[${EMAILS[x.key]}] ${x.subject}\n\n${x.body}`, 'email'); if (MAIL_CHECK[x.key]) d.checks[MAIL_CHECK[x.key]] = true; if (ui.email.outboxId === x.id) { ui.email.outboxId = null; ui.drawer = null; } commit(); toast('보냄 처리했습니다 (상담 기록에 저장)'); },
+  dropOutbox(el) { const d = deal(); d.outbox = d.outbox.filter(o => o.id !== el.dataset.id); commit(); },
+  shipDocs(el) {
+    const d = deal(), s = d.shipments.find(x => x.id === el.dataset.sid), types = isIntl(s) ? ['CI', 'PL', 'MARK'] : ['MARK'];
+    const docs = types.map(t => latestIssued(d, t, s.id) && !findDraft(d, t, s.id) ? null : createDoc(d, t, s.id)).filter(Boolean);
+    const errs = [], warns = [];
+    for (const doc of docs) { const sn = buildSnap(d, doc); verifyMath(sn).forEach(e => errs.push(`${doc.type}: ${e}`)); docWarnings(d, doc, sn).forEach(w => warns.push(`${doc.type}: ${w}`)); }
+    if (errs.length) { alert('자동 검산 오류:\n' + errs.join('\n')); commit(); return; }
+    if (docs.length && !confirm(`${s.no}차 배송 서류 ${docs.map(x => x.type).join('·')}를 한 번에 발행하고 PDF로 출력합니다.${warns.length ? '\n\n확인할 점:\n- ' + [...new Set(warns)].join('\n- ') : ''}\n\n계속할까요?`)) { commit(); return; }
+    for (const doc of docs) issueCore(d, doc, buildSnap(d, doc));
+    commit();
+    const html = types.map(t => latestIssued(d, t, s.id)).filter(Boolean).map(doc => renderDoc(doc.snapshot, false)).join('');
+    printHtml(html, `${d.code}_S${s.no}_Shipping-Docs_BUNNAR`);
+  },
+  emailKey(el) { ui.email.outboxId = null; ui.email.sid = el.dataset.sid || ''; ui.email.key = el.dataset.key; A.emailReset(true); ui.drawer = { kind: 'email' }; render(); },
+  emailReset(silent) { const e = emailTpl(deal(), ui.email.key, ui.email.sid); ui.email.subject = e.subject; ui.email.body = e.body; if (silent !== true) render(); },
   async copyEmail() { try { await navigator.clipboard.writeText(`Subject: ${ui.email.subject}\n\n${ui.email.body}`); toast('복사되었습니다'); } catch (e) { alert('복사 실패 — 직접 선택해 복사하세요.'); } },
-  logEmail() { const d = deal(); log(d, `[${EMAILS[ui.email.key]}] ${ui.email.subject}\n\n${ui.email.body}`, 'email'); const st = { inquiry: 'inquiry_reply', pi: 'order_sent', shipped: 'dispatch_notify' }[ui.email.key]; if (st) d.checks[st] = true; commit(); toast('상담 기록에 저장했습니다'); },
+  logEmail() { if (ui.email.outboxId) return A.sentOutbox({ dataset: {} }); const d = deal(); log(d, `[${EMAILS[ui.email.key]}] ${ui.email.subject}\n\n${ui.email.body}`, 'email'); const st = { inquiry: 'inquiry_reply', pi: 'order_sent', shipped: 'dispatch_notify' }[ui.email.key]; if (st) d.checks[st] = true; commit(); toast('상담 기록에 저장했습니다'); },
   /* settlement */
   addCost() { deal().settlement.costs.push({ id: uid(), label: '', krw: 0 }); commit(); },
   delCost(el) { const d = deal(); d.settlement.costs = d.settlement.costs.filter(c => c.id !== el.dataset.id); commit(); },
@@ -1615,6 +1715,7 @@ function loadSample() {
   tw.verify.find(v => v.key === 'perf').note = '국내 물류업체 인도 건 — 직접 수출실적 인정 여부 확인 필요';
   tw.verify.find(v => v.key === 'zero').note = '영세율 적용 가능 여부 세무사 확인';
   log(tw, '한국 내 지정 물류업체로 배송 요청. 2박스, 박스별 배송 식별 라벨 필요', 'note');
+  AUTO.shipAdded(au, s1); AUTO.hold(tw);
   state.deals.unshift(tw, au);
 }
 
